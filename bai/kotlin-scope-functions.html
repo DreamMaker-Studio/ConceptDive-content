@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scope functions | ConceptDive</title>
+<meta name="description" content="Vừa tạo Dialog hay Intent rồi gán 4 thuộc tính liên tiếp, bạn phải lặp lại tên biến ở mọi dòng. Năm hàm scope functions mở ra một khối lệnh nhỏ ngay trên đối tượng đó để bạn gán thuộc tính hoặc đổi ki">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-scope-functions.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Scope functions | ConceptDive">
+<meta property="og:description" content="Vừa tạo Dialog hay Intent rồi gán 4 thuộc tính liên tiếp, bạn phải lặp lại tên biến ở mọi dòng. Năm hàm scope functions mở ra một khối lệnh nhỏ ngay trên đối tượng đó để bạn gán thuộc tính hoặc đổi ki">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-scope-functions.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/scope-functions-matrix.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Scope functions</h1>
+<h2>Bản 30 giây</h2>
+<p>Vừa tạo <code>Dialog</code> hay <code>Intent</code> rồi gán 4 thuộc tính liên tiếp, bạn phải lặp lại tên biến ở mọi dòng. Năm hàm scope functions mở ra một khối lệnh nhỏ ngay trên đối tượng đó để bạn gán thuộc tính hoặc đổi kiểu dữ liệu. Nhờ vậy, biến tạm không bị tràn ra phần còn lại của hàm.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong Java cũ, muốn tạo và cài đặt đối tượng nhiều bước, bạn phải tạo biến tạm rồi viết lại tên biến ở từng dòng. Biến tạm này vẫn nằm lại trong hàm sau khi dùng xong, dễ bị các dòng bên dưới dùng nhầm.</p>
+<p>Khi làm việc với biến có thể null, bạn lại phải viết nhiều tầng <code>if (x != null)</code> lồng nhau. Lập trình viên cần một cách nối các bước xử lý liền mạch mà không phải đặt thêm tên biến phụ.</p>
+<p>Kotlin 1.0 (2016) đưa sẵn <code>let</code>, <code>run</code>, <code>with</code>, <code>apply</code> vào thư viện chuẩn, rồi Kotlin 1.1 (2017) bổ sung thêm <code>also</code>. Nhờ là <a href="kotlin-inline-function.html">inline function</a>, cả năm hàm giúp code gọn lại mà không tạo thêm đối tượng lúc chạy.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Năm hàm này không phải được đặt tên ngẫu nhiên, mà bốn <a href="kotlin-extension-and-object.html">extension function</a> ghép thành một bảng 2x2 theo hai câu hỏi. Câu hỏi một là bên trong ngoặc nhọn bạn gọi đối tượng bằng <code>this</code> hay <code>it</code>. Câu hỏi hai là chạy xong ngoặc nhọn thì hàm trả về chính đối tượng đó hay trả về kết quả dòng cuối. Riêng hàm thứ năm <code>with</code> nằm ngoài bảng vì nhận đối tượng làm tham số thường.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Ma trận 2x2 phân loại scope functions theo đối tượng ngữ cảnh (this/it) và kết quả trả về, cùng hàm độc lập with" src="../kotlin/diagrams/scope-functions-matrix.png"></p>
+<p>Hai hàm trả về kết quả dòng cuối là <code>let</code> (gọi bằng <code>it</code>) và <code>run</code> (gọi bằng <code>this</code>). Hai hàm trả về lại chính đối tượng ban đầu là <code>also</code> (gọi bằng <code>it</code>) và <code>apply</code> (gọi bằng <code>this</code>). Còn <code>with</code> nhận đối tượng qua ngoặc tròn <code>with(x)</code> nên không ghép được với dấu <code>?.</code> như <code>x?.run</code> khi biến có thể null. Vì cả năm đều là <a href="kotlin-inline-function.html">inline function</a>, compiler chép thẳng thân hàm vào chỗ gọi nên không tốn thêm bộ nhớ Heap.</p>
+<h2>Đánh đổi</h2>
+<p>Code của bạn gọn lại, đọc một mạch từ trên xuống và không còn biến tạm thừa. Đổi lại, nếu bạn nối hoặc lồng 3 khối scope functions liên tiếp, người đọc sẽ rối và rất khó đặt breakpoint gỡ lỗi. Nhất là khi lồng hai khối cùng dùng <code>this</code>, bạn rất dễ gọi nhầm thuộc tính của khối bên ngoài.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chỉ mở biến ra trong đúng vài dòng cần dùng nó, xong việc là đóng lại ngay (lexical scoping).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Scope functions không sinh ra để nối chuỗi cho ngắn code, mà để thu hẹp phạm vi biến tạm tránh rò rỉ ngữ cảnh.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class UserConfig(var name: String = &quot;&quot;, var age: Int = 0)
+
+val config = UserConfig().apply {
+    name = &quot;Alice&quot;
+    age = 25
+}.also {
+    println(&quot;Created: ${it.name}&quot;)
+}
+
+val summary: String = config.let { &quot;${it.name} - ${it.age}&quot; }
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy hay gặp nhất là viết <code>x?.let { work() } ?: runFallback()</code> khi hàm <code>work()</code> có thể trả về null. Lúc đó dù <code>x</code> khác null, toán tử Elvis <code>?:</code> vẫn chạy nhánh dự phòng và làm hỏng ý đồ <a href="kotlin-null-safety.html">Null safety</a> của bạn. Đừng lồng các khối dùng <code>this</code> như <code>apply</code> hay <code>run</code> quá hai tầng vì sẽ không biết <code>this</code> đang chỉ vào đâu. Triệu chứng là hàm gán nhầm biến của lớp ngoài, hoặc chạy cả nhánh đúng lẫn nhánh báo lỗi trong một lần bấm.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Dùng scope function như let hay apply có làm app chậm đi vì sinh thêm object không?
+Không. Cả năm hàm đều được đánh dấu <code>inline</code>, nên lúc biên dịch compiler chép thẳng các dòng bên trong ra ngay chỗ gọi. Ứng dụng không tốn thêm đối tượng lambda nào trên Heap.</p>
+<p><strong>Hỏi:</strong> Làm sao chọn nhanh giữa let, run, also và apply mà không cần tra bảng?
+Hãy tự hỏi mình cần nhận lại đối tượng cũ hay kết quả mới, và muốn viết <code>this</code> hay <code>it</code>. Muốn cài đặt thuộc tính hoặc in log rồi giữ nguyên đối tượng thì chọn <code>apply</code> hoặc <code>also</code>. Muốn đổi sang giá trị khác hoặc kiểm tra khác null bằng <code>?.</code> thì chọn <code>let</code> hoặc <code>run</code>.</p>
+<p><strong>Hỏi:</strong> Vì sao viết <code>user?.let { sendEmail(it) } ?: showLoginDialog()</code> lại có thể gây lỗi hiển thị sai?
+Vì dấu <code>?:</code> nhìn vào kết quả trả về của cả khối <code>let</code>, chứ không chỉ nhìn vào biến <code>user</code>. Nếu <code>sendEmail(it)</code> trả về null, hộp thoại đăng nhập vẫn bật lên dù người dùng đã đăng nhập rồi. Khi hàm bên trong có thể trả về null, bạn hãy viết <code>if (user != null)</code> bình thường cho rõ nghĩa.</p>
+<p><strong>Hỏi:</strong> Khi nào nên dùng <code>also</code> thay vì <code>apply</code>?
+Dùng <code>also</code> khi bạn chỉ làm việc phụ như in log hay bắn sự kiện thống kê mà không sửa thuộc tính của đối tượng. Vì <code>also</code> gọi đối tượng bằng tên <code>it</code>, bạn đọc vào thấy rõ ngay mình đang truyền cả đối tượng đi. Nó cũng tránh được việc gọi nhầm biến <code>this</code> của lớp bên ngoài.</p>
+<p><strong>Hỏi:</strong> Hàm <code>with</code> và <code>run</code> khác nhau chỗ nào khi cùng nhận <code>this</code> và trả về kết quả?
+<code>with</code> nhận đối tượng làm tham số trong ngoặc <code>with(user)</code>, còn <code>run</code> gọi trực tiếp sau dấu chấm <code>user.run</code>. Vì vậy khi biến có thể null, bạn viết <code>user?.run</code> rất gọn, còn dùng <code>with</code> thì không gắn dấu <code>?.</code> vào được.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Vẽ lại được bảng 2x2 của 4 hàm let, run, also, apply theo hai trục this/it và kết quả trả về, kèm hàm with đứng riêng.</li>
+<li>Giải thích được vì sao dùng 5 hàm này không tạo thêm đối tượng lambda trên Heap nhờ từ khóa inline.</li>
+<li>Chỉ ra được bẫy x?.let trả về null làm chạy nhầm nhánh Elvis và bẫy lồng hai khối dùng this.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/scope-functions.html" target="_blank" rel="noopener">Scope functions — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/let.html" target="_blank" rel="noopener">let function API reference — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/apply.html" target="_blank" rel="noopener">apply function API reference — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/docs/whatsnew11.html" target="_blank" rel="noopener">What&#x27;s new in Kotlin 1.1</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+<li><a href="kotlin-null-safety.html">Null safety</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-scope-functions" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

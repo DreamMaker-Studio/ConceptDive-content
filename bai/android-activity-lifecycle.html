@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Activity Lifecycle | ConceptDive</title>
+<meta name="description" content="Khi mở ứng dụng khác đè lên mà thiếu RAM, hệ điều hành sẽ tắt ứng dụng cũ để lấy bộ nhớ. Vòng đời là bộ hàm báo trước giữa ứng dụng và hệ điều hành. Nhờ đó, bạn kịp ngắt định vị và lưu dữ liệu màn hìn">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-activity-lifecycle.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Activity Lifecycle | ConceptDive">
+<meta property="og:description" content="Khi mở ứng dụng khác đè lên mà thiếu RAM, hệ điều hành sẽ tắt ứng dụng cũ để lấy bộ nhớ. Vòng đời là bộ hàm báo trước giữa ứng dụng và hệ điều hành. Nhờ đó, bạn kịp ngắt định vị và lưu dữ liệu màn hìn">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-activity-lifecycle.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/activity-lifecycle-process-death.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Activity Lifecycle</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi mở ứng dụng khác đè lên mà thiếu RAM, hệ điều hành sẽ tắt ứng dụng cũ để lấy bộ nhớ. Vòng đời là bộ hàm báo trước giữa ứng dụng và hệ điều hành. Nhờ đó, bạn kịp ngắt định vị và lưu dữ liệu màn hình trước khi nhân hệ điều hành thu hồi tiến trình.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Tháng 10/2008, HTC Dream ra mắt với vỏn vẹn 192MB RAM. Chip sóng và hệ điều hành chiếm phần lớn, chỉ để lại chưa đầy 100MB cho ứng dụng.</p>
+<p>Thiết bị di động không thể dùng bộ nhớ swap trên ổ đĩa vì chip nhớ flash quá chậm và nhanh hỏng. Trong khi đó, cuộc gọi đến có thể ập tới bất ngờ và cần RAM trống ngay lập tức.</p>
+<p>Kỹ sư Android đưa Low Memory Killer vào kernel để gửi tín hiệu <code>SIGKILL</code> tắt thẳng tiến trình ngầm. Họ tạo ra lifecycle để ứng dụng kịp lưu trạng thái, giúp người dùng mở lại thấy màn hình vẫn như chưa từng bị tắt.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Activity Lifecycle không phải chuỗi hàm tiện ích để bạn sắp xếp việc nạp giao diện. Thực ra, nó là quy ước báo hiệu giữa ứng dụng và hệ điều hành để nhường trả tài nguyên. Cơ chế này giúp nhân hệ điều hành thu hồi RAM bất cứ lúc nào mà người dùng mở lại vẫn thấy màn hình cũ.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Activity che khuất lưu Bundle, LMKD tăng điểm oom_score_adj và gửi SIGKILL khi cạn RAM" src="../android/diagrams/activity-lifecycle-process-death.png"></p>
+<p>Khi màn hình của bạn bị che khuất, hệ thống gọi <code>onPause</code> rồi <code>onStop</code> và lưu dữ liệu tạm qua <code>onSaveInstanceState</code>. Lúc này, hệ điều hành tăng điểm <code>oom_score_adj</code> (mức ưu tiên bị tắt trong bộ dọn LMKD) của tiến trình lên cao. Khi máy thiếu RAM, LMKD gửi lệnh <code>SIGKILL</code> tắt ngay tiến trình có điểm cao nhất mà không gọi <code>onDestroy</code>. Khi người dùng mở lại ứng dụng, Android tạo tiến trình mới và truyền lại <code>Bundle</code> vào <code>onCreate</code> để dựng lại màn hình.</p>
+<h2>Đánh đổi</h2>
+<p>Hệ thống chạy ổn định ngay cả trên những máy ít RAM. Đổi lại, bạn phải tự viết code lưu trạng thái màn hình và cẩn thận tránh <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>. Mỗi lần người dùng xoay ngang điện thoại, Activity bị hủy rồi tạo lại nên các việc đang chạy dở rất dễ bị ngắt.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Giữ cảm giác ứng dụng chạy liên tục bằng cách cất dữ liệu vào bản chụp tạm trước khi hủy. Khi người dùng quay về, hệ thống dựng lại màn hình từ bản chụp đó.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Lifecycle báo trước để hệ điều hành thu hồi RAM ứng dụng ngầm bất cứ lúc nào mà người dùng không biết.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Khi bạn trả phòng tạm để đi chơi xa, khách sạn cất đồ của bạn vào chiếc vali nhỏ rồi cho khách khác thuê phòng. Khi bạn quay lại, nhân viên xếp đồ từ vali ra một căn phòng mới giống hệt phòng cũ.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// Observer
+class LocationListener(private val gpsManager: GpsManager) : DefaultLifecycleObserver {
+    override fun onStart(owner: LifecycleOwner) = gpsManager.startUpdates()
+    override fun onStop(owner: LifecycleOwner) = gpsManager.stopUpdates()
+}
+
+// Activity
+lifecycle.addObserver(LocationListener(gpsManager))
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy hay gặp nhất là tin rằng <code>onDestroy()</code> lúc nào cũng chạy khi ứng dụng đóng. Khi ứng dụng nằm dưới nền mà máy hết RAM, Low Memory Killer bắn lệnh <code>SIGKILL</code> tắt tiến trình ngay mà bỏ qua <code>onDestroy()</code>. Nếu bạn đợi tới <code>onDestroy</code> mới lưu bài viết đang soạn dở, người dùng sẽ mất sạch chữ vừa gõ. Cũng đừng gọi lệnh ghi file hay mạng lâu trong các hàm vòng đời, vì bị <code>SIGKILL</code> giữa chừng sẽ làm hỏng dữ liệu.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Gọi finish() thì Activity có bị hủy ngay lập tức không?
+Không. Lệnh <code>finish()</code> chỉ báo cho hệ thống xếp lịch đóng màn hình, nên các dòng code viết ngay bên dưới nó vẫn chạy tiếp. Hệ thống chỉ thực sự gọi <code>onDestroy</code> ở các lượt xử lý tin nhắn sau trên Main Thread.</p>
+<p><strong>Hỏi:</strong> onPause với onStop khác nhau chỗ nào trong thực tế?
+<code>onPause</code> chạy khi màn hình mất tương tác nhưng vẫn nhìn thấy, còn <code>onStop</code> chạy khi màn hình bị che kín. Ví dụ khi một hộp thoại xin quyền trong suốt bật đè lên, Activity phía dưới chỉ vào <code>onPause</code> chứ chưa vào <code>onStop</code>. Bạn nên dừng hoạt ảnh nhẹ ở <code>onPause</code>, và ngắt GPS hay camera nặng ở <code>onStop</code>.</p>
+<p><strong>Hỏi:</strong> Lưu trạng thái màn hình nên chọn onSaveInstanceState hay ViewModel, làm sao biết?
+Tuỳ vào việc bạn muốn giữ dữ liệu qua lúc xoay màn hình hay qua lúc hệ thống tắt ngầm tiến trình. <a href="android-viewmodel.html">ViewModel</a> giữ được danh sách lớn trong RAM khi xoay máy, nhưng sẽ mất hết nếu tiến trình bị hệ thống tắt. Vì vậy, bạn phải dùng thêm <code>onSaveInstanceState</code> để cất các ID hoặc chữ đang gõ vào <code>Bundle</code> nhằm tải lại màn hình.</p>
+<p><strong>Hỏi:</strong> Vì sao Google khuyên giải phóng tài nguyên ở onStop thay vì onDestroy?
+Vì hệ thống không hứa sẽ luôn gọi <code>onDestroy</code>. Khi ứng dụng của bạn lùi về nền, hệ thống có thể gửi <code>SIGKILL</code> tắt thẳng tiến trình mà không chạy qua <code>onDestroy</code>. Ngắt định vị hay máy ảnh ngay ở <code>onStop</code> giúp trả lại phần cứng ngay khi người dùng không còn nhìn thấy màn hình.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách LMKD tăng điểm oom_score_adj và gửi SIGKILL tắt tiến trình nền mà không gọi onDestroy.</li>
+<li>Nêu được vai trò của lifecycle như cơ chế báo trước để ứng dụng lưu Bundle và nhường RAM cho hệ điều hành.</li>
+<li>Chỉ ra được bẫy mất dữ liệu khi lưu trong onDestroy và nguy cơ rò rỉ bộ nhớ khi xoay màn hình.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/components/activities/activity-lifecycle" target="_blank" rel="noopener">The activity lifecycle — Android Developers</a></li>
+<li><a href="https://source.android.com/docs/core/perf/lmkd" target="_blank" rel="noopener">Low memory killer daemon — AOSP</a></li>
+<li><a href="https://developer.android.com/reference/android/app/Activity" target="_blank" rel="noopener">Activity API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-activity-lifecycle" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

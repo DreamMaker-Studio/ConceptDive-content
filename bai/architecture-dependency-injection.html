@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dependency Injection | ConceptDive</title>
+<meta name="description" content="Khi một lớp tự gọi lệnh tạo công cụ bên trong, bạn không thể tráo bằng công cụ giả để chạy unit test. Dependency Injection đổi ngược lại: bên ngoài tạo sẵn công cụ rồi truyền vào cho đối tượng dùng. N">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-dependency-injection.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dependency Injection | ConceptDive">
+<meta property="og:description" content="Khi một lớp tự gọi lệnh tạo công cụ bên trong, bạn không thể tráo bằng công cụ giả để chạy unit test. Dependency Injection đổi ngược lại: bên ngoài tạo sẵn công cụ rồi truyền vào cho đối tượng dùng. N">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-dependency-injection.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/architecture/diagrams/dependency-injection-testing-isolation.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kiến trúc</p>
+<h1>Dependency Injection</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi một lớp tự gọi lệnh tạo công cụ bên trong, bạn không thể tráo bằng công cụ giả để chạy unit test. Dependency Injection đổi ngược lại: bên ngoài tạo sẵn công cụ rồi truyền vào cho đối tượng dùng. Nhờ đó, bạn tách hẳn việc dùng công cụ ra khỏi việc khởi tạo công cụ.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="oop-solid.html">SOLID</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Đầu thập niên 2000, cách viết test trước khi viết code (TDD) phát triển mạnh. Các kỹ sư nhận ra những lớp tự gọi <code>new ApiClient()</code> ở bên trong thì không sao viết unit test riêng lẻ được. Cứ chạy test là hàm lại gọi mạng thật hoặc ghi xuống ổ cứng, vừa chậm vừa không giả lập được lúc rớt mạng.</p>
+<p>Tháng 1/2004, Martin Fowler viết bài luận nổi tiếng về IoC Containers. Ông đặt tên cho cách làm này là Dependency Injection (tiêm phụ thuộc), tức là truyền đối tượng cần dùng từ bên ngoài vào.</p>
+<p>Khi dự án lớn dần, việc tự tay khởi tạo rồi truyền hàng chục tham số qua nhiều tầng rất mỏi tay. Các thư viện như Guice, Dagger và Hilt ra đời để tự động nối các đối tượng này giúp bạn.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Dependency Injection không phải là thư viện Hilt hay Koin mà bạn bắt buộc phải cài vào dự án. Nó chỉ là một cách tổ chức code. Thay vì tự gọi lệnh khởi tạo, đối tượng nhận các công cụ cần dùng từ bên ngoài truyền vào.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Tiêm phụ thuộc qua constructor giúp cô lập kiểm thử bằng cách tráo đổi bản giả lập không sửa code" src="../architecture/diagrams/dependency-injection-testing-isolation.png"></p>
+<p>Bên ngoài tạo sẵn các đối tượng phụ thuộc rồi truyền vào lớp của bạn qua <code>constructor</code> hoặc gán vào biến thuộc tính (field injection). Khi đi cùng nguyên lý <a href="oop-solid.html">DIP</a>, lớp của bạn chỉ nhận vào một <code>interface</code> thay vì lớp cụ thể. Lúc chạy ứng dụng thật thì bạn truyền bản gọi mạng thật, còn lúc chạy test thì truyền bản giả lập vào.</p>
+<h2>Đánh đổi</h2>
+<p>Code của bạn tách hẳn việc khởi tạo ra khỏi việc tính toán nghiệp vụ nên viết unit test rất nhẹ nhàng. Đổi lại, dự án có thêm nhiều file hơn và chỗ ghép nối các đối tượng lúc khởi động sẽ phức tạp hơn. Thư viện sinh code lúc biên dịch như Dagger làm thời gian build lâu hơn. Còn thư viện tra cứu lúc chạy như Koin dễ làm sập ứng dụng nếu quên khai báo.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Đảo ngược điều khiển (Inversion of Control): nhường việc tạo đối tượng cho bên ngoài lo. Nhờ đó, lớp bên trong dễ thay đổi và dễ kiểm thử.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Dependency Injection chỉ là truyền công cụ từ bên ngoài vào thay vì tự tạo bên trong, không phụ thuộc vào thư viện.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">interface UserRepository { fun getUser(): String }
+class ApiUserRepo : UserRepository { override fun getUser() = &quot;Network&quot; }
+class FakeUserRepo : UserRepository { override fun getUser() = &quot;Mock&quot; }
+
+class UserPresenter(private val repo: UserRepository) {
+    fun displayUser(): String = repo.getUser()
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy hay gặp là dùng một biến toàn cục (Service Locator) để lấy công cụ ngay giữa thân hàm thay vì nhận qua <code>constructor</code>. Cách này giấu mất lớp đang cần những gì và làm các bài test sau bị dính dữ liệu cũ của bài test trước. Còn nếu <code>constructor</code> nhận quá nhiều tham số, lớp đang ôm quá nhiều việc và vi phạm nguyên lý đơn trách nhiệm trong <a href="oop-solid.html">SOLID</a>. Đừng cài các thư viện DI đồ sộ vào một thư viện nhỏ độc lập vì chỉ làm dự án build chậm thêm.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Không dùng Hilt hay Koin thì có làm Dependency Injection được không?
+Được, không bắt buộc phải có thư viện. DI chỉ là truyền đối tượng cần dùng từ bên ngoài vào thay vì tự tạo ở bên trong. Bạn tự tay viết code khởi tạo rồi truyền qua <code>constructor</code> (Manual DI) đã là làm đúng bản chất của DI rồi.</p>
+<p><strong>Hỏi:</strong> Service Locator với Dependency Injection khác nhau ở đâu khi đều lấy được phụ thuộc?
+Khác nhau ở chỗ bạn có nhìn thấy ngay lớp đó cần những công cụ gì hay không. Với Service Locator, lệnh lấy công cụ nằm lẫn trong ruột hàm nên không đọc hết code thì không biết lớp cần gì. Còn DI đặt hết các công cụ cần dùng ngay trên <code>constructor</code>, truyền thiếu một thứ là trình biên dịch báo lỗi ngay.</p>
+<p><strong>Hỏi:</strong> Dự án nên chọn Hilt hay Koin, làm sao biết?
+Hilt kiểm tra cây phụ thuộc lúc build nên thiếu gì là báo lỗi liền, hợp cho dự án lớn. Còn Koin nối đối tượng lúc chạy nên build nhanh hơn. Nhưng nếu quên khai báo một lớp trong Koin, mở màn hình đó lên ứng dụng mới sập.</p>
+<p><strong>Hỏi:</strong> DI có tác dụng thực sự gì ngoài việc hỗ trợ viết Unit Test?
+Nó tách nơi dùng công cụ ra khỏi nơi cài đặt và khởi tạo công cụ đó. Khi đổi từ lưu file sang cơ sở dữ liệu Room, bạn chỉ đổi chỗ truyền vào mà không sửa code nghiệp vụ.</p>
+<p><strong>Hỏi:</strong> Constructor nhận tới tám tham số thì dùng DI thế nào cho gọn?
+Bạn đừng tìm cách giấu bớt tham số, vì đó là dấu hiệu lớp này đang ôm quá nhiều việc và vi phạm <a href="oop-solid.html">SOLID</a>. Cách sửa đúng là tách lớp đó thành các <code>Use Case</code> hoặc dịch vụ nhỏ hơn rồi mới truyền phụ thuộc vào.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được nhu cầu tráo đối tượng giả khi viết unit test chính là lý do sinh ra Dependency Injection.</li>
+<li>Phân biệt được việc tự truyền tham số qua constructor (Manual DI) với việc dùng thư viện như Hilt hay Koin.</li>
+<li>Chỉ ra được bẫy dùng Service Locator giấu phụ thuộc trong thân hàm và bẫy constructor nhận quá nhiều tham số.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/training/dependency-injection" target="_blank" rel="noopener">Dependency injection in Android</a></li>
+<li><a href="https://martinfowler.com/articles/injection.html" target="_blank" rel="noopener">Inversion of Control and Dependency Injection</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Dependency_injection" target="_blank" rel="noopener">Dependency injection — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="oop-solid.html">SOLID</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Darchitecture-dependency-injection" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

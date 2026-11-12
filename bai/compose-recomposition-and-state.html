@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compose: Recomposition &amp; State | ConceptDive</title>
+<meta name="description" content="Khi bạn bấm nút tăng số đếm, Compose không vẽ lại cả màn hình mà chỉ gọi lại đúng hàm đọc biến State đó. Hàm remember giúp bạn giữ lại dữ liệu trong sổ nhớ Slot Table qua những lần hàm chạy lại. Nhờ v">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-recomposition-and-state.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Compose: Recomposition &amp; State | ConceptDive">
+<meta property="og:description" content="Khi bạn bấm nút tăng số đếm, Compose không vẽ lại cả màn hình mà chỉ gọi lại đúng hàm đọc biến State đó. Hàm remember giúp bạn giữ lại dữ liệu trong sổ nhớ Slot Table qua những lần hàm chạy lại. Nhờ v">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-recomposition-and-state.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/compose/diagrams/recomposition-slot-table-gap-buffer.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Compose</p>
+<h1>Compose: Recomposition &amp; State</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn bấm nút tăng số đếm, Compose không vẽ lại cả màn hình mà chỉ gọi lại đúng hàm đọc biến <code>State</code> đó. Hàm <code>remember</code> giúp bạn giữ lại dữ liệu trong sổ nhớ <code>Slot Table</code> qua những lần hàm chạy lại. Nhờ vậy, chỉ phần giao diện có dữ liệu mới được cập nhật, còn các chỗ khác đứng yên.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+<li><a href="kotlin-stateflow-vs-sharedflow.html">StateFlow vs SharedFlow</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2008, hệ thống View của Android ra đời. Muốn sửa giao diện, bạn tự gọi <code>setText</code> hay <code>setVisibility</code> từ nhiều nơi trong Activity.</p>
+<p>Khi màn hình phức tạp, chỉ cần quên gọi <code>setVisibility</code> ở một nhánh <code>if</code> là màn hình hiện sai so với ViewModel (<em>State drift</em>). Nhiều chỗ cùng sửa một View thì rất khó lần ra chỗ nào vừa làm hỏng giao diện.</p>
+<p>Năm 2021, Google phát hành Jetpack Compose với cách viết giao diện khai báo (<em>Declarative UI</em>). Bạn chỉ mô tả màn hình trông thế nào với dữ liệu hiện tại, còn Compose tự lo cập nhật.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Recomposition</code> không xoá màn hình rồi vẽ lại từ đầu. Lần chạy đầu, Compose ghi mọi thứ hàm của bạn tạo ra vào một cuốn sổ theo đúng thứ tự gọi, gọi là <code>Slot Table</code>. Khi một <code>State</code> đổi, Compose chỉ gọi lại những phạm vi hàm (<code>RecomposeScope</code>) đã đọc <code>State</code> đó, rồi so kết quả mới với sổ cũ. Chỗ nào khác với sổ cũ thì mới sửa trên màn hình.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Compose ghi giao diện vào sổ Slot Table, chỉ gọi lại RecomposeScope đã đọc State vừa đổi và bỏ qua hàm có tham số không đổi" src="../compose/diagrams/recomposition-slot-table-gap-buffer.png"></p>
+<p>Khi biên dịch, Compose thêm tham số <code>$composer</code> vào mọi hàm <code>@Composable</code> để đọc và ghi từng mục trong sổ <code>Slot Table</code>. Sổ chừa sẵn một khoảng trống (<em>Gap Buffer</em>) nên thêm hay bớt mục ở giữa không phải dời cả mảng. Gặp <code>remember</code>, <code>$composer</code> cất giá trị vào đúng ô để lần chạy sau lấy lại. Hàm con có tham số không đổi thì được bỏ qua, còn <code>derivedStateOf</code> chỉ báo chạy lại khi kết quả điều kiện đổi.</p>
+<h2>Đánh đổi</h2>
+<p>Viết giao diện như hàm đọc dữ liệu giúp bạn tránh cảnh màn hình hiện một đằng, ViewModel lưu một nẻo. Đổi lại, ứng dụng tốn thêm bộ nhớ để giữ cuốn sổ <code>Slot Table</code> và tốn công theo dõi xem hàm nào đọc <code>State</code> nào.</p>
+<p>Nếu mỗi lần recompose bạn tạo đối tượng mới ngay trong thân hàm, hàm con nhận nó sẽ không được bỏ qua.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Muốn đổi một chữ hay ẩn một nút, bạn chỉ sửa dữ liệu gốc, không tự tay tìm View để sửa.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Recomposition không vẽ lại điểm ảnh trên màn hình, mà chỉ gọi lại các hàm đọc <code>State</code> mới để cập nhật <code>Slot Table</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Composable
+fun TodoListScreen(listState: LazyListState) {
+    val showScrollToTop by remember(listState) {
+        derivedStateOf { listState.firstVisibleItemIndex &gt; 5 }
+    }
+    if (showScrollToTop) {
+        ScrollToTopButton(onClick = { /* cuộn lên đầu */ })
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn gán giá trị mới cho <code>State</code> ngay trong thân hàm Composable, hàm sẽ tự gọi lại chính nó mãi không dừng (<em>Recomposition loop</em>). Khi mở Layout Inspector, bạn sẽ thấy số lần recompose tăng vọt liên tục và khung hình bị giật. Cũng đừng đọc <code>State</code> đổi liên tục ở hàm cha bọc cả màn hình, vì cả màn hình sẽ chạy lại theo. Gọi API thì đặt vào <a href="compose-side-effects.html">side effect</a>, không gọi thẳng trong thân hàm.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có thể dùng remember có truyền key thay thế hoàn toàn cho derivedStateOf được không?
+Không nên khi dữ liệu đầu vào thay đổi từng chút một như vị trí cuộn danh sách. Nếu truyền vị trí cuộn làm key cho <code>remember</code>, hàm chạy lại mỗi lần vị trí đổi, dù nút cuộn lên đầu chưa cần đổi. Còn <code>derivedStateOf</code> chỉ báo cho hàm chạy lại đúng lúc bạn cuộn qua mốc mục thứ 5.</p>
+<p><strong>Hỏi:</strong> Bỏ quên remember khi khai báo mutableStateOf có làm sập ứng dụng không?
+Ứng dụng không sập, nhưng cứ mỗi lần hàm chạy lại là biến của bạn bị tạo mới và quay về giá trị ban đầu. Ví dụ bạn đang gõ dở chữ vào ô tìm kiếm mà màn hình recompose, chữ vừa gõ sẽ biến mất ngay.</p>
+<p><strong>Hỏi:</strong> Có phải compiler Compose luôn tự động bỏ qua việc vẽ lại hàm Composable nếu dữ liệu không đổi?
+Không hẳn, và từ Kotlin 2.0.20 luật đã đổi vì chế độ <em>strong skipping</em> bật mặc định. Tham số không ổn định như <code>List</code> được bỏ qua nếu là đúng đối tượng cũ (so <code>===</code>), tham số ổn định thì so <code>equals</code>. Hàm con hay chạy lại thừa nhất khi bạn tạo đối tượng mới mỗi lần recompose, ví dụ gọi <code>listOf(...)</code> trong thân hàm cha.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách Compose ghi cây giao diện vào sổ Slot Table và chỉ gọi lại RecomposeScope đã đọc State vừa đổi.</li>
+<li>Nêu được vai trò của tham số $composer, khoảng trống Gap Buffer và cách remember giữ giá trị qua các lần chạy.</li>
+<li>Phân biệt được cơ chế bỏ qua hàm bằng === và equals trong strong skipping, cũng như cách dùng derivedStateOf.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/compose/state" target="_blank" rel="noopener">State and Jetpack Compose — Android</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/mental-model" target="_blank" rel="noopener">Thinking in Compose — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/lifecycle" target="_blank" rel="noopener">Lifecycle of composables — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/performance/stability/strongskipping" target="_blank" rel="noopener">Strong skipping mode</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="compose-side-effects.html">Compose: Side Effects</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="kotlin-stateflow-vs-sharedflow.html">StateFlow vs SharedFlow</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dcompose-recomposition-and-state" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

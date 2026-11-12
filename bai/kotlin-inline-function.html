@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inline Functions | ConceptDive</title>
+<meta name="description" content="Khi bạn truyền lambda vào hàm thường trong vòng lặp, máy phải tạo đối tượng tạm trên Heap nên dễ gây chậm. Từ khóa inline bảo compiler chép thẳng thân hàm và lambda vào ngay chỗ gọi. Nhờ vậy, code chạ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-inline-function.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Inline Functions | ConceptDive">
+<meta property="og:description" content="Khi bạn truyền lambda vào hàm thường trong vòng lặp, máy phải tạo đối tượng tạm trên Heap nên dễ gây chậm. Từ khóa inline bảo compiler chép thẳng thân hàm và lambda vào ngay chỗ gọi. Nhờ vậy, code chạ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-inline-function.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/inline-bytecode-expansion.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Inline Functions</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn truyền lambda vào hàm thường trong vòng lặp, máy phải tạo đối tượng tạm trên Heap nên dễ gây chậm. Từ khóa <code>inline</code> bảo compiler chép thẳng thân hàm và lambda vào ngay chỗ gọi. Nhờ vậy, code chạy nhanh như viết vòng lặp tay mà bạn vẫn tách hàm gọn gàng.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Tháng 1/2012, Andrey Breslav viết về lộ trình Kotlin và nêu khó khăn khi chạy lambda trên JVM 6 và 7.</p>
+<p>Thời đó, mỗi lambda dùng biến bên ngoài (closure) đều biến thành một anonymous class trên Heap. Gọi hàm nhận lambda trong vòng lặp sẽ tạo đối tượng <code>Function</code> liên tục và bắt Garbage Collector dọn rác vất vả.</p>
+<p>JetBrains cần một cách viết hàm bậc cao không tốn thêm bộ nhớ (zero-overhead). Họ muốn bạn dùng lambda thoải mái mà tốc độ vẫn ngang vòng lặp <code>for</code> thường.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Inline function không phải phép màu làm mọi hàm tự chạy nhanh hơn. Khi bạn gắn <code>inline</code>, compiler chép toàn bộ bytecode của hàm đó và của lambda dán thẳng vào chỗ gọi.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hàm thường cấp phát đối tượng Function trên Heap; inline function dán thẳng bytecode vào nơi gọi để triệt tiêu chi phí" src="../kotlin/diagrams/inline-bytecode-expansion.png"></p>
+<p>Lúc biên dịch, thân hàm và lambda được chép vào ngay chỗ gọi nên không cần tạo đối tượng <code>Function</code> trên Heap. Vì code lambda đã nằm thẳng trong hàm ngoài, lệnh <code>return</code> trong lambda sẽ thoát luôn khỏi hàm ngoài đó (non-local return). Với <code>reified</code>, compiler nhìn thấy kiểu thật tại chỗ gọi nên thay chữ <code>T</code> bằng class thật trong bytecode. Nhờ vậy, bạn viết được <code>T::class.java</code> lúc chạy dù JVM vốn xóa kiểu generic (type erasure).</p>
+<h2>Đánh đổi</h2>
+<p>Bạn không tốn bộ nhớ Heap cho lambda và bớt được một lần gọi hàm. Đổi lại, nếu gắn <code>inline</code> cho hàm dài mà gọi ở nhiều nơi, file bytecode sẽ phình to. Hàm <code>inline</code> public cũng không đọc trực tiếp được biến <code>private</code> của class. Ngoài ra, bạn không cất lambda vào biến được nếu không gắn thêm <code>noinline</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chấp nhận chép lặp lại mã lệnh ở nhiều chỗ để lúc chạy không tốn công tạo đối tượng và gọi hàm (Space-Time Tradeoff).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>inline</code> không làm thân hàm chạy nhanh hơn, mà bỏ bước tạo đối tượng lambda bằng cách chép bytecode vào chỗ gọi.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Thay vì in sách riêng rồi chuyền tay nhau đọc, bạn sao chép đoạn văn đó dán thẳng vào sổ tay của từng người.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">inline fun &lt;reified T : Parcelable&gt; Intent.getParcelableCompat(key: String): T? {
+    return if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableExtra(key, T::class.java)
+    } else {
+        @Suppress(&quot;DEPRECATION&quot;)
+        getParcelableExtra(key) as? T
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn gắn <code>inline</code> cho hàm dài được gọi khắp nơi, file APK sẽ phình to và thời gian build tăng lên. Khi đưa lambda vào một object khác hoặc luồng khác, bạn phải thêm <code>crossinline</code> để cấm lệnh <code>return</code> thoát khỏi hàm ngoài. Muốn cất lambda vào biến hoặc truyền sang hàm thường, bạn phải gắn <code>noinline</code> cho tham số đó. Đừng gắn <code>inline</code> cho hàm không có tham số lambda, vì chỉ làm to bytecode mà không nhanh hơn.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Cứ hàm nào gọi thường xuyên thì gắn từ khóa <code>inline</code> cũng sẽ giúp chạy nhanh hơn à?
+Không phải. Nếu hàm không nhận tham số lambda, gắn <code>inline</code> chỉ làm phình kích thước file bytecode mà không giúp chạy nhanh hơn. Máy ảo vốn tự inline các hàm ngắn hay được gọi, nên chính compiler Kotlin cũng cảnh báo lợi ích là không đáng kể.</p>
+<p><strong>Hỏi:</strong> <code>crossinline</code> và <code>noinline</code> khác nhau như thế nào khi viết hàm inline?
+Khác ở chỗ code của lambda có được chép vào nơi gọi hay không. Với <code>crossinline</code>, code vẫn được chép vào nhưng cấm viết <code>return</code> thoát thẳng khỏi hàm bao ngoài. Còn <code>noinline</code> giữ lambda thành một đối tượng như thường để bạn cất vào biến hoặc truyền sang hàm khác.</p>
+<p><strong>Hỏi:</strong> Vì sao từ khóa <code>reified</code> bắt buộc phải đi chung với <code>inline</code>?
+Vì <a href="kotlin-generics-variance.html">kiểu generic bị xoá</a> ngay lúc biên dịch, khi chạy <code>T</code> không còn thông tin gì. Gắn <code>inline</code> thì compiler chép mã tới từng nơi gọi, nơi đó biết rõ <code>T</code> là class nào. Nó thay <code>T</code> bằng class thật trong bytecode nên <code>is T</code> hay <code>T::class</code> mới dùng được.</p>
+<p><strong>Hỏi:</strong> Khi nào tuyệt đối không nên gắn <code>inline</code> cho một hàm?
+Khi thân hàm dài và được gọi ở hàng trăm chỗ trong dự án. Chép lặp lại một đoạn code lớn ra nhiều nơi sẽ làm file APK nặng thêm. Code quá dài còn làm đầy bộ nhớ đệm lệnh của CPU nên chạy chậm hơn.</p>
+<p><strong>Hỏi:</strong> Lệnh <code>return</code> bên trong một lambda inline có thoát khỏi chính lambda đó không?
+Không, nó thoát thẳng khỏi cả hàm cha đang bọc bên ngoài. Lý do là code của lambda đã được chép hòa vào thân hàm cha (non-local return). Nếu chỉ muốn thoát khỏi riêng lambda đó, bạn phải viết <code>return@tênHàm</code> có gắn nhãn.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách compiler chép thẳng bytecode vào chỗ gọi để không phải tạo đối tượng Function trên Heap.</li>
+<li>Nêu được vì sao inline cho phép non-local return và giúp reified giữ lại class thật cho kiểu T.</li>
+<li>Chỉ ra được bẫy làm phình bytecode khi inline hàm dài và cách dùng noinline, crossinline.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/inline-functions.html" target="_blank" rel="noopener">Inline functions — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/lambdas.html" target="_blank" rel="noopener">Higher-order functions and lambdas — Kotlin</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-scope-functions.html">Scope functions</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-inline-function" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

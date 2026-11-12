@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLID | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng thêm tính năng mới, sửa một đoạn code cũ rất dễ làm hỏng những chỗ đang chạy tốt. Năm nguyên lý SOLID giúp bạn chia code thành các khối có ranh giới rõ ràng. Nhờ đó, bạn thêm được tính nă">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-solid.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SOLID | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng thêm tính năng mới, sửa một đoạn code cũ rất dễ làm hỏng những chỗ đang chạy tốt. Năm nguyên lý SOLID giúp bạn chia code thành các khối có ranh giới rõ ràng. Nhờ đó, bạn thêm được tính nă">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-solid.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/oop/diagrams/solid.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · OOP</p>
+<h1>SOLID</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng thêm tính năng mới, sửa một đoạn code cũ rất dễ làm hỏng những chỗ đang chạy tốt. Năm nguyên lý SOLID giúp bạn chia code thành các khối có ranh giới rõ ràng. Nhờ đó, bạn thêm được tính năng mới mà không làm hỏng dây chuyền cả hệ thống.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Cuối thập niên 1990, các dự án C++ và Java phình to rất nhanh. Chúng rơi vào cảnh mà Robert C. Martin (Uncle Bob) gọi là "sự thối rữa thiết kế" (design rot). Nhiều khi bạn chỉ sửa định dạng in hóa đơn mà làm hỏng luôn phần thanh toán vì code dính chặt vào nhau.</p>
+<p>Năm 2000, Uncle Bob viết bài tổng hợp các nguyên tắc thiết kế hướng đối tượng. Đến năm 2004, Michael Feathers ghép các chữ cái đầu thành tên gọi SOLID. Năm nguyên lý này đúc kết từ việc chữa những dự án thực tế cứ sửa một chỗ là hỏng một chùm.</p>
+<p>Mỗi chữ cái giải quyết một nỗi khổ quen thuộc: code cứng nhắc, sửa đâu vỡ đó và không đem đi tái sử dụng được. Chúng đặt ra ranh giới để dự án vẫn đứng vững khi yêu cầu nghiệp vụ thay đổi liên tục.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>SOLID không phải là bộ luật trang trí cho code trông sang hơn. Nó sắp xếp chiều phụ thuộc giữa các lớp. Nhờ đó, khi bạn sửa một chỗ thì phạm vi bị ảnh hưởng chỉ gói gọn rất nhỏ.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Năm nguyên tắc SOLID, mỗi nguyên tắc một câu ý chính và một ví dụ" src="../oop/diagrams/solid.png"></p>
+<p>Chữ S gom các hàm đổi vì cùng lý do về một lớp, còn chữ O thêm tính năng qua lớp mới. Chữ L bắt lớp con phải giữ đúng lời hứa hành vi của lớp cha. Chữ I tách <code>interface</code> lớn thành các mảnh nhỏ để nơi gọi không phải gánh hàm thừa. Chữ D đảo chiều phụ thuộc: cả tầng cao lẫn tầng thấp đều nhìn vào <code>interface</code> chứ không gọi thẳng lớp cụ thể.</p>
+<h2>Đánh đổi</h2>
+<p>Code dễ viết unit test, dễ tách việc cho nhiều người làm chung và ít hỏng vặt khi đổi yêu cầu. Đổi lại, dự án sinh ra nhiều file và <code>interface</code> hơn, khiến bạn phải nhảy qua thêm một tầng trung gian (indirection) khi đọc code. Nếu áp máy móc cho tính năng nhỏ, người đọc phải nhảy qua hàng chục file chỉ để tìm vài dòng lệnh.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Giữ cho các khối ít dính vào nhau: đặt những phần hay thay đổi sau một <code>interface</code> ổn định để lỗi không lan dây chuyền.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>SOLID không sinh ra để làm đẹp code, mà để trả lời câu hỏi: sửa chỗ này thì vỡ chỗ nào?</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>SOLID giống hệ thống vách ngăn chống cháy trên tàu thủy. Khi một khoang bốc cháy, cửa ngăn sập xuống ngay để lửa không lan sang nhấn chìm cả con tàu.</p>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy phổ biến là mỗi lớp lại đẻ kèm cặp <code>FooInterface</code> và <code>FooImpl</code> dù dự án chỉ có một bản cài đặt. Bẫy thứ hai là vi phạm chữ L (Liskov): lớp con ghi đè hàm rồi ném <code>UnsupportedOperationException</code>, làm ứng dụng sập lúc chạy. Bạn hãy kết hợp <a href="architecture-dependency-injection.html">Dependency Injection</a> để áp dụng chữ D, và nắm vững <a href="oop-four-pillars.html">Bốn tính chất OOP</a> làm gốc. Đừng tách <code>interface</code> cho những màn hình thêm-sửa-xóa (CRUD) đơn giản vì chỉ làm người đọc mỏi tay bấm tìm file.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có phải class nào cũng bắt buộc phải tạo interface tương ứng thì mới chuẩn SOLID?
+Không phải. Nếu một lớp chỉ có một cách chạy duy nhất và không cần làm giả khi test, tạo thêm <code>interface</code> chỉ làm chật dự án. Bạn chỉ nên tách <code>interface</code> khi thực sự có từ hai cách cài đặt trở lên hoặc cần tráo bằng bản giả trong unit test.</p>
+<p><strong>Hỏi:</strong> Khi nào không nên áp dụng đầy đủ năm nguyên lý SOLID?
+Khi bạn viết các màn hình CRUD đơn giản, hàm tiện ích ngắn hoặc bản thử nghiệm cần làm nhanh để kiểm chứng ý tưởng. Áp dụng đủ SOLID luôn đẻ thêm nhiều file, <code>interface</code> và tầng gọi bắc cầu. Với bài toán nhỏ, làm vậy chỉ khiến bạn phải mở năm bảy file mới đọc hết một luồng chạy.</p>
+<p><strong>Hỏi:</strong> Làm sao nhận biết code đang vi phạm nguyên lý thay thế Liskov (LSP)?
+Dấu hiệu rõ nhất là lớp con ghi đè hàm của lớp cha nhưng bên trong lại ném lỗi <code>UnsupportedOperationException</code> hoặc để rỗng. Một dấu hiệu nữa là nơi gọi hàm cứ phải dùng <code>is</code> kiểm tra xem đối tượng thuộc lớp con nào rồi mới dám gọi. Khi bạn thay lớp con vào chỗ của lớp cha mà ứng dụng chạy sai, nghĩa là hợp đồng Liskov đã bị vỡ.</p>
+<p><strong>Hỏi:</strong> Single Responsibility (SRP) có phải là một class chỉ được làm đúng một việc duy nhất?
+Không đúng. SRP nói rằng một lớp chỉ nên có một lý do để thay đổi, tức chỉ phục vụ một nghiệp vụ. Lớp đó vẫn có thể chứa nhiều hàm, miễn là khi nghiệp vụ kia đổi quy định thì các hàm này mới cùng sửa.</p>
+<p><strong>Hỏi:</strong> Nguyên lý đảo ngược phụ thuộc (DIP) và <a href="architecture-dependency-injection.html">Dependency Injection</a> có phải là một không?
+Không phải. DIP yêu cầu lớp xử lý nghiệp vụ chỉ gọi qua <code>interface</code> thay vì gọi thẳng lớp chi tiết bên dưới. Còn <a href="architecture-dependency-injection.html">Dependency Injection</a> là cách bạn truyền đối tượng từ bên ngoài vào <code>constructor</code>, giúp thực hiện nguyên lý DIP đó.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được SOLID dùng để khoanh vùng chỗ hỏng khi sửa code chứ không phải để làm đẹp mã nguồn.</li>
+<li>Nêu được ý nghĩa của từng chữ cái S, O, L, I, D bằng ví dụ cụ thể.</li>
+<li>Chỉ ra được bẫy tạo cặp FooInterface/FooImpl thừa thãi và bẫy lớp con ném UnsupportedOperationException vi phạm Liskov.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/SOLID" target="_blank" rel="noopener">SOLID principles — Wikipedia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Single-responsibility_principle" target="_blank" rel="noopener">Single-responsibility principle — Wikipedia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Dependency_inversion_principle" target="_blank" rel="noopener">Dependency inversion principle — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Doop-solid" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

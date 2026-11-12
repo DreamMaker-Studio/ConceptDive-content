@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoroutineContext &amp; Dispatchers | ConceptDive</title>
+<meta name="description" content="Khi một coroutine chạy, nó cần biết mình chạy trên luồng nào, gắn với Job nào và xử lý lỗi ra sao. CoroutineContext là chiếc túi giữ các thông tin cài đặt đó, còn Dispatchers quyết định luồng nào sẽ n">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-coroutine-context-and-dispatchers.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CoroutineContext &amp; Dispatchers | ConceptDive">
+<meta property="og:description" content="Khi một coroutine chạy, nó cần biết mình chạy trên luồng nào, gắn với Job nào và xử lý lỗi ra sao. CoroutineContext là chiếc túi giữ các thông tin cài đặt đó, còn Dispatchers quyết định luồng nào sẽ n">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-coroutine-context-and-dispatchers.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/coroutine-context-dispatcher-intercept.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>CoroutineContext &amp; Dispatchers</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi một coroutine chạy, nó cần biết mình chạy trên luồng nào, gắn với <code>Job</code> nào và xử lý lỗi ra sao. <code>CoroutineContext</code> là chiếc túi giữ các thông tin cài đặt đó, còn <code>Dispatchers</code> quyết định luồng nào sẽ nhận việc. Khi bạn mở một coroutine con, nó tự chép lại túi cài đặt từ cha nhưng luôn tạo một <code>Job</code> con riêng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-coroutine-state-machine.html">Continuation &amp; Compiler State Machine</a></li>
+<li><a href="thread.html">Thread</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2017, viết code bất đồng bộ bằng Callback hay <code>ThreadPool</code> làm thông tin tác vụ bị rời rạc khắp nơi. Bạn phải tự truyền biến cờ trạng thái, tên tác vụ và đối tượng quản lý luồng qua từng hàm lồng nhau.</p>
+<p>Khi có lỗi hoặc khi người dùng thoát màn hình, các luồng con bên dưới vẫn cứ âm thầm chạy tiếp. Do thiếu liên kết giữa tác vụ cha và con, tài nguyên rất dễ rò rỉ và các luồng dễ đụng độ nhau.</p>
+<p>Đội ngũ Kotlin tạo ra <code>CoroutineContext</code> cùng cơ chế <a href="kotlin-structured-concurrency.html">đồng quy có cấu trúc</a> (<code>Structured Concurrency</code>) để gom mọi tác vụ về một mối. Mọi cài đặt về luồng chạy và vòng đời đều được giữ chung trong một túi và tự động truyền từ cha xuống con.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>CoroutineContext</code> không phải là một bảng <code>HashMap</code> thông thường, dù bạn vẫn lấy phần tử ra bằng dấu ngoặc vuông như <code>context[Job]</code>. Thật ra, nó là danh sách liên kết lệch trái và bất biến (<code>CombinedContext</code>), chứa nhiều phần tử cài đặt khác nhau.</p>
+<p>Mỗi phần tử có một khóa (<code>Key</code>) riêng mang sẵn kiểu dữ liệu, nên bạn lấy ra dùng ngay mà khỏi ép kiểu.</p>
+<h2>Cơ chế</h2>
+<p><img alt="ContinuationInterceptor bọc Continuation thành DispatchedContinuation rồi đẩy vào hàng đợi thread pool" src="../kotlin/diagrams/coroutine-context-dispatcher-intercept.png"></p>
+<p>Mỗi <code>Dispatcher</code> thực chất là một bộ chặn <code>ContinuationInterceptor</code> nằm sẵn bên trong túi <code>CoroutineContext</code>. Khi một hàm <code>suspend</code> vừa chờ mạng xong và chuẩn bị chạy tiếp, bộ chặn này đón lấy <code>Continuation</code> rồi bọc thành <code>DispatchedContinuation</code>.</p>
+<p>Sau đó nó đẩy gói việc này vào hàng đợi của nhóm luồng hoặc gửi vào vòng lặp sự kiện của luồng giao diện. Khi bạn ghép hai túi cài đặt bằng dấu <code>+</code>, phần tử ở bên phải sẽ đè lên phần tử cùng loại ở bên trái.</p>
+<h2>Đánh đổi</h2>
+<p>Do <code>CoroutineContext</code> bất biến, dùng dấu <code>+</code> thêm phần tử sẽ nối thẳng vào cấu trúc cũ mà khỏi chép lại. Đổi lại, tìm phần tử phải dò từng mắt xích, riêng <code>ContinuationInterceptor</code> được đặt ngoài cùng để lấy ngay.</p>
+<p>Nếu dùng dấu <code>+</code> nối ngữ cảnh liên tục trong vòng lặp lớn, chương trình sẽ tạo nhiều <code>CombinedContext</code> thừa trên Heap.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Mọi tác vụ đang chạy đều mang theo túi thông tin môi trường bên cạnh. Bạn có thể gắn thêm phần tử mới mà không phải sửa hàm nhận.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Dispatchers</code> không tự giữ luồng riêng, mà là bộ chặn <code>ContinuationInterceptor</code> đón <code>Continuation</code> rồi đẩy vào hàng đợi của luồng đích.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">val customScope = CoroutineScope(
+    Dispatchers.Default + CoroutineName(&quot;ComputeWorker&quot;) + SupervisorJob()
+)
+customScope.launch(Dispatchers.IO) {
+    val currentThread = Thread.currentThread().name
+    val taskName = coroutineContext[CoroutineName]?.name
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu dùng <code>Job()</code> thường cho cả <code>CoroutineScope</code>, chỉ cần một coroutine con gọi API bị lỗi là nó hủy luôn các coroutine anh em khác. Cũng đừng chạy việc nặng như giải mã ảnh hay sắp xếp danh sách lớn trên <code>Dispatchers.Main</code>, vì sẽ làm đứng màn hình (<code>ANR</code>). Khi đang viết trong khối <code>flow { ... }</code> của <a href="kotlin-flow-under-the-hood.html">Flow</a>, nếu bạn bọc <code>withContext</code> để đổi luồng phát thì ứng dụng sẽ sập ngay. Triệu chứng thường gặp là cả màn hình ngừng chạy sau một lỗi nhỏ, đơ giao diện, hoặc kẹt cứng do cạn luồng.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Coroutine con có kế thừa Job của coroutine cha không?
+Không, coroutine con chép mọi phần tử từ cha như <code>Dispatcher</code> hay <code>CoroutineName</code>, trừ <code>Job</code>. Hàm tạo luôn sinh một <code>Job</code> mới cho con rồi móc làm nhánh dưới của <code>Job</code> cha. Nhờ vậy khi hủy cha thì con mới tự hủy theo, trừ khi bạn tự tay truyền một <code>Job()</code> lẻ vào hàm tạo.</p>
+<p><strong>Hỏi:</strong> Có thể dùng CoroutineExceptionHandler cho hàm launch của coroutine con không?
+Không có tác dụng. <code>CoroutineExceptionHandler</code> chỉ bắt được lỗi khi gắn vào coroutine gốc (<code>Root Coroutine</code>), vì coroutine con gặp lỗi sẽ đẩy thẳng lên cha.</p>
+<p><strong>Hỏi:</strong> Toán tử cộng hai CoroutineContext có thể ghi đè phần tử cũ không?
+Có. Khi dùng dấu <code>+</code> ghép hai phần tử cùng khóa, phần tử bên phải sẽ thay thế phần tử bên trái.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được CoroutineContext là danh sách liên kết bất biến CombinedContext và cách con chép ngữ cảnh từ cha nhưng tạo Job mới.</li>
+<li>Trình bày được Dispatchers thực chất là ContinuationInterceptor bọc Continuation thành DispatchedContinuation rồi đẩy vào hàng đợi luồng.</li>
+<li>Chỉ ra được bẫy dùng Job thường thay vì SupervisorJob làm một nhánh lỗi kéo sập cả các nhánh anh em.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/coroutine-context-and-dispatchers.html" target="_blank" rel="noopener">Coroutine context and dispatchers — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.coroutines/-coroutine-context/" target="_blank" rel="noopener">CoroutineContext API reference — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.coroutines/-continuation-interceptor/" target="_blank" rel="noopener">ContinuationInterceptor API reference — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-coroutine-dispatcher/" target="_blank" rel="noopener">CoroutineDispatcher API reference — kotlinx.coroutines</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-coroutine-state-machine.html">Continuation &amp; Compiler State Machine</a></li>
+<li><a href="thread.html">Thread</a></li>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-coroutine-context-and-dispatchers" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

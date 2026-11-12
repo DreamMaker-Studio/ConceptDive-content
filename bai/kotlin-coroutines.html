@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coroutines | ConceptDive</title>
+<meta name="description" content="Nếu mỗi lần gọi API hay đọc dữ liệu bạn lại tạo một luồng mới, bộ nhớ RAM sẽ nhanh chóng cạn sạch. Coroutine cắt hàm của bạn tại các điểm chờ, cất biến dở dang vào bộ nhớ Heap rồi nhường luồng cho việ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-coroutines.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Coroutines | ConceptDive">
+<meta property="og:description" content="Nếu mỗi lần gọi API hay đọc dữ liệu bạn lại tạo một luồng mới, bộ nhớ RAM sẽ nhanh chóng cạn sạch. Coroutine cắt hàm của bạn tại các điểm chờ, cất biến dở dang vào bộ nhớ Heap rồi nhường luồng cho việ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-coroutines.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/coroutine-suspend.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Coroutines</h1>
+<h2>Bản 30 giây</h2>
+<p>Nếu mỗi lần gọi API hay đọc dữ liệu bạn lại tạo một luồng mới, bộ nhớ RAM sẽ nhanh chóng cạn sạch. Coroutine cắt hàm của bạn tại các điểm chờ, cất biến dở dang vào bộ nhớ Heap rồi nhường luồng cho việc khác chạy. Nhờ vậy, chỉ vài luồng sẵn có cũng đủ thay phiên nhau chạy hàng chục nghìn công việc cùng lúc.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="thread.html">Thread</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1958, Melvin Conway đặt ra khái niệm coroutine khi viết một chương trình hợp ngữ (assembler). Năm 1963, ông công bố bài báo trên tạp chí CACM dùng coroutine để thiết kế trình biên dịch COBOL.</p>
+<p>Nửa thế kỷ sau, lập trình viên vướng phải giới hạn của luồng hệ điều hành. Mỗi <code>thread</code> giữ trước khoảng một megabyte bộ nhớ ảo và tốn tài nguyên quản lý của nhân hệ điều hành. Tạo hàng nghìn <code>thread</code> sẽ làm hết bộ nhớ và làm CPU mất nhiều thời gian đổi qua lại giữa các luồng.</p>
+<p>Dùng callback hay RxJava tránh được việc tạo nhiều luồng nhưng lại làm code đứt đoạn và rất khó đọc khi lỗi. JetBrains cần một cách viết code chạy từ trên xuống tự nhiên mà không phải xin thêm luồng của hệ điều hành.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Coroutine không phải là một luồng nhẹ do hệ điều hành tạo ra hay quản lý. Nó là <a href="kotlin-coroutine-state-machine.html">máy trạng thái</a> do trình biên dịch tạo lúc build, kèm đối tượng <code>Continuation</code> trên Heap để nhớ chỗ vừa dừng.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hàm suspend cất biến vào Continuation, trả COROUTINE_SUSPENDED để thread làm việc khác, rồi chạy tiếp ở nhãn 1 khi resumeWith được gọi." src="../kotlin/diagrams/coroutine-suspend.png"></p>
+<p>Khi thấy từ khóa <code>suspend</code>, trình biên dịch thêm tham số <code>Continuation</code> vào cuối hàm và chia thân hàm thành các nhánh đánh số. Tới điểm chờ, hàm cất các biến còn cần dùng sau đó vào đối tượng <code>Continuation</code> rồi trả về <code>COROUTINE_SUSPENDED</code> để nhả luồng. Khi việc chờ đã xong, hàm <code>resumeWith()</code> được gọi để lấy lại biến và nhảy tới đúng nhánh kế tiếp. Đoạn code sau đó chạy trên luồng nào là do <code>Dispatcher</code> chỉ định.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn viết được code bất đồng bộ thẳng một mạch từ trên xuống và chạy hàng chục nghìn việc trên vài luồng ít ỏi. Đổi lại, hàm <code>suspend</code> chỉ gọi được từ một hàm <code>suspend</code> khác hoặc bên trong một coroutine. Khi có lỗi, stack trace nhìn ngắn hơn vì trình biên dịch đã cắt hàm thành các chặng rời nhau. Nếu bạn đặt lệnh đọc file chặn luồng vào nhầm <code>Dispatcher</code>, cả nhóm luồng ở đó sẽ bị kẹt theo.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chia một hàm dài thành nhiều chặng nhỏ theo kiểu Continuation-Passing Style để dừng ở bất kỳ chặng nào và gọi chạy tiếp về sau.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Coroutine không phải thread nhẹ nào cả; nó chỉ biết nhường lượt, còn chạy song song hay không là do Dispatcher.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Thay vì bắt bạn đứng chôn chân trước quầy suốt hai tiếng chờ làm thủ tục, quầy đưa bạn tấm phiếu ghi số thứ tự. Bạn ra ghế ngồi làm việc khác, khi tới số thì bất kỳ nhân viên nào đang rảnh cũng gọi bạn lên làm tiếp được.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun loadData() {
+    viewModelScope.launch {
+        _uiState.value = UiState.Loading
+        val result = withContext(Dispatchers.IO) {
+            repository.fetchData()
+        }
+        _uiState.value = UiState.Success(result)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Đừng tạo coroutine mới trong vòng lặp triệu lần, vì mỗi lần cấp thêm đối tượng trên Heap và tốn công dọn rác. Cũng đừng gọi lệnh đọc đĩa hay chờ mạng chặn luồng trong <code>Dispatchers.Default</code>, vì các tác vụ nền khác sẽ đứng im chờ theo. Khi bắt lỗi bằng <code>catch (e: Exception)</code>, nếu bạn nuốt luôn <code>CancellationException</code> thì coroutine sẽ không dừng lại được khi màn hình đã đóng. Hãy gắn coroutine với <a href="android-activity-lifecycle.html">Activity Lifecycle</a> và <a href="android-state-holders.html">State Holders</a> để tự hủy đúng lúc.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Bọc hàm chặn luồng vào <code>withContext(Dispatchers.Default)</code> là an toàn không sợ đơ app?
+Không đúng. <code>Dispatchers.Default</code> chỉ mở số luồng bằng số nhân CPU của máy, dành riêng cho việc tính toán nặng. Đưa lệnh đọc file hay chờ mạng chặn luồng vào đây sẽ giam hết số luồng đó; bạn phải dùng <code>Dispatchers.IO</code>.</p>
+<p><strong>Hỏi:</strong> <code>supervisorScope</code> khác gì <code>coroutineScope</code> khi một coroutine con bị lỗi sập?
+Khác ở chỗ lỗi có làm hủy luôn các coroutine anh em đang chạy cùng hay không. Trong <code>coroutineScope</code>, chỉ cần một việc con ném lỗi là cả phạm vi dừng lại và hủy hết các việc con còn lại. Trong <code>supervisorScope</code>, các nhánh anh em vẫn chạy tiếp, nhưng lỗi chưa bắt của khối <code>launch</code> con vẫn báo lên handler và làm sập app.</p>
+<p><strong>Hỏi:</strong> Tại sao coroutine đang chạy vòng lặp tính toán thì lệnh <code>job.cancel()</code> lại không có tác dụng?
+Vì lệnh hủy chỉ bật một cờ báo dừng, còn coroutine phải tự kiểm tra cờ đó mới dừng lại. Vòng lặp chỉ tính toán thuần mà không gọi hàm <code>suspend</code> nào thì không có điểm dừng để kiểm tra cờ hủy. Bạn cần gọi <code>yield()</code> hoặc kiểm tra biến <code>isActive</code> trong mỗi vòng lặp để thoát ra kịp thời.</p>
+<p><strong>Hỏi:</strong> Nên chọn <code>launch</code> hay <code>async</code> khi kích hoạt một coroutine mới?
+Tùy xem bạn có cần lấy kết quả trả về từ công việc đó hay không. Dùng <code>launch</code> cho những việc làm xong là thôi như lưu lịch sử hay gửi sự kiện thống kê. Dùng <code>async</code> khi bạn cần gọi <code>await()</code> để lấy kết quả trả về, nhất là lúc gọi 2 API song song rồi gộp dữ liệu.</p>
+<p><strong>Hỏi:</strong> Vì sao bắt ngoại lệ bằng <code>catch (e: Exception)</code> lại có thể làm hỏng cơ chế huỷ coroutine?
+Vì coroutine dùng chính ngoại lệ <code>CancellationException</code> để báo tin hủy và thoát khỏi hàm đang chạy. Do <code>CancellationException</code> là lớp con của <code>Exception</code>, khối <code>catch</code> chung sẽ bắt luôn cả tín hiệu hủy này làm coroutine cứ chạy tiếp. Bạn chỉ nên bắt đúng lỗi cần xử lý như <code>IOException</code>, hoặc kiểm tra nếu là <code>CancellationException</code> thì ném trả lại.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao tạo hàng nghìn OS thread làm tốn bộ nhớ ảo và mất thời gian đổi ngữ cảnh CPU.</li>
+<li>Trình bày được cách trình biên dịch biến hàm suspend thành máy trạng thái và cất biến vào đối tượng Continuation trên Heap.</li>
+<li>Chỉ ra được bẫy gọi lệnh chặn luồng trong Dispatchers.Default và bẫy nuốt mất CancellationException trong khối catch.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/coroutines-overview.html" target="_blank" rel="noopener">Coroutines overview — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/coroutines-basics.html" target="_blank" rel="noopener">Coroutines basics — Kotlin Documentation</a></li>
+<li><a href="https://developer.android.com/kotlin/coroutines" target="_blank" rel="noopener">Kotlin coroutines on Android</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Coroutine" target="_blank" rel="noopener">Coroutine — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-state-holders.html">State Holders</a></li>
+<li><a href="kotlin-coroutine-state-machine.html">Continuation &amp; Compiler State Machine</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-coroutines" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

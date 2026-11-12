@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Null safety | ConceptDive</title>
+<meta name="description" content="Khi gọi API mà một trường trả về null, ứng dụng rất dễ sập nếu bạn quên kiểm tra. Kotlin tách rõ kiểu có thể null và kiểu không thể null ngay từ lúc bạn khai báo biến. Compiler bắt bạn xử lý trường hợ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-null-safety.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Null safety | ConceptDive">
+<meta property="og:description" content="Khi gọi API mà một trường trả về null, ứng dụng rất dễ sập nếu bạn quên kiểm tra. Kotlin tách rõ kiểu có thể null và kiểu không thể null ngay từ lúc bạn khai báo biến. Compiler bắt bạn xử lý trường hợ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-null-safety.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/null-safety-type-hierarchy.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Null safety</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi gọi API mà một trường trả về <code>null</code>, ứng dụng rất dễ sập nếu bạn quên kiểm tra. Kotlin tách rõ kiểu có thể null và kiểu không thể null ngay từ lúc bạn khai báo biến. Compiler bắt bạn xử lý trường hợp <code>null</code> trước khi biên dịch xong nên lỗi không lọt tới tay người dùng.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1965, Tony Hoare đưa con trỏ null vào ngôn ngữ ALGOL W chỉ vì cách đó rất dễ làm trong compiler.</p>
+<p>Từ quyết định đó, lỗi <code>NullPointerException</code> xuất hiện khắp nơi và làm tốn hàng triệu giờ gỡ lỗi của lập trình viên.</p>
+<p>Trên Java và Android, <code>NullPointerException</code> luôn là lỗi làm sập ứng dụng nhiều nhất. Khi làm Kotlin, JetBrains muốn bắt hết lỗi này ngay lúc biên dịch chứ không đợi tới lúc chạy.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Null safety không làm giá trị <code>null</code> biến mất khỏi bộ nhớ máy tính. Nó chỉ dời việc kiểm tra <code>null</code> từ lúc ứng dụng đang chạy (runtime) về lúc bạn đang viết code (compile-time).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hệ thống kiểu phân nhánh giữa non-nullable và nullable; Platform Type từ Java là lỗ thủng bypass compile-time" src="../kotlin/diagrams/null-safety-type-hierarchy.png"></p>
+<p>Kotlin chia mỗi kiểu thành hai nhánh: không nhận <code>null</code> (<code>String</code>) và có thể nhận <code>null</code> (<code>String?</code>). Trong code thuần Kotlin, compiler kiểm tra hết lúc biên dịch nên lúc chạy không tốn thêm bước nào. Ở đầu các hàm không phải <code>private</code>, compiler chèn thêm lệnh <code>Intrinsics</code> để chặn <code>null</code> truyền từ code Java sang. Với biến có dấu hỏi, compiler bắt bạn dùng dấu <code>?.</code>, toán tử Elvis <code>?:</code> hoặc kiểm tra trước để smart cast.</p>
+<h2>Đánh đổi</h2>
+<p>Code thuần Kotlin giúp bạn tránh được hầu hết lỗi sập app vì <code>null</code>. Đổi lại, bạn phải khai báo kiểu kỹ hơn và luôn viết sẵn nhánh xử lý khi thiếu dữ liệu. Lớp bảo vệ này vẫn thủng khi gọi sang code Java qua kiểu <code>Platform Type</code> trong <a href="kotlin-why-over-java.html">Vì sao Kotlin thay Java trên Android</a>. Bù lại, các <a href="kotlin-scope-functions.html">Scope functions</a> như <code>let</code> đi cùng dấu <code>?.</code> giúp bạn xử lý biến có thể <code>null</code> rất gọn.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Bắt lỗi ngay lúc đang gõ code để lỗi không lọt sang lúc người dùng đang mở app (Fail-Fast).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Null safety dời việc bắt lỗi <code>null</code> từ lúc chạy về lúc biên dịch nhờ tách kiểu, nhưng vẫn thủng ở biên giới với Java.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun formatName(raw: String?): String {
+    val clean = raw?.trim()?.takeIf { it.isNotEmpty() }
+    return clean ?: &quot;ANONYMOUS&quot;
+}
+
+val valid = formatName(&quot;  android &quot;)
+val empty = formatName(null)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Khi bạn gõ <code>!!</code>, bạn tự tắt lớp kiểm tra của compiler và chịu rủi ro sập app. Bẫy hay gặp nhất là gọi hàm Java thiếu <code>@Nullable</code>, lúc đó Kotlin nhận về <code>Platform Type</code> (<code>String!</code>). Nếu bạn gán thẳng kết quả đó vào biến không có dấu hỏi mà Java trả về <code>null</code>, app sẽ ném <code>NullPointerException</code> ngay. Đừng dùng <code>!!</code> trong code chạy thật, hãy dùng <code>?:</code> để lấy giá trị mặc định hoặc tự ném lỗi có ghi rõ lý do.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Viết 100% mã bằng Kotlin thì ứng dụng không bao giờ bị lỗi <code>NullPointerException</code> nữa đúng không?
+Không phải. Ứng dụng vẫn sập nếu bạn dùng <code>!!</code> hoặc thư viện đọc JSON nhét <code>null</code> thẳng vào biến không có dấu hỏi. Ngoài ra, các hàm trong Android SDK viết bằng Java thiếu chú thích cũng có thể trả <code>null</code> về cho bạn.</p>
+<p><strong>Hỏi:</strong> Ký hiệu dấu chấm than <code>String!</code> (Platform Type) từ Java nghĩa là gì?
+Đó là kiểu đến từ Java khi hàm bên đó không ghi rõ <code>@Nullable</code> hay <code>@NonNull</code>. Vì compiler Kotlin không biết biến đó có <code>null</code> hay không, nó để bạn tự quyết định. Nếu bạn gán vào biến không dấu hỏi mà hàm Java trả về <code>null</code>, ứng dụng sẽ sập <code>NullPointerException</code> ngay.</p>
+<p><strong>Hỏi:</strong> Tại sao đã kiểm tra <code>if (item != null)</code> rồi mà compiler vẫn không cho smart cast thuộc tính <code>var</code>?
+Vì biến <code>var</code> của class có thể bị gán lại bằng <code>null</code> bất cứ lúc nào. Một luồng khác có thể đổi nó thành <code>null</code> ngay sau dòng <code>if</code> của bạn. Để dùng được, bạn hãy chép nó sang một biến cục bộ <code>val</code> hoặc dùng <code>item?.let</code> rồi mới xử lý.</p>
+<p><strong>Hỏi:</strong> Có trường hợp nào được phép dùng toán tử ép buộc <code>!!</code> không?
+Tuỳ vào việc bạn viết code ứng dụng hay viết bài test. Trong unit test với dữ liệu mẫu chắc chắn khác <code>null</code>, bạn dùng <code>!!</code> để sai là báo đỏ ngay. Còn trong code chạy thật, bạn hãy dùng <code>?:</code> hoặc <code>requireNotNull</code> kèm câu báo lỗi rõ ràng.</p>
+<p><strong>Hỏi:</strong> Các lệnh <code>Intrinsics.checkNotNullParameter</code> do compiler sinh ra có làm chậm app Kotlin không?
+Không đáng kể. Đó chỉ là một lệnh so sánh với <code>null</code> rất nhẹ ở đầu hàm để chặn <code>null</code> từ phía Java truyền sang. Hàm <code>private</code> không có lệnh này vì Java không gọi được, còn hàm <code>public</code> và <code>internal</code> thì có.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách Kotlin dời việc kiểm tra null từ lúc chạy về lúc biên dịch bằng cách tách kiểu T và T?.</li>
+<li>Nêu được vì sao compiler chèn lệnh Intrinsics ở đầu các hàm không phải private để chặn null từ Java.</li>
+<li>Chỉ ra được bẫy Platform Type (T!) khi gọi hàm Java thiếu chú thích và tác hại của toán tử !!.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/null-safety.html" target="_blank" rel="noopener">Null safety — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/java-interop.html" target="_blank" rel="noopener">Calling Java from Kotlin: Platform types</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Null_pointer" target="_blank" rel="noopener">Null pointer — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-sealed-vs-data-class.html">Sealed class vs data class</a></li>
+<li><a href="kotlin-scope-functions.html">Scope functions</a></li>
+<li><a href="kotlin-why-over-java.html">Vì sao Kotlin thay Java trên Android</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-null-safety" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

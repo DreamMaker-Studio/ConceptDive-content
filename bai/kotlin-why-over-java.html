@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vì sao Kotlin thay Java trên Android | ConceptDive</title>
+<meta name="description" content="Android từng bị kẹt ở các bản Java cũ suốt nhiều năm vì vướng máy ảo trên máy cũ và vụ kiện bản quyền. Kotlin giải quyết bằng cách dịch cú pháp mới ra đúng chuẩn bytecode của Java để chạy ngay trên cá">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-why-over-java.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vì sao Kotlin thay Java trên Android | ConceptDive">
+<meta property="og:description" content="Android từng bị kẹt ở các bản Java cũ suốt nhiều năm vì vướng máy ảo trên máy cũ và vụ kiện bản quyền. Kotlin giải quyết bằng cách dịch cú pháp mới ra đúng chuẩn bytecode của Java để chạy ngay trên cá">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-why-over-java.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/kotlin-compilation-pipeline.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Vì sao Kotlin thay Java trên Android</h1>
+<h2>Bản 30 giây</h2>
+<p>Android từng bị kẹt ở các bản Java cũ suốt nhiều năm vì vướng máy ảo trên máy cũ và vụ kiện bản quyền. Kotlin giải quyết bằng cách dịch cú pháp mới ra đúng chuẩn bytecode của Java để chạy ngay trên các máy đó. Nhờ gọi qua lại trực tiếp với Java, bạn viết được code mới mà không cần chờ người dùng nâng cấp hệ điều hành.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-null-safety.html">Null safety</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Vào thập niên 2010, phía máy chủ đã lên Java 8 với nhiều tính năng mới. Trong khi đó, Android vẫn kẹt ở Java 6 và 7 vì máy ảo Dalvik và vì phải hỗ trợ hàng triệu điện thoại cũ.</p>
+<p>Google cũng không thể tự sửa Java vì không nắm bản quyền và đang vướng vụ kiện với Oracle từ năm 2010. Lập trình viên Android rất cần cú pháp mới nhưng bản thân hệ điều hành lại không tự nâng cấp được.</p>
+<p>Năm 2011, JetBrains làm ra Kotlin có khả năng dịch ra cùng chuẩn bytecode với Java. Năm 2017, Google chọn Kotlin làm ngôn ngữ chính thức để hiện đại hóa việc viết app mà không đụng vào Android.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Kotlin không chỉ là bộ cú pháp viết tắt để bạn gõ ít chữ hơn Java. Thực chất, nó là cách đem các tính năng ngôn ngữ mới chạy trên một máy ảo cũ đã đóng băng. Kotlin không có máy ảo riêng mà chạy nhờ ngay trên máy ảo Java và máy ảo ART của Android. Mọi cú pháp mới bạn viết đều được compiler đổi về các lệnh bytecode quen thuộc trước khi đóng gói.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Quy trình biên dịch hội tụ về JVM bytecode và hạ cấp sang Dex chạy trên máy ảo ART của Android" src="../kotlin/diagrams/kotlin-compilation-pipeline.png"></p>
+<p>Trình biên dịch <code>kotlinc</code> dịch code của bạn ra bytecode JVM, rồi công cụ <code>d8</code> đổi tiếp sang file Dex cho Android. Các thông tin của <a href="kotlin-null-safety.html">Null safety</a> không có sẵn trong máy ảo nên được compiler ghi vào các annotation. Để tự bảo vệ khi gọi qua lại với Java, compiler chèn thêm lệnh kiểm tra <code>Intrinsics</code> ở đầu các hàm không phải <code>private</code>. Nhờ dùng chung bytecode, mọi thứ như <a href="kotlin-val-vs-const.html">Val vs Const Val</a> đều biến thành trường <code>static</code> hoặc hàm <code>getter</code> giống hệt Java.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn dùng được ngay các tính năng mới trên cả những máy Android đời cũ mà không cần chờ cập nhật hệ thống. Đổi lại, file APK phải gánh thêm thư viện <code>kotlin-stdlib</code> và thời gian chờ <code>kotlinc</code> biên dịch cũng lâu hơn <code>javac</code>. Ngoài ra, lớp kiểm tra rỗng vẫn có thể bị lọt khi bạn nhận dữ liệu từ hàm Java không gắn chú thích <code>@Nullable</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tách rời ngôn ngữ khỏi máy ảo bên dưới (Language vs Runtime Decoupling). Khi không sửa được máy ảo trên điện thoại, ta nâng cấp ở bước biên dịch.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Kotlin thắng không vì cú pháp ngắn hơn, mà là cách duy nhất đưa ngôn ngữ hiện đại lên runtime Android bị đóng băng.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Lắp bộ chuyển đổi điện thông minh cho một mạng lưới dây dẫn cũ kỹ trong nhà. Thay vì đập tường làm lại dây cáp, bạn gắn đầu cắm mới để dùng thiết bị hiện đại ngay trên hạ tầng cũ.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class UserFormatter {
+    // Tham số mặc định là khái niệm chỉ Kotlin hiểu, bytecode không có.
+    // @JvmOverloads bắt compiler sinh thêm bản rút gọn cho Java gọi được.
+    @JvmOverloads
+    fun format(name: String, role: String = &quot;USER&quot;): String {
+        return &quot;${name.trim()}:$role&quot;
+    }
+}
+val f = UserFormatter()
+val short = f.format(&quot;alice&quot;)
+val full = f.format(&quot;bob&quot;, &quot;ADMIN&quot;)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nhiều bạn tưởng Kotlin tự chạy nhanh hơn Java, nên dùng lambda vô tội vạ trong vòng lặp làm tốn công dọn rác. Bẫy thứ hai là gọi hàm Java không có chú thích rỗng, nhận về kiểu <code>Platform Type</code> và làm app sập lúc chạy. Bạn cũng đừng bấm nút đổi tự động cả file Java sang Kotlin rồi để nguyên không kiểm tra lại các chỗ nhận <code>null</code>. Triệu chứng thường gặp là thời gian build dự án dài ra và lỗi <code>NullPointerException</code> nổ ngay ở chỗ Kotlin gọi sang Java.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Viết bằng Kotlin thì ứng dụng Android có tự động chạy nhanh hơn Java không?
+Không. Cả hai đều dịch ra cùng một chuẩn bytecode và chạy chung trên máy ảo ART của Android. Nếu truyền lambda vào hàm thiếu <code>inline</code>, Kotlin còn tạo thêm đối tượng trên Heap làm tốn công dọn rác.</p>
+<p><strong>Hỏi:</strong> Bẫy nguy hiểm nhất khi gọi mã Java từ Kotlin trong cùng một dự án là gì?
+Đó là kiểu <code>Platform Type</code> xuất hiện khi hàm bên Java không ghi rõ <code>@Nullable</code> hay <code>@NonNull</code>. Lúc này compiler Kotlin không biết kết quả có thể <code>null</code> hay không nên bỏ qua không bắt lỗi lúc dịch. Nếu bạn gán thẳng vào biến không dấu hỏi mà hàm Java trả về <code>null</code>, ứng dụng sẽ sập <code>NullPointerException</code> ngay.</p>
+<p><strong>Hỏi:</strong> Dự án Java cũ có nhất thiết phải viết lại toàn bộ sang Kotlin không?
+Không cần. Vì dùng chung bytecode, các class Kotlin và Java gọi qua lại với nhau trực tiếp trong cùng một module. Cách làm an toàn là giữ nguyên code Java đang chạy ổn định, chỉ viết Kotlin cho màn hình mới hoặc khi cần sửa lại.</p>
+<p><strong>Hỏi:</strong> Kotlin bảo vệ Null safety thế nào khi một lớp Java gọi vào hàm của Kotlin?
+Ở đầu các hàm không phải <code>private</code> nhận tham số không-null, compiler tự chèn thêm lệnh <code>Intrinsics.checkNotNullParameter</code>. Nếu bên Java truyền <code>null</code> vào, hàm sẽ ném lỗi <code>NullPointerException</code> ngay ở dòng đầu tiên và chỉ rõ tên tham số bị <code>null</code>. Nhờ vậy, giá trị <code>null</code> không thể trôi sâu vào các hàm bên trong rồi mới gây sập ở một chỗ khó tìm.</p>
+<p><strong>Hỏi:</strong> Đổi từ Java sang Kotlin thì dự án phải trả giá bằng chi phí gì lớn nhất?
+Thường là thời gian biên dịch: <code>kotlinc</code> phải suy diễn kiểu nhiều hơn <code>javac</code> nên build chậm hơn. Thư viện <code>kotlin-stdlib</code> làm APK nặng thêm một chút, nhưng công cụ R8 sẽ cắt bỏ phần lớn những hàm không dùng. Chi phí khó thấy hơn là giai đoạn dài dự án trộn cả hai ngôn ngữ, người mới vào phải đọc hiểu cả hai.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được trong hai câu: Android kẹt ở Java cũ vì Dalvik và vụ kiện Oracle; Kotlin thắng nhờ dịch ra cùng bytecode chạy trên máy cũ.</li>
+<li>Nêu được Kotlin không có máy ảo riêng, các tính năng như <a href="kotlin-null-safety.html">Null safety</a> đều xử lý lúc biên dịch và chèn Intrinsics ở đầu hàm.</li>
+<li>Trình bày được các đánh đổi: thời gian build của kotlinc lâu hơn, thêm kotlin-stdlib và bẫy Platform Type khi gọi hàm Java.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/kotlin/first" target="_blank" rel="noopener">Android Kotlin-first approach — Android Developers</a></li>
+<li><a href="https://developer.android.com/studio/write/java8-support" target="_blank" rel="noopener">Java 8 language features support — Android</a></li>
+<li><a href="https://source.android.com/docs/core/runtime" target="_blank" rel="noopener">Android runtime (ART) and Dalvik</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Kotlin_(programming_language)" target="_blank" rel="noopener">Kotlin (programming language) — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-null-safety.html">Null safety</a></li>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-why-over-java" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

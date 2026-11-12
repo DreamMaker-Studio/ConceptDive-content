@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ViewModel | ConceptDive</title>
+<meta name="description" content="Khi người dùng xoay ngang điện thoại, Android hủy ngay Activity cũ rồi tạo một Activity mới tinh. ViewModel cất dữ liệu của màn hình ở một vùng nhớ riêng được hệ thống giữ lại qua lần xoay đó. Nhờ vậy">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-viewmodel.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ViewModel | ConceptDive">
+<meta property="og:description" content="Khi người dùng xoay ngang điện thoại, Android hủy ngay Activity cũ rồi tạo một Activity mới tinh. ViewModel cất dữ liệu của màn hình ở một vùng nhớ riêng được hệ thống giữ lại qua lần xoay đó. Nhờ vậy">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-viewmodel.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/viewmodel-store-retention.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>ViewModel</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi người dùng xoay ngang điện thoại, Android hủy ngay Activity cũ rồi tạo một Activity mới tinh. <code>ViewModel</code> cất dữ liệu của màn hình ở một vùng nhớ riêng được hệ thống giữ lại qua lần xoay đó. Nhờ vậy, Activity mới tạo xong chỉ việc lấy lại dữ liệu đang có mà không phải gọi mạng tải lại từ đầu.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2017, xoay màn hình là nỗi ám ảnh quen thuộc của người làm Android. Mỗi lần đổi cấu hình máy, hệ thống gọi <code>onDestroy()</code> trên Activity cũ rồi dựng một Activity mới. Biến trong Activity mất sạch, còn cuộc gọi mạng đang chạy thì gãy ngang hoặc trả kết quả về màn hình cũ.</p>
+<p>Cách cứu dữ liệu qua <code>onSaveInstanceState(Bundle)</code> thời đó chỉ gửi được dưới 1MB qua bộ đệm <code>Binder</code>. Nó không thể chứa nổi danh sách dài hay giữ lại cuộc gọi API đang chạy dở dang.</p>
+<p>Tháng 5/2017 tại Google I/O, Google ra mắt bộ thư viện Android Architecture Components cùng với <code>ViewModel</code>. Lớp này đứng tách khỏi Activity để giữ dữ liệu và các tác vụ đang chạy đi qua những lần màn hình tạo lại.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>ViewModel</code> không phải là một luồng chạy ngầm hay có phép màu tự thoát khỏi bộ thu gom rác. Nó chỉ là đối tượng nằm trong <code>ViewModelStore</code>, được Activity cũ trao cho Activity mới qua <code>NonConfigurationInstance</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="ComponentActivity chuyển giao ViewModelStore qua onRetainNonConfigurationInstance để Activity mới nhận lại trên Heap khi xoay máy" src="../android/diagrams/viewmodel-store-retention.png"></p>
+<p>Khi bạn xoay máy, <code>ComponentActivity</code> giữ lại kho <code>ViewModelStore</code> qua hàm <code>onRetainNonConfigurationInstance()</code>. Activity mới nhận lại đúng kho này, nên các <code>ViewModel</code> trên Heap vẫn còn tham chiếu và không bị thu gom rác. Trong Jetpack Compose, hàm <code>viewModel()</code> gắn vào <code>ViewModelStoreOwner</code> của từng đích điều hướng (navigation entry) với vòng đời riêng. Chỉ khi bạn bấm Back thoát hẳn màn hình hoặc gọi <code>finish()</code>, hệ thống mới gọi <code>ViewModelStore.clear()</code> để chạy hàm <code>onCleared()</code> và hủy <code>viewModelScope</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn có một chỗ giữ dữ liệu và coroutine sống nguyên vẹn qua lúc xoay màn hình mà không bị gọi lại API. Đổi lại, <code>ViewModel</code> vẫn mất sạch khi hệ điều hành tắt tiến trình chạy ngầm (<code>Process Death</code>). Do sống lâu hơn Activity, <code>ViewModel</code> sẽ gây <a href="android-memory-leak.html">rò rỉ bộ nhớ</a> nếu giữ tham chiếu tới View hay Activity.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tách vòng đời của dữ liệu nghiệp vụ ra khỏi vòng đời ngắn ngủi của các thành phần vẽ giao diện (lifecycle decoupling).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>ViewModel</code> sống qua lúc xoay màn hình vì kho <code>ViewModelStore</code> chứa nó được Activity cũ trao tận tay cho Activity mới qua <code>NonConfigurationInstance</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class UserViewModel(
+    private val repository: UserRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow&lt;String&gt;(&quot;Init&quot;)
+    val uiState: StateFlow&lt;String&gt; = _uiState.asStateFlow()
+
+    fun loadData() {
+        viewModelScope.launch {
+            _uiState.value = repository.fetchName()
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu giữ <code>Activity</code>, <code>View</code> hay lambda trỏ tới giao diện trong <code>ViewModel</code>, màn hình cũ sẽ bị <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>. Lúc xoay máy, bộ thu gom rác không sao xóa được Activity cũ vì <code>ViewModel</code> vẫn đang nắm giữ nó trên Heap. Ngoài ra, để giữ dữ liệu khi hệ thống tắt app chạy ngầm, một mình <code>ViewModel</code> là không đủ mà bạn phải dùng thêm <code>SavedStateHandle</code>. Cũng đừng giữ sự kiện một lần bằng biến lẻ trong <code>ViewModel</code>, hãy theo <a href="architecture-state-vs-event.html">State vs Event</a> để tránh lặp khi xoay máy.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> ViewModel có sống sót được khi app bị hệ điều hành diệt ngầm không?
+Không. <code>ViewModel</code> chỉ là đối tượng nằm trên RAM của ứng dụng nên sẽ mất sạch khi hệ thống bắn tín hiệu <code>SIGKILL</code> tắt tiến trình. Muốn giữ lại dữ liệu qua tình huống này, bạn bắt buộc phải kết hợp với <code>SavedStateHandle</code>.</p>
+<p><strong>Hỏi:</strong> ViewModel có nên giữ Context không, làm sao nạp tài nguyên hệ thống?
+Tuyệt đối không giữ <code>Activity Context</code>, vì xoay máy một lần là <code>ViewModel</code> sẽ giữ chặt lấy Activity cũ gây <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>. Nếu thật sự cần <code>Context</code> của hệ thống, bạn có thể kế thừa <code>AndroidViewModel</code> để chỉ giữ <code>Application Context</code> sống cùng toàn ứng dụng. Cách gọn nhất là <code>ViewModel</code> chỉ phát ra mã số tài nguyên như <code>R.string.error</code>, còn tầng giao diện tự đổi mã đó thành chữ.</p>
+<p><strong>Hỏi:</strong> Màn hình nào cũng bắt buộc phải có một ViewModel riêng không?
+Không. Với những màn hình tĩnh chỉ hiện vài dòng giới thiệu hoặc hộp thoại đơn giản không gọi mạng, tạo thêm <code>ViewModel</code> là thừa thãi. Lúc đó bạn chỉ cần giữ trạng thái ngay trên giao diện cho đỡ phải tạo thêm lớp và viết code nối dây.</p>
+<p><strong>Hỏi:</strong> Hai Fragment trên cùng màn hình muốn dùng chung dữ liệu thì làm thế nào?
+Bạn hãy lấy <code>ViewModel</code> theo vòng đời của Activity đang chứa hai Fragment đó thay vì lấy riêng theo từng Fragment. Nhờ dùng chung <code>ViewModelStoreOwner</code> là Activity, hai Fragment sẽ nhận cùng một <code>ViewModel</code> trên Heap để đọc ghi chung.</p>
+<p><strong>Hỏi:</strong> Khi nào thì ViewModel thực sự bị hủy và dọn dẹp khỏi bộ nhớ?
+Khi người dùng bấm nút Back rời hẳn khỏi màn hình đó hoặc khi code của bạn tự gọi <code>finish()</code> đóng Activity. Lúc ấy hệ thống không giữ kho lại nữa mà gọi <code>ViewModelStore.clear()</code>, kích hoạt hàm <code>onCleared()</code> để hủy mọi coroutine trong <code>viewModelScope</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được ViewModel sống qua xoay máy là nhờ kho ViewModelStore được chuyển giao qua NonConfigurationInstance.</li>
+<li>Phân biệt được xoay màn hình (ViewModel còn trên RAM) với lúc hệ thống tắt tiến trình ngầm (ViewModel mất sạch, cần SavedStateHandle).</li>
+<li>Nêu được vì sao giữ Activity Context trong ViewModel lại gây rò rỉ bộ nhớ màn hình cũ.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/libraries/architecture/viewmodel" target="_blank" rel="noopener">ViewModel overview — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/lifecycle/ViewModel" target="_blank" rel="noopener">ViewModel API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/lifecycle/ViewModelStore" target="_blank" rel="noopener">ViewModelStore API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-state-holders.html">State Holders</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-viewmodel" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

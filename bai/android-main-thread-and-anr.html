@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Main Thread &amp; ANR | ConceptDive</title>
+<meta name="description" content="Khi bạn bấm một nút trên màn hình, lệnh bấm và lệnh vẽ lại nút đều xếp hàng chạy trên một luồng chính duy nhất. Nếu bạn đọc file lớn hay gọi mạng ngay trên luồng này, các việc đứng sau sẽ kẹt cứng và ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-main-thread-and-anr.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Main Thread &amp; ANR | ConceptDive">
+<meta property="og:description" content="Khi bạn bấm một nút trên màn hình, lệnh bấm và lệnh vẽ lại nút đều xếp hàng chạy trên một luồng chính duy nhất. Nếu bạn đọc file lớn hay gọi mạng ngay trên luồng này, các việc đứng sau sẽ kẹt cứng và ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-main-thread-and-anr.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/anr-watchdog-thresholds.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Main Thread &amp; ANR</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn bấm một nút trên màn hình, lệnh bấm và lệnh vẽ lại nút đều xếp hàng chạy trên một luồng chính duy nhất. Nếu bạn đọc file lớn hay gọi mạng ngay trên luồng này, các việc đứng sau sẽ kẹt cứng và màn hình đơ luôn. Quá hạn mà luồng chính chưa rảnh, Android sẽ bật bảng báo lỗi ANR cho người dùng đóng ứng dụng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-handler-looper-message-queue.html">Handler, Looper &amp; MessageQueue</a></li>
+<li><a href="thread.html">Thread</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Từ bản Android 1.0 (2008), toàn bộ giao diện được thiết kế chạy trên một luồng chính duy nhất. Mọi việc vẽ màn hình hay nhận cú chạm đều phải xếp hàng qua hàng đợi của luồng này. Chỉ cần lập trình viên chạy một việc nặng trên luồng chính, màn hình sẽ đứng im không bấm được nữa.</p>
+<p>Để người dùng không bị kẹt chết ở một ứng dụng đơ, Android đặt đồng hồ canh thời gian phản hồi. Hết giờ mà ứng dụng chưa trả lời, hệ thống hiện bảng báo không phản hồi để người dùng tắt đi. Nhưng lúc đang viết code, lập trình viên vẫn rất khó biết dòng nào vừa lỡ chặn luồng chính.</p>
+<p>Tháng 12 năm 2010, kỹ sư Brad Fitzpatrick đưa công cụ <code>StrictMode</code> vào Android 2.3 Gingerbread. Công cụ này báo ngay trên log mỗi khi bạn đọc ghi đĩa hoặc gọi mạng trên luồng chính.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Lỗi ANR (<em>Application Not Responding</em>) không phải do máy hết RAM hay luồng bị sập. Đó là còi báo động của hệ thống khi <a href="android-handler-looper-message-queue.html">hàng đợi tin nhắn</a> trên luồng chính bị một việc nặng chặn đứng. Dịch vụ hệ thống luôn bấm giờ cho từng sự kiện giao diện hoặc vòng đời đang chạy. Hết hạn mà luồng chính chưa làm xong việc đó để nhận việc mới, Android sẽ bật hộp thoại ANR.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hệ thống giám sát mốc thời gian: chạm 5s, Broadcast 10s (nền 60s), Service 20s (nền 200s); vượt ngưỡng kích hoạt ANR và lưu tệp traces" src="../android/diagrams/anr-watchdog-thresholds.png"></p>
+<p>Sự kiện chạm màn hình hoặc bấm phím sẽ bị báo ANR nếu không xử lý xong trong 5 giây. Với <code>BroadcastReceiver</code>, hạn là 10 giây ở tiền cảnh (10–20 giây từ Android 14) và 60 giây ở nền, tùy bản Android. Còn <code>Service</code> phải chạy xong <code>onCreate</code> hay <code>onStartCommand</code> trong 20 giây ở tiền cảnh, hoặc 200 giây ở nền. Khi nổ ANR, hệ thống chụp lại stack trace vào <code>traces.txt</code> hoặc các tệp <code>anr_*</code>, lấy ra bằng lệnh <code>adb bugreport</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Đưa việc đọc file hay gọi mạng sang luồng phụ thì bạn phải thêm bước chuyển kết quả về luồng chính để vẽ lại. Đổi lại, luồng chính luôn rảnh tay để vẽ khung hình mượt và phản hồi ngay mỗi khi người dùng chạm vào.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Luồng đang trực tiếp vẽ màn hình và nghe tay người dùng bấm thì không được phép đứng chờ bất kỳ việc nặng nào.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Lỗi ANR không xảy ra vì máy chậm, mà do luồng chính bị chiếm dụng bởi các tác vụ nặng.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class MainApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) {
+            val policy = StrictMode.ThreadPolicy.Builder()
+                .detectAll().penaltyLog().build()
+            StrictMode.setThreadPolicy(policy)
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Gọi mạng trên luồng chính làm app sập ngay với <code>NetworkOnMainThreadException</code>, còn đọc file hay giải mã JSON lớn sẽ gây giật hoặc ANR. Đừng bật <code>StrictMode</code> ở bản phát hành cho người dùng vì việc theo dõi mọi lệnh đọc ghi sẽ làm máy chạy chậm đi. Khi dính ANR, bạn sẽ thấy mục <code>ActivityManager</code> báo lỗi trong logcat kèm tệp vết lưu đúng dòng code đang giữ chân luồng chính.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao một tác vụ đọc file chỉ tốn vài mili-giây trên Main thread vẫn có thể gây ra lỗi ANR?
+Vì tốc độ đọc file phụ thuộc vào lúc đó chip nhớ flash đang rảnh hay bận. Khi máy đang cài ứng dụng khác hoặc ghi ảnh nền, lệnh đọc một file nhỏ cũng có thể phải chờ vài giây. Vì vậy mọi việc đọc ghi đĩa đều phải đưa sang luồng phụ.</p>
+<p><strong>Hỏi:</strong> Các ngưỡng thời gian kích hoạt ANR phổ biến nhất trên Android là bao lâu?
+Chạm và <code>startForeground</code> có hạn 5 giây; <code>BroadcastReceiver</code> là 10 giây tiền cảnh (10–20 giây từ Android 14) và 60 giây ở nền. Với <code>Service</code>, hạn là 20 giây cho dịch vụ tiền cảnh và 200 giây cho dịch vụ nền, tùy bản Android. Quá các mốc này mà hàm chưa trả về, hệ thống sẽ báo ứng dụng ngừng phản hồi.</p>
+<p><strong>Hỏi:</strong> Làm thế nào để điều tra nguyên nhân gốc rễ khi ứng dụng bị lỗi ANR trong sản xuất?
+Bạn mở mục Android Vitals trên Google Play Console hoặc chạy lệnh <code>adb bugreport</code> để lấy tệp vết <code>traces</code>. Tệp này ghi lại toàn bộ các hàm mà luồng chính đang chạy dở ngay lúc bị treo. Nhìn vào đỉnh stack trace của luồng <code>main</code>, bạn sẽ thấy ngay hàm nào đang đứng chờ khóa hay đọc đĩa.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao mọi việc vẽ và nhận chạm đi chung một hàng đợi trên luồng chính nên dễ bị kẹt.</li>
+<li>Nêu đúng các mốc thời gian báo ANR cho sự kiện chạm, BroadcastReceiver và Service ở tiền cảnh lẫn nền.</li>
+<li>Trình bày được cách bật StrictMode lúc debug và cách đọc tệp traces để tìm dòng code chặn luồng.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/performance/vitals/anr" target="_blank" rel="noopener">ANRs — App quality Android Developers</a></li>
+<li><a href="https://developer.android.com/guide/components/processes-and-threads" target="_blank" rel="noopener">Processes and threads overview — Android</a></li>
+<li><a href="https://developer.android.com/reference/android/os/StrictMode" target="_blank" rel="noopener">StrictMode API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/topic/performance/anrs/diagnose-and-fix-anrs" target="_blank" rel="noopener">Diagnose and fix ANRs</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-handler-looper-message-queue.html">Handler, Looper &amp; MessageQueue</a></li>
+<li><a href="thread.html">Thread</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-main-thread-and-anr" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

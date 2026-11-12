@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compose: Side Effects | ConceptDive</title>
+<meta name="description" content="Nếu đặt lệnh gọi API thẳng vào thân hàm Composable của màn hình hồ sơ, mỗi lần vẽ lại là gọi mạng thêm một lần. Compose cho bạn các khối side effect để gắn những việc ngoài giao diện vào vòng đời của ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-side-effects.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Compose: Side Effects | ConceptDive">
+<meta property="og:description" content="Nếu đặt lệnh gọi API thẳng vào thân hàm Composable của màn hình hồ sơ, mỗi lần vẽ lại là gọi mạng thêm một lần. Compose cho bạn các khối side effect để gắn những việc ngoài giao diện vào vòng đời của ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-side-effects.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/compose/diagrams/compose-lifecycle-side-effects.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Compose</p>
+<h1>Compose: Side Effects</h1>
+<h2>Bản 30 giây</h2>
+<p>Nếu đặt lệnh gọi API thẳng vào thân hàm Composable của màn hình hồ sơ, mỗi lần vẽ lại là gọi mạng thêm một lần. Compose cho bạn các khối side effect để gắn những việc ngoài giao diện vào vòng đời của màn hình. Khi người dùng rời màn hình, các coroutine và bộ lắng nghe bên trong cũng tự động hủy theo.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong Compose, hàm giao diện có thể chạy lại nhiều lần do <a href="compose-recomposition-and-state.html">Recomposition</a>, chạy bất cứ lúc nào hoặc bị bỏ qua. Vì vậy, lệnh gọi mạng hay đăng ký bộ lắng nghe đặt ngay trong thân hàm sẽ chạy lặp lại không kiểm soát được.</p>
+<p>Compose 1.0 (2021) ra mắt kèm sẵn <code>LaunchedEffect</code>, <code>DisposableEffect</code> và <code>SideEffect</code> để đặt những việc đó vào chỗ có vòng đời rõ ràng. Nhờ gắn với cây giao diện, các việc này chỉ chạy đúng lúc cần và tự dọn dẹp khi màn hình đóng lại.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Side effect không phải là chỗ để bạn nhét đại các đoạn code chạy ngầm. Chúng là những điểm neo vòng đời (<em>Lifecycle anchors</em>) được ghi trong sổ <code>Slot Table</code> của Compose. Nhờ vậy, Compose biết khi nào thành phần xuất hiện để bắt đầu việc, khi nào biến mất để hủy việc.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Ba điểm neo vòng đời: LaunchedEffect theo cây, DisposableEffect dọn dẹp và rememberCoroutineScope cho sự kiện" src="../compose/diagrams/compose-lifecycle-side-effects.png"></p>
+<p>Khi thành phần bước vào màn hình, <code>LaunchedEffect</code> mở một coroutine và tự hủy nó rồi chạy lại mỗi khi tham số <code>key</code> đổi. Nếu muốn mở coroutine lúc người dùng bấm nút, bạn lấy phạm vi từ <code>rememberCoroutineScope</code> để gọi bên trong hàm xử lý nút bấm. Còn <code>DisposableEffect</code> dành cho thứ cần gỡ bỏ như bộ lắng nghe, với khối <code>onDispose</code> bắt buộc chạy khi đổi <code>key</code> hoặc rời màn hình.</p>
+<h2>Đánh đổi</h2>
+<p>Đặt việc gọi mạng và lắng nghe vào đúng khối side effect giúp bạn không quên hủy chúng khi đóng màn hình. Đổi lại, bạn phải chọn đúng tham số <code>key</code> cho từng khối. Thiếu <code>key</code> thì màn hình giữ mãi dữ liệu cũ, còn <code>key</code> đổi liên tục thì tác vụ cứ bị hủy rồi chạy lại.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Hàm vẽ giao diện chỉ nên làm việc vẽ. Mọi việc chạm ra bên ngoài phải gắn vào vòng đời của phần giao diện đó.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Side effect không phải nơi chạy ngầm tự do, mà là điểm neo gắn công việc bên ngoài vào vòng đời của phần giao diện.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Composable
+fun UserProfileScreen(userId: String, viewModel: ProfileViewModel) {
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(userId) { viewModel.loadProfile(userId) }
+    DisposableEffect(userId) {
+        onDispose { viewModel.clearCache() }
+    }
+    Button(onClick = { scope.launch { viewModel.saveProfile() } }) {
+        Text(&quot;Lưu hồ sơ&quot;)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn truyền cố định <code>LaunchedEffect(Unit)</code> cho chỗ cần tải lại theo <code>userId</code>, đổi người dùng xong màn hình vẫn hiện hồ sơ cũ. Quên gỡ bộ lắng nghe trong <code>onDispose</code> sẽ giữ chặt đối tượng trên bộ nhớ Heap gây rò rỉ. Đừng dùng <code>LaunchedEffect</code> để xử lý lúc người dùng bấm nút mà hãy dùng <code>rememberCoroutineScope</code>. Khi truyền nhầm <code>key</code> đổi liên tục, màn hình sẽ nháy hoài, gọi API lặp lại hoặc dừng giữa chừng với <code>JobCancellationException</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có thể gọi trực tiếp LaunchedEffect bên trong callback khi người dùng bấm nút không?
+Không được. <code>LaunchedEffect</code> là một hàm <code>@Composable</code> nên chỉ gọi được ngay trong thân hàm vẽ giao diện, không gọi được bên trong <code>onClick</code>. Muốn chạy coroutine khi bấm nút, bạn lấy <code>scope</code> từ <code>rememberCoroutineScope</code> rồi gọi <code>scope.launch</code> trong <code>onClick</code>.</p>
+<p><strong>Hỏi:</strong> Dùng LaunchedEffect(Unit) có đảm bảo tác vụ chỉ chạy đúng một lần trong đời ứng dụng không?
+Không. Nó chỉ chạy một lần trong suốt thời gian thành phần đó còn nằm trên màn hình. Nếu người dùng chuyển sang màn hình khác rồi quay lại, thành phần được tạo mới nên <code>LaunchedEffect(Unit)</code> sẽ chạy lại từ đầu.</p>
+<p><strong>Hỏi:</strong> Có bắt buộc phải cung cấp khối onDispose bên trong DisposableEffect không?
+Bắt buộc. Nếu bạn quên viết <code>onDispose</code> ở cuối <code>DisposableEffect</code>, trình biên dịch sẽ báo lỗi ngay lúc gõ code. Khối này giúp bạn chắc chắn có chỗ gỡ bỏ bộ lắng nghe hay <code>BroadcastReceiver</code> khi thành phần rời khỏi màn hình.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách LaunchedEffect tự hủy coroutine cũ và chạy coroutine mới mỗi khi key đổi.</li>
+<li>Phân biệt được việc dùng LaunchedEffect khi vào màn hình với dùng rememberCoroutineScope trong callback bấm nút.</li>
+<li>Nêu được vai trò bắt buộc của khối onDispose trong DisposableEffect để gỡ bộ lắng nghe khi rời màn hình.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/compose/side-effects" target="_blank" rel="noopener">Side-effects in Compose — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/lifecycle" target="_blank" rel="noopener">Lifecycle of composables — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dcompose-side-effects" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

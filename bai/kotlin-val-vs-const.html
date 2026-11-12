@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Val vs Const Val | ConceptDive</title>
+<meta name="description" content="Khi bạn khai báo biến chỉ đọc, val sẽ gọi hàm getter để lấy giá trị lúc ứng dụng đang chạy. Còn const val bảo compiler chép thẳng giá trị hằng số vào từng chỗ dùng ngay lúc biên dịch. Khác biệt này qu">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-val-vs-const.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Val vs Const Val | ConceptDive">
+<meta property="og:description" content="Khi bạn khai báo biến chỉ đọc, val sẽ gọi hàm getter để lấy giá trị lúc ứng dụng đang chạy. Còn const val bảo compiler chép thẳng giá trị hằng số vào từng chỗ dùng ngay lúc biên dịch. Khác biệt này qu">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-val-vs-const.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/val-vs-const-bytecode.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Val vs Const Val</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn khai báo biến chỉ đọc, <code>val</code> sẽ gọi hàm <code>getter</code> để lấy giá trị lúc ứng dụng đang chạy. Còn <code>const val</code> bảo compiler chép thẳng giá trị hằng số vào từng chỗ dùng ngay lúc biên dịch. Khác biệt này quyết định việc dùng nó trong <code>annotation</code> và rủi ro lệch dữ liệu khi nâng cấp thư viện.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Khi làm Kotlin, nhóm thiết kế muốn mọi thuộc tính trong class đều đi qua hàm đọc để giữ tính đóng gói. Vì vậy, mỗi biến <code>val</code> được dịch thành một trường <code>private</code> kèm theo hàm <code>getter</code> công khai.</p>
+<p>Nhưng cách này lại vướng quy định của máy ảo Java khi bạn truyền giá trị vào <code>annotation</code>. <code>annotation</code> bắt buộc giá trị phải có sẵn ngay trong bytecode lúc biên dịch, chứ không đợi gọi hàm <code>getter</code> lúc chạy được.</p>
+<p>Từ khóa <code>const</code> ra đời để chép thẳng giá trị vào bytecode cho các chỗ như vậy. Đổi lại, nó gây lệch giá trị giữa các module khi thư viện đổi hằng số mà bên gọi chưa biên dịch lại.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>val</code> và <code>const val</code> không phải hai cách viết hằng số giống nhau. <code>val</code> là một thuộc tính có hàm <code>getter</code>, mỗi lần bạn đọc là máy gọi vào hàm đó lúc đang chạy. Ngược lại, <code>const val</code> là hằng số lúc biên dịch, được compiler chép thẳng giá trị vào mọi chỗ gọi. Class gốc vẫn giữ một trường <code>public static final</code> cho bên Java dùng, nhưng code Kotlin khi đọc sẽ lấy thẳng giá trị đã chép.</p>
+<h2>Cơ chế</h2>
+<p><img alt="val sinh getter gọi hàm lúc runtime bảo toàn tương thích nhị phân trong khi const val inlining literal trực tiếp vào bytecode" src="../kotlin/diagrams/val-vs-const-bytecode.png"></p>
+<p>Khi bạn viết <code>val</code> thường, compiler tạo một trường <code>private final</code> và một hàm <code>getter</code> trong bytecode. Khi bạn viết <code>const val</code>, compiler tạo trường <code>public static final</code> nhưng tại mọi chỗ gọi nó chép thẳng giá trị vào luôn. Vì phải chép ngay lúc dịch, <code>const val</code> chỉ nhận kiểu nguyên thủy hoặc <code>String</code> và không cho viết hàm <code>getter</code> riêng. Lúc chạy, chỗ gọi nạp thẳng con số hoặc chuỗi bằng lệnh <code>ldc</code> hay <code>bipush</code> mà không cần hỏi class gốc.</p>
+<h2>Đánh đổi</h2>
+<p>Dùng <code>const val</code> giúp bạn truyền được giá trị vào <code>annotation</code> và bớt được một lần gọi hàm <code>getter</code>. Đổi lại, bạn không thể gán kết quả của một hàm cho nó hay ghi đè nó ở lớp con. Rủi ro lớn nhất là gãy tương thích nhị phân khi một thư viện đổi giá trị <code>const val</code>. Nếu module gọi không biên dịch lại, nó vẫn chạy với giá trị cũ đã chép sẵn trong bytecode.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chép cứng giá trị lúc biên dịch để dùng ngay, hoặc đọc qua hàm lúc chạy để giữ đồng bộ khi đổi.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>const val</code> không phải để chạy nhanh hơn <code>val</code>, mà là cái bẫy gãy tương thích nhị phân mỗi khi bạn đổi giá trị.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p><code>val</code> giống như bạn cho người khác số điện thoại của mình để họ gọi hỏi giá vé mỗi khi cần. <code>const val</code> giống như in sẵn giá vé 50 nghìn đồng lên từng tờ rơi phát cho mọi người. Khi giá vé tăng lên 100 nghìn, người gọi điện thoại biết ngay giá mới, còn người cầm tờ rơi vẫn đinh ninh giá cũ.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">const val TIMEOUT_MS = 5000L
+
+annotation class HttpConfig(val timeout: Long = TIMEOUT_MS)
+
+class ApiClient {
+    val baseUrl: String get() = &quot;https://api.domain.com&quot;
+    val timeoutMs: Long = TIMEOUT_MS
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy nguy hiểm nhất là sửa <code>const val</code> trong một module thư viện mà không biên dịch lại các module đang gọi nó. Module gọi vẫn giữ nguyên con số cũ đã chép vào bytecode, làm hai bên chạy lệch nhau mà không báo lỗi. Vì vậy, đừng dùng <code>const val</code> cho các thông số có thể đổi qua các phiên bản thư viện. Với biến công khai cho module khác đọc, hãy dùng <code>val</code> để giữ tương thích nhị phân.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Dùng val thì giá trị của biến có luôn luôn bất biến không?
+Không. Từ khóa <code>val</code> chỉ cấm bạn gán biến đó sang đối tượng khác, chứ không cấm sửa dữ liệu bên trong đối tượng. Ngoài ra, một biến <code>val</code> tự viết hàm <code>get()</code> hoặc dùng <a href="kotlin-lateinit-vs-lazy.html">by lazy</a> vẫn có thể trả về kết quả khác nhau.</p>
+<p><strong>Hỏi:</strong> Cả hai đều không sửa được, khi nào bắt buộc phải dùng const val?
+Bạn bắt buộc dùng <code>const val</code> khi truyền giá trị vào <code>annotation</code> hoặc dùng trong <code>switch-case</code> phía Java. Những chỗ này đòi hỏi giá trị phải nằm sẵn trong bytecode ngay lúc biên dịch. Còn ở các chỗ bình thường khác, bạn cứ dùng <code>val</code> để sau này đổi giá trị không sợ lỗi.</p>
+<p><strong>Hỏi:</strong> Vì sao đổi giá trị const val trong một library module lại làm app chạy sai dù không báo lỗi biên dịch?
+Vì lúc biên dịch lần trước, compiler đã chép thẳng giá trị cũ của <code>const val</code> vào bytecode của module gọi. Khi bạn chỉ thay file <code>.jar</code> của thư viện mà không biên dịch lại module gọi, chỗ gọi vẫn đọc con số cũ của nó. Thế là thư viện chạy giá trị mới còn ứng dụng lại chạy giá trị cũ.</p>
+<p><strong>Hỏi:</strong> Vì sao Kotlin cấm khai báo const val cho đối tượng class thông thường hoặc bên trong hàm?
+Vì <code>const val</code> phải chép được ngay vào bytecode lúc dịch nên chỉ nhận kiểu nguyên thủy hoặc <code>String</code>. Còn một đối tượng class thông thường phải đợi lúc chạy mới tạo trên Heap qua constructor. Ngoài ra, <code>const val</code> chỉ đặt được ở đầu file, trong <code>object</code> hoặc <code>companion object</code>, nơi sinh được trường <code>static final</code>.</p>
+<p><strong>Hỏi:</strong> const val có giúp ứng dụng chạy nhanh hơn val đáng kể không?
+Không đáng kể. Dùng <code>const val</code> chỉ bớt được một lệnh gọi hàm <code>getter</code> và một lần đọc biến tĩnh. Trên Android, máy ảo ART vốn tự chép thẳng các hàm <code>getter</code> ngắn vào chỗ gọi nên tốc độ gần như nhau.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được val gọi hàm getter lúc chạy, còn const val chép thẳng giá trị vào bytecode lúc biên dịch.</li>
+<li>Nêu được điều kiện dùng const val: chỉ nhận kiểu nguyên thủy hoặc String, đặt ở cấp file hoặc trong object.</li>
+<li>Trình bày được vì sao đổi const val trong thư viện mà không biên dịch lại bên gọi sẽ làm lệch dữ liệu.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/properties.html" target="_blank" rel="noopener">Compile-time constants (const val) — Kotlin</a></li>
+<li><a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-13.html" target="_blank" rel="noopener">JLS §13.4.9: Final Fields and Constants</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-val-vs-const" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

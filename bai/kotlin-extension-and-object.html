@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extension Function &amp; Object Declaration | ConceptDive</title>
+<meta name="description" content="Khi muốn gắn thêm hàm toSlug() cho lớp String có sẵn mà không sửa được mã nguồn của nó, bạn viết một extension function. Khi biên dịch, Kotlin chỉ biến nó thành một hàm tĩnh bình thường nhận chuỗi đó ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-extension-and-object.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Extension Function &amp; Object Declaration | ConceptDive">
+<meta property="og:description" content="Khi muốn gắn thêm hàm toSlug() cho lớp String có sẵn mà không sửa được mã nguồn của nó, bạn viết một extension function. Khi biên dịch, Kotlin chỉ biến nó thành một hàm tĩnh bình thường nhận chuỗi đó ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-extension-and-object.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/extension-static-dispatch.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Extension Function &amp; Object Declaration</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi muốn gắn thêm hàm <code>toSlug()</code> cho lớp <code>String</code> có sẵn mà không sửa được mã nguồn của nó, bạn viết một <code>extension function</code>. Khi biên dịch, Kotlin chỉ biến nó thành một hàm tĩnh bình thường nhận chuỗi đó làm tham số đầu tiên. Từ khóa <code>object</code> giúp tạo ngay một đối tượng duy nhất (<code>Singleton</code>) mà khỏi tự viết khóa đa luồng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong dự án Java, mỗi khi cần thêm hàm xử lý chuỗi hay ngày tháng, bạn phải tạo lớp tiện ích như <code>StringUtils</code>. Khi ghép nhiều bước xử lý, bạn phải viết các lời gọi hàm lồng ngược vào nhau thay vì chấm nối tiếp trên đối tượng.</p>
+<p>Bên cạnh đó, muốn tạo một đối tượng dùng chung duy nhất (<code>Singleton</code>) trong Java vừa dài dòng vừa dễ sai. Bạn phải tự viết bước kiểm tra khóa hai lần để hai luồng chạy cùng lúc không tạo ra hai đối tượng khác nhau.</p>
+<p>JetBrains giới thiệu Kotlin năm 2011 và ra mắt bản 1.0 năm 2016 với sẵn <code>extension function</code> và từ khóa <code>object</code>. Hai tính năng này giúp bạn chấm gọi hàm tự nhiên và tạo đối tượng duy nhất chỉ bằng một dòng khai báo.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Extension function</code> không hề mở khóa hay nhét thêm hàm mới vào bên trong lớp gốc.</p>
+<p>Thật ra, trình biên dịch tạo một hàm <code>static</code> trong lớp <code>&lt;TênFile&gt;Kt</code>, nhận đối tượng trước dấu chấm làm tham số đầu tiên.</p>
+<p>Từ khóa <code>object</code> cũng không phải biến <code>static</code> rời rạc: trình biên dịch tạo lớp giữ biến <code>INSTANCE</code>, khởi tạo ở lần gọi đầu. Nó an toàn đa luồng nhờ chuẩn nạp lớp JVM (JLS §12.4.2).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hàm mở rộng được phân giải tĩnh theo kiểu khai báo biến tại thời điểm biên dịch, không qua bảng hàm ảo vtable" src="../kotlin/diagrams/extension-static-dispatch.png"></p>
+<p>Khi bạn gọi <code>extension function</code>, trình biên dịch chọn luôn hàm sẽ chạy dựa theo kiểu khai báo của biến ngay lúc dịch code.</p>
+<p>Vì lệnh gọi không đi qua <a href="jvm-virtual-method-dispatch.html">bảng hàm ảo</a> <code>vtable</code>, lớp con không thể ghi đè (<code>override</code>) hàm mở rộng của lớp cha.</p>
+<p>Nếu hàm mở rộng trùng tên và tham số với hàm có sẵn trong lớp, trình biên dịch luôn gọi hàm của lớp.</p>
+<p>Còn khi viết hàm trong <code>companion object</code>, bạn gắn thêm <code>@JvmStatic</code> nếu muốn phía Java gọi thẳng được như hàm <code>static</code> thường.</p>
+<h2>Đánh đổi</h2>
+<p>Vì bản chất chỉ là hàm tĩnh đứng bên ngoài, <code>extension function</code> không đọc được các biến <code>private</code> hay <code>protected</code> của lớp gốc.</p>
+<p>Đổi lại, khi gõ dấu chấm, IDE tự gợi ý hàm ngay giúp code gọn và dễ đọc hơn lớp <code>Util</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Giữ nguyên cách máy ảo chạy hàm tĩnh bên dưới, chỉ bọc lại bằng cách viết dấu chấm cho người đọc dễ hiểu (syntactic sugar).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Hàm mở rộng được phân giải theo kiểu khai báo lúc biên dịch, không phải kiểu đối tượng lúc chạy.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun String.toSlug(): String = lowercase().replace(&quot; &quot;, &quot;-&quot;)
+class NetworkClient {
+    companion object {
+        @JvmStatic
+        fun create(): NetworkClient = NetworkClient()
+    }
+}
+object AppDatabase {
+    val version = 1
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu thư viện thêm hàm thật trùng tên với <code>extension function</code> của bạn, code sẽ âm thầm gọi hàm của thư viện. Lạm dụng <code>object</code> giữ dữ liệu tạo ra biến toàn cục sống suốt đời ứng dụng, gây khó test và giữ bộ nhớ. Khi gọi hàm trong <code>companion object</code> từ code Java mà quên gắn <code>@JvmStatic</code>, bạn buộc phải viết dài dòng qua <code>.Companion</code> mới biên dịch được.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Nếu khai báo một extension function trùng tên và kiểu tham số với member function có sẵn của class thì chuyện gì xảy ra?
+Hàm có sẵn bên trong lớp (<code>member function</code>) sẽ luôn thắng và được gọi. Trình biên dịch Kotlin chỉ hiện cảnh báo vàng báo rằng hàm mở rộng của bạn đã bị hàm thật che mất. Hàm mở rộng đó sẽ không bao giờ chạy chừng nào hai bên còn trùng hệt tên và danh sách tham số.</p>
+<p><strong>Hỏi:</strong> Từ khoá object trong Kotlin có phải tương đương hoàn toàn với từ khoá static trong Java không?
+Không giống nhau về cách tổ chức trong bộ nhớ. Từ khóa <code>object</code> tạo một lớp thật và giữ đối tượng duy nhất trên Heap, khởi tạo khi chạm tới lần đầu. Là đối tượng thật, <code>object</code> kế thừa được lớp khác hoặc cài đặt <code>interface</code>, điều mà hàm <code>static</code> trong Java không làm được.</p>
+<p><strong>Hỏi:</strong> Tại sao gọi extension function trên một biến có kiểu giao diện lại không áp dụng đa hình lúc chạy?
+Vì <code>extension function</code> được dịch thành lệnh gọi hàm tĩnh <code>invokestatic</code> ngay từ lúc biên dịch. Máy ảo không hề tra <a href="jvm-virtual-method-dispatch.html">bảng hàm ảo</a> để xem đối tượng thật lúc chạy thuộc lớp con nào. Bạn khai báo biến thuộc kiểu gì trên dòng code thì trình biên dịch khóa cứng vào hàm mở rộng của đúng kiểu đó.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được extension function khi dịch ra bytecode chỉ là hàm static nhận đối tượng gốc làm tham số đầu tiên.</li>
+<li>Trình bày được vì sao hàm mở rộng chọn theo kiểu khai báo lúc biên dịch và luôn thua hàm có sẵn trong lớp khi trùng tên.</li>
+<li>Nêu được cách object tạo đối tượng duy nhất an toàn đa luồng khi nạp lớp và tác dụng của nhãn @JvmStatic.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/extensions.html" target="_blank" rel="noopener">Extensions — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/object-declarations.html" target="_blank" rel="noopener">Object declarations and expressions — Kotlin</a></li>
+<li><a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-12.html" target="_blank" rel="noopener">JLS §12.4.2: Class Initialization Procedure</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="kotlin-val-vs-const.html">Val vs Const Val</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-extension-and-object" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

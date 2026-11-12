@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composition over Inheritance | ConceptDive</title>
+<meta name="description" content="Khi bạn kế thừa một lớp chỉ để dùng lại vài hàm, sửa một chút ở lớp cha rất dễ làm hỏng lớp con. Thay vì bắt lớp mới làm con của lớp cũ, bạn hãy đặt các khối chức năng vào bên trong như những biến thà">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-composition-over-inheritance.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Composition over Inheritance | ConceptDive">
+<meta property="og:description" content="Khi bạn kế thừa một lớp chỉ để dùng lại vài hàm, sửa một chút ở lớp cha rất dễ làm hỏng lớp con. Thay vì bắt lớp mới làm con của lớp cũ, bạn hãy đặt các khối chức năng vào bên trong như những biến thà">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-composition-over-inheritance.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/oop/diagrams/composition-fragile-base-class.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · OOP</p>
+<h1>Composition over Inheritance</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn kế thừa một lớp chỉ để dùng lại vài hàm, sửa một chút ở lớp cha rất dễ làm hỏng lớp con. Thay vì bắt lớp mới làm con của lớp cũ, bạn hãy đặt các khối chức năng vào bên trong như những biến thành phần. Nhờ vậy, bạn đổi được hành vi ngay lúc chạy và lỗi ở khối nào chỉ nằm yên trong khối đó.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="oop-abstract-class-vs-interface.html">Abstract class đối lập Interface</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1994, nhóm Gang of Four đúc kết nguyên lý ưu tiên lắp ghép hơn kế thừa trong cuốn sách mẫu thiết kế kinh điển. Kế thừa làm vỡ tính đóng gói vì lớp con bị lệ thuộc thẳng vào cách lớp cha tự gọi hàm bên trong.</p>
+<p>Năm 2001, Joshua Bloch khuyên ưu tiên lắp ghép hơn kế thừa trong sách Effective Java. Đến năm 2003, Allen Holub mổ xẻ lỗi lớp cơ sở mong manh (<em>Fragile Base Class</em>) trong bài viết 'Why extends is evil'.</p>
+<p>Vì vậy, Kotlin để mọi lớp mặc định là <code>final</code>, đúng theo lời khuyên thiết kế rõ cho kế thừa hoặc khóa lại. Đồng thời, ngôn ngữ thêm từ khóa <code>by</code> để bạn chuyển tiếp lệnh gọi hàm thật gọn.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Lắp ghép không hề phủ nhận hay đối chọi với tính đa hình. Thay vì khóa cứng quan hệ cha con từ lúc biên dịch, bạn nối các đối tượng với nhau linh hoạt lúc chạy. Kế thừa thể hiện quan hệ "là một" (IS-A), còn lắp ghép thể hiện quan hệ "có chứa" (HAS-A). Đối tượng bọc ngoài giữ biến trỏ tới đối tượng bên trong rồi nhờ nó làm hộ, nên giấu kín được cách cài đặt.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Kế thừa HashSet làm addCount bị đếm trùng do gọi nội bộ, còn lắp ghép ủy quyền bảo toàn tính đóng gói" src="../oop/diagrams/composition-fragile-base-class.png"></p>
+<p>Đối tượng bọc ngoài giữ các đối tượng thành phần làm biến riêng trên bộ nhớ Heap. Khi bạn gọi hàm, nó chỉ chuyển lời gọi đó sang cho đối tượng thành phần bên trong xử lý. Với từ khóa <code>by</code> trong Kotlin, trình biên dịch tự sinh sẵn các hàm chuyển tiếp cho toàn bộ <code>interface</code>. Nhờ đó, bạn không phải gõ tay từng hàm lặp lại mà vẫn được kiểm tra kiểu an toàn.</p>
+<h2>Đánh đổi</h2>
+<p>Lắp ghép giúp code dễ viết unit test và dễ tráo đổi hành vi ngay lúc ứng dụng đang chạy. Đổi lại, chương trình tốn thêm một đối tượng bọc ngoài trên Heap và thêm một bước gọi hàm bắc cầu. Nếu ngôn ngữ không có từ khóa <code>by</code>, bạn sẽ phải tự gõ tay rất nhiều hàm chuyển tiếp trung gian.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Hệ thống luôn bền hơn khi ghép từ các khối rời có thể tháo lắp độc lập (loose coupling). Khi cần thêm tính năng, bạn nên ghép thêm khối mới thay vì sửa vào cây kế thừa cũ.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Kế thừa trói lớp con vào dòng họ lúc biên dịch, còn lắp ghép cho phép đổi khối chức năng lúc chạy.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Kế thừa giống cơ thể sinh học bị gắn chặt gen di truyền từ đời bố mẹ. Lắp ghép giống túi đồ nghề của người thợ: cần kìm thì rút kìm, hỏng tua vít thì đổi cái mới ngay.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class CountingSet&lt;T&gt;(private val inner: MutableSet&lt;T&gt; = HashSet()) :
+    MutableSet&lt;T&gt; by inner {
+    var addCount = 0
+    override fun add(element: T): Boolean {
+        addCount++
+        return inner.add(element)
+    }
+    override fun addAll(elements: Collection&lt;T&gt;): Boolean {
+        addCount += elements.size
+        return inner.addAll(elements)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu kế thừa chỉ để lấy một hàm tiện ích, lớp con phải gánh theo mọi hàm thừa của lớp cha. Đừng dùng kế thừa khi hai lớp không có quan hệ bản chất "là một" (IS-A) rõ ràng. Đặc biệt, ghi đè hàm mà lớp cha tự gọi lại chính nó sẽ làm biến đếm bị cộng trùng. Triệu chứng là nâng cấp thư viện cha cũng làm lớp con chạy sai, hoặc muốn tách lớp đi nơi khác đều vướng.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao lớp <code>CountingSet</code> kế thừa <code>HashSet</code> đếm sai khi gọi <code>addAll</code>?
+Bên trong <code>HashSet</code>, hàm <code>addAll</code> tự gọi hàm <code>add</code> cho từng phần tử. Vì <code>add</code> đã bị lớp con ghi đè nên mỗi phần tử bị cộng hai lần. Khi lắp ghép bằng <code>by</code>, lớp bọc chỉ gọi chuyển tiếp vào <code>inner</code> nên tránh được vòng gọi ngầm của lớp cha.</p>
+<p><strong>Hỏi:</strong> Cơ chế ủy quyền <code>by</code> trong Kotlin có giải quyết được nhược điểm gõ nhiều mã chuyển tiếp của mẫu Wrapper không?
+Có. Lúc biên dịch, Kotlin tự sinh toàn bộ các hàm chuyển tiếp cho những hàm có trong <code>interface</code>. Bạn chỉ cần viết lại đúng hàm nào muốn thêm logic, vừa gọn code vừa giữ nguyên lợi thế của lắp ghép.</p>
+<p><strong>Hỏi:</strong> Tại sao lớp cơ sở mong manh (<em>Fragile Base Class</em>) lại là thảm họa lớn nhất của kế thừa?
+Vì ở bản cập nhật sau, tác giả lớp cha có thể đổi cách các hàm bên trong gọi lẫn nhau. Lớp con ghi đè một hàm sẽ vô tình làm chệch luồng chạy mới mà tác giả lớp cha không hề biết. Hậu quả là ứng dụng tính sai dữ liệu âm thầm lúc chạy dù biên dịch không báo một lỗi nào.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được quan hệ IS-A (kế thừa) và HAS-A (lắp ghép đối tượng thành phần).</li>
+<li>Giải thích được ví dụ CountingSet kế thừa HashSet bị đếm gấp đôi vì addAll gọi ngầm hàm add.</li>
+<li>Trình bày được cách từ khóa by trong Kotlin tự sinh các hàm chuyển tiếp ở lúc biên dịch.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/delegation.html" target="_blank" rel="noopener">Implementation by delegation — Kotlin Documentation</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Composition_over_inheritance" target="_blank" rel="noopener">Composition over inheritance — Wikipedia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Fragile_base_class" target="_blank" rel="noopener">Fragile base class — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="oop-abstract-class-vs-interface.html">Abstract class đối lập Interface</a></li>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="oop-solid.html">SOLID</a></li>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Doop-composition-over-inheritance" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

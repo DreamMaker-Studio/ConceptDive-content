@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generics &amp; Variance | ConceptDive</title>
+<meta name="description" content="Khi dùng generic, trình biên dịch chặn việc truyền MutableList&lt;Dog&gt; vào MutableList&lt;Animal&gt; để tránh nhét nhầm Cat vào. Để truyền được an toàn, Kotlin tách rõ chiều dữ liệu đi ra và đi vào. Từ khóa ou">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-generics-variance.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Generics &amp; Variance | ConceptDive">
+<meta property="og:description" content="Khi dùng generic, trình biên dịch chặn việc truyền MutableList&lt;Dog&gt; vào MutableList&lt;Animal&gt; để tránh nhét nhầm Cat vào. Để truyền được an toàn, Kotlin tách rõ chiều dữ liệu đi ra và đi vào. Từ khóa ou">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-generics-variance.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/generics-variance-directions.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Generics &amp; Variance</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi dùng generic, trình biên dịch chặn việc truyền <code>MutableList&lt;Dog&gt;</code> vào <code>MutableList&lt;Animal&gt;</code> để tránh nhét nhầm <code>Cat</code> vào. Để truyền được an toàn, Kotlin tách rõ chiều dữ liệu đi ra và đi vào. Từ khóa <code>out</code> cho phép coi <code>Producer&lt;Dog&gt;</code> là con của <code>Producer&lt;Animal&gt;</code>, còn <code>in</code> cho phép coi <code>Consumer&lt;Animal&gt;</code> là con của <code>Consumer&lt;Dog&gt;</code>.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2004, Java 5 thêm generics nhưng phải xóa thông tin kiểu khi biên dịch (<code>type erasure</code>) để chạy trên máy ảo cũ. Ở bytecode, mọi tham số kiểu <code>T</code> đều bị đổi về kiểu giới hạn trên (<code>upper bound</code>) hoặc <code>Object</code>.</p>
+<p>Trong Java, mảng thường được phép gán <code>Dog[]</code> vào <code>Animal[]</code> rồi để tới lúc chạy mới kiểm tra kiểu. Cách này làm chương trình dễ bị sập giữa chừng với lỗi <code>ArrayStoreException</code> khi bạn nhét một con <code>Cat</code> vào mảng đó.</p>
+<p>Để chặn lỗi lúc biên dịch trên tập hợp, Java bắt viết <code>? extends</code> và <code>? super</code> rất rối ở từng chỗ gọi. Kotlin sửa bằng cách cho bạn khai báo <code>out</code> và <code>in</code> ngay trên định nghĩa lớp để lúc gọi hàm không phải viết lại nữa.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Variance không hề biến đổi hay ép kiểu đối tượng trong bộ nhớ lúc ứng dụng đang chạy. Đây chỉ là quy tắc biên dịch để quyết định khi nào lớp bọc kiểu con thay thế được lớp bọc kiểu cha.</p>
+<p>Danh sách sửa được của <code>Dog</code> không phải con của danh sách <code>Animal</code>, vì làm vậy sẽ nhét được <code>Cat</code> vào danh sách <code>Dog</code>.</p>
+<p>Kotlin dùng <code>out</code> cho lớp chỉ trả dữ liệu ra (chỉ đọc), và dùng <code>in</code> cho lớp chỉ nhận vào (chỉ ghi).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Chiều quan hệ kế thừa trong Generics: out giữ nguyên chiều (hiệp biến), in đảo ngược chiều (nghịch biến)" src="../kotlin/diagrams/generics-variance-directions.png"></p>
+<p>Khi dịch ra bytecode, trình biên dịch xóa sạch các nhãn <code>&lt;T&gt;</code> và thay bằng kiểu giới hạn trên (<code>upper bound</code>) hoặc <code>Object</code>. Tại những chỗ bạn đọc dữ liệu ra khỏi lớp generic, trình biên dịch tự động chèn thêm lệnh ép kiểu <code>checkcast</code>.</p>
+<p>Khi đánh dấu <code>out T</code>, trình biên dịch chỉ cho <code>T</code> nằm ở kiểu trả về và cấm làm tham số đầu vào.</p>
+<p>Ngược lại, nếu bạn đánh dấu <code>in T</code>, <code>T</code> chỉ được nằm ở vị trí tham số nhận vào và bị cấm làm kiểu trả về.</p>
+<h2>Đánh đổi</h2>
+<p>Nhờ <code>out</code> và <code>in</code>, bạn truyền được tập hợp kiểu con vào hàm nhận kiểu cha mà vẫn chặn lỗi sai kiểu. Đổi lại, do kiểu <code>T</code> bị xóa ở bytecode nên lúc chạy không viết được <code>x is T</code> hay gọi <code>T()</code>.</p>
+<p>Để giữ kiểu <code>T</code> lúc chạy, bạn phải viết <a href="kotlin-inline-function.html">inline function</a> kèm <code>reified</code>, đổi lại mã bytecode chép ra dài hơn.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Hộp chứa kiểu con chỉ thay thế an toàn cho hộp chứa kiểu cha khi tách bạch hộp lấy ra và hộp bỏ vào.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Variance không đổi đối tượng runtime, mà là luật kiểm soát chiều đọc ghi của compiler để bảo vệ kiểu generic.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Một chiếc hộp đựng cam <code>out</code> chỉ cho phép nhặt cam ra xem, nên người xem coi nó như hộp hoa quả vẫn an toàn. Chiếc máy ép hoa quả <code>in</code> có thể ép mọi loại quả, nên đưa cam vào máy ép hoa quả vẫn hoạt động chính xác.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">interface Producer&lt;out T&gt; { fun produce(): T }
+interface Consumer&lt;in T&gt; { fun consume(item: T) }
+class Box&lt;T&gt;(var value: T) : Producer&lt;T&gt;, Consumer&lt;T&gt; {
+    override fun produce(): T = value
+    override fun consume(item: T) { value = item }
+}
+val p: Producer&lt;Any&gt; = Box&lt;String&gt;(&quot;text&quot;)
+val c: Consumer&lt;String&gt; = Box&lt;Any&gt;(123)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Khi ép kiểu cưỡng bức <code>list as List&lt;Int&gt;</code>, lúc ép không báo lỗi vì đã xóa kiểu, nhưng lúc đọc phần tử mới sập <code>ClassCastException</code>. Cũng đừng gắn <code>out</code> cho những lớp vừa đọc vừa ghi như danh sách <code>MutableList</code> hay bộ nhớ đệm. Nếu lạm dụng <code>List&lt;*&gt;</code> khắp nơi, bạn sẽ không thêm được phần tử nào và đọc ra chỉ nhận kiểu <code>Any?</code>. Triệu chứng là trình biên dịch báo đỏ khi truyền danh sách vào hàm, hoặc sập <code>ClassCastException</code> lúc đọc phần tử.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao trong Kotlin <code>List</code> kiểu <code>String</code> gán được cho <code>List</code> kiểu <code>Any</code>, nhưng <code>MutableList</code> kiểu <code>String</code> lại không gán được cho <code>MutableList</code> kiểu <code>Any</code>?
+Vì <code>List</code> trong Kotlin chỉ đọc và khai báo là <code>List&lt;out E&gt;</code>, nên coi danh sách chuỗi như <code>List&lt;Any&gt;</code> rất an toàn. Còn <code>MutableList</code> có hàm <code>add</code> nhận phần tử vào; nếu cho gán vậy thì bạn nhét được <code>Int</code> vào danh sách <code>String</code>. Do đó trình biên dịch bắt <code>MutableList</code> phải giữ nguyên kiểu (<code>invariant</code>) để không ai nhét nhầm dữ liệu.</p>
+<p><strong>Hỏi:</strong> Vì sao Java cho gán <code>String[]</code> vào <code>Object[]</code> nhưng Kotlin cấm gán <code>Array&lt;String&gt;</code> vào <code>Array&lt;Any&gt;</code>?
+Vì mảng Java cho gán kiểu con vào kiểu cha từ trước khi có generics. Lỗi nhét nhầm số vào mảng chuỗi chỉ lộ ra lúc chạy qua <code>ArrayStoreException</code>. Kotlin thiết kế lại <code>Array&lt;T&gt;</code> giữ nguyên kiểu (<code>invariant</code>) để trình biên dịch bắt lỗi ngay lúc bạn đang gõ code.</p>
+<p><strong>Hỏi:</strong> Quy tắc nhớ PECS trong Java tương ứng với từ khóa nào trong Kotlin?
+Tương ứng thẳng với hai từ khóa <code>out</code> và <code>in</code>. Chữ P-E (Producer Extends) bên Java là chỉ lấy dữ liệu ra, tương ứng với từ khóa <code>out</code> trong Kotlin. Còn chữ C-S (Consumer Super) bên Java là chỉ nhận dữ liệu vào, tương ứng với từ khóa <code>in</code> trong Kotlin.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cơ chế xóa kiểu (type erasure) ở bytecode và việc trình biên dịch tự chèn lệnh ép kiểu checkcast ở chỗ đọc ra.</li>
+<li>Trình bày được vì sao dùng out cho bên chỉ trả dữ liệu ra (cùng chiều kế thừa) và in cho bên chỉ nhận dữ liệu vào (ngược chiều kế thừa).</li>
+<li>So sánh được mảng Array giữ nguyên kiểu an toàn từ lúc dịch của Kotlin với mảng dễ nổ lỗi ArrayStoreException lúc chạy của Java.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/generics.html" target="_blank" rel="noopener">Generics: in, out, where — Kotlin</a></li>
+<li><a href="https://docs.oracle.com/javase/tutorial/java/generics/erasure.html" target="_blank" rel="noopener">Type Erasure — Oracle Java Tutorials</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Generics_in_Java" target="_blank" rel="noopener">Generics in Java — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+<li><a href="kotlin-sealed-vs-data-class.html">Sealed class vs data class</a></li>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-generics-variance" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

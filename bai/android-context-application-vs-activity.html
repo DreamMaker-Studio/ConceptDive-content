@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context: Application vs Activity | ConceptDive</title>
+<meta name="description" content="Context là đầu mối để ứng dụng của bạn lấy tài nguyên và gọi dịch vụ của hệ điều hành Android. Activity là Context gắn với màn hình đang mở, dùng để bật hộp thoại và nạp giao diện theo đúng bảng màu. ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-context-application-vs-activity.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Context: Application vs Activity | ConceptDive">
+<meta property="og:description" content="Context là đầu mối để ứng dụng của bạn lấy tài nguyên và gọi dịch vụ của hệ điều hành Android. Activity là Context gắn với màn hình đang mở, dùng để bật hộp thoại và nạp giao diện theo đúng bảng màu. ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-context-application-vs-activity.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/context-activity-vs-application.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Context: Application vs Activity</h1>
+<h2>Bản 30 giây</h2>
+<p><code>Context</code> là đầu mối để ứng dụng của bạn lấy tài nguyên và gọi dịch vụ của hệ điều hành Android. <code>Activity</code> là <code>Context</code> gắn với màn hình đang mở, dùng để bật hộp thoại và nạp giao diện theo đúng bảng màu. Còn <code>Application</code> là <code>Context</code> sống suốt lúc ứng dụng chạy, hợp để truyền vào cơ sở dữ liệu nhằm tránh rò rỉ bộ nhớ.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2008, Android được thiết kế với nhiều thành phần độc lập như Activity, Service và BroadcastReceiver. Các thành phần này đều cần một cách chung để đọc file layout, mở database hay gửi thông báo.</p>
+<p>Google tạo ra lớp trừu tượng <code>Context</code> làm đầu mối giao tiếp chung. Nhưng vì mỗi thành phần có tuổi thọ dài ngắn khác nhau, việc dùng chung một kiểu <code>Context</code> rất dễ gây lỗi bộ nhớ.</p>
+<p>Nếu bạn truyền nhầm <code>Context</code> của màn hình vào đối tượng sống lâu, <a href="android-memory-leak.html">Memory leak</a> sẽ xảy ra và làm ứng dụng hết RAM. Ngược lại, lấy <code>Context</code> toàn cục đi mở hộp thoại thì ứng dụng sẽ sập ngay hoặc mất sạch màu sắc giao diện.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Context</code> không phải là một đối tượng vạn năng ở đâu cũng giống nhau. Nó dùng mẫu bọc ngoài (<em>Decorator pattern</em>) để gắn thêm khả năng tùy theo tuổi thọ từng thành phần.</p>
+<p><code>Activity</code> kế thừa từ <code>ContextThemeWrapper</code>, nên nó có thêm bảng màu giao diện và thẻ căn cước cửa sổ (<em>window token</em>). Trong khi đó, <code>Application</code> kế thừa thẳng từ <code>ContextWrapper</code>, không gắn với cửa sổ nào và sống từ lúc mở tới lúc tắt tiến trình.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Activity có Theme và Window Token mở Dialog hợp lệ; Application thiếu token ném BadTokenException nhưng an toàn cho Singleton" src="../android/diagrams/context-activity-vs-application.png"></p>
+<p>Khi bạn mở một <code>Dialog</code>, hệ thống đòi phải có thẻ <code>window token</code> hợp lệ để biết đặt hộp thoại đè lên màn hình nào. Vì <code>Application</code> không gắn với cửa sổ nào cả, truyền nó vào <code>Dialog</code> sẽ làm hệ thống ném lỗi <code>BadTokenException</code> ngay.</p>
+<p>Còn khi nạp file XML giao diện, <code>Activity</code> tự áp bảng màu (<em>Theme</em>) bạn đã khai báo trong manifest lên các nút bấm. Nếu bạn nạp giao diện bằng <code>applicationContext</code>, các View sẽ lấy màu mặc định của hệ thống và làm lệch thiết kế của bạn.</p>
+<h2>Đánh đổi</h2>
+<p>Truyền <code>applicationContext</code> vào các đối tượng sống lâu giúp bạn yên tâm không bao giờ làm rò rỉ màn hình. Đổi lại, nó không mở được hộp thoại và nếu dùng để mở màn hình mới thì phải gắn thêm cờ tạo ngăn xếp riêng.</p>
+<p>Dùng <code>Activity</code> thì vẽ giao diện và mở hộp thoại đầy đủ. Tuy nhiên, bạn phải gỡ mọi tham chiếu tới nó ngay khi màn hình đóng.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Đối tượng sống lâu không bao giờ được giữ tham chiếu tới đối tượng có tuổi thọ ngắn hơn mình.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>applicationContext không thể thay thế cho Activity, vì nó hoàn toàn thiếu thông tin bảng màu và thẻ window token của cửa sổ giao diện.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class PreferenceStore(private val appContext: Context) {
+    private val prefs = appContext.getSharedPreferences(&quot;prefs&quot;, Context.MODE_PRIVATE)
+}
+
+class UserProfileActivity : AppCompatActivity() {
+    fun showConfirmDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(&quot;Xác nhận&quot;)
+            .show()
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Truyền <code>Activity</code> vào biến singleton hay việc chạy ngầm sẽ giữ chặt cả màn hình trên Heap, dẫn tới lỗi sập <code>OutOfMemoryError</code>. Ngược lại, đưa <code>applicationContext</code> vào <code>AlertDialog.Builder</code> sẽ làm ứng dụng sập ngay lập tức với lỗi <code>WindowManager.BadTokenException</code>. Nếu gọi <code>startActivity</code> từ <code>applicationContext</code>, bạn buộc phải thêm cờ <code>FLAG_ACTIVITY_NEW_TASK</code>, dễ làm lệch thứ tự các màn hình đang mở. Vì vậy, hãy truyền <code>applicationContext</code> cho kho dữ liệu sống lâu và chỉ dùng <code>Activity</code> cho các việc hiển thị trên màn hình.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Điều gì sẽ xảy ra nếu hiển thị AlertDialog bằng applicationContext?
+Ứng dụng sẽ sập ngay khi dòng lệnh mở hộp thoại chạy. Hệ thống ném ra lỗi <code>WindowManager.BadTokenException</code>. Lý do là <code>applicationContext</code> không có thẻ <code>window token</code> để báo cho hệ thống biết hộp thoại này thuộc về màn hình nào.</p>
+<p><strong>Hỏi:</strong> Khi nào bắt buộc phải dùng Activity Context thay vì Application Context?
+Bạn bắt buộc phải dùng <code>Activity</code> cho mọi việc đụng tới giao diện trên màn hình. Ví dụ như mở <code>Dialog</code>, nạp file XML cần giữ đúng màu sắc <code>Theme</code>, hoặc lấy dịch vụ <code>WindowManager</code>. Ngoài ra, mở màn hình mới từ <code>Activity</code> sẽ xếp màn hình đó nối tiếp tự nhiên vào ngăn xếp hiện tại.</p>
+<p><strong>Hỏi:</strong> Sự khác biệt giữa getApplication() và context.applicationContext là gì?
+Hai cách này trả về cùng một đối tượng duy nhất trong bộ nhớ, chỉ khác nhau ở kiểu dữ liệu và nơi gọi. Hàm <code>getApplication()</code> chỉ có sẵn bên trong <code>Activity</code> hoặc <code>Service</code> và trả về đúng kiểu <code>Application</code>. Còn <code>applicationContext</code> gọi được từ bất kỳ biến <code>Context</code> nào và trả về kiểu chung <code>Context</code>.</p>
+<p><strong>Hỏi:</strong> Truyền Activity Context vào thư viện Room Database sẽ gây ra hậu quả gì?
+Màn hình đó sẽ bị rò rỉ trên bộ nhớ Heap sau khi người dùng bấm thoát. Vì đối tượng Room Database thường là singleton sống suốt từ lúc mở app, biến <code>Activity</code> bị giữ bên trong cũng không được dọn. Nếu thư viện không tự đổi sang <code>applicationContext</code>, cả cây giao diện cũ sẽ nằm kẹt lại trong RAM.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được Activity kế thừa ContextThemeWrapper (có Theme và window token) với Application chỉ kế thừa ContextWrapper.</li>
+<li>Giải thích được vì sao truyền Activity vào singleton làm rò rỉ cả cây View trên Heap.</li>
+<li>Nêu được lý do dùng applicationContext tạo Dialog gây sập ứng dụng với lỗi BadTokenException.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/reference/android/content/Context" target="_blank" rel="noopener">Context API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/view/ContextThemeWrapper" target="_blank" rel="noopener">ContextThemeWrapper API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/app/Application" target="_blank" rel="noopener">Application API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-context-application-vs-activity" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

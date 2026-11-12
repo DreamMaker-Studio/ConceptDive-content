@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samsung MDC Protocol | ConceptDive</title>
+<meta name="description" content="Khi viết app điều khiển màn hình thương mại Samsung qua cáp nối tiếp hoặc mạng, bạn dùng giao thức MDC. Mỗi lệnh gửi đi là một mảng byte mở đầu bằng 0xAA và chốt cuối bằng một byte checksum. Ứng dụng ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-samsung-mdc-protocol.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Samsung MDC Protocol | ConceptDive">
+<meta property="og:description" content="Khi viết app điều khiển màn hình thương mại Samsung qua cáp nối tiếp hoặc mạng, bạn dùng giao thức MDC. Mỗi lệnh gửi đi là một mảng byte mở đầu bằng 0xAA và chốt cuối bằng một byte checksum. Ứng dụng ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-samsung-mdc-protocol.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/samsung-mdc-packet-frame.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Samsung MDC Protocol</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi viết app điều khiển màn hình thương mại Samsung qua cáp nối tiếp hoặc mạng, bạn dùng giao thức <code>MDC</code>. Mỗi lệnh gửi đi là một mảng byte mở đầu bằng <code>0xAA</code> và chốt cuối bằng một byte <code>checksum</code>. Ứng dụng phải gửi từng lệnh một, đợi màn hình trả lời xong rồi mới được gửi lệnh kế tiếp.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-tcp-stream-framing.html">TCP Stream Framing</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Khi lắp hàng chục màn hình quảng cáo ở sân bay, kỹ thuật viên không thể cầm điều khiển hồng ngoại đi bấm từng chiếc. Kéo riêng từng sợi cáp từ máy chủ tới mỗi màn hình cũng làm hết sạch cổng cắm vật lý.</p>
+<p>Samsung cho phép cắm cáp nối tiếp từ cổng ra của màn hình trước sang cổng vào của màn hình sau. Giao thức Multiple Display Control (<code>MDC</code>) gửi lệnh nhị phân gắn mã ID tới đúng màn hình trên một dây.</p>
+<p>Nhờ quy ước không trả lời lệnh phát chung, bạn bật tắt cả dàn máy mà không nghẽn đường truyền.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>MDC</code> không gửi chữ đọc được bằng mắt như HTTP. Nó đóng gói lệnh thành khung byte ngắn, truyền qua cáp <code>RS-232C</code> hoặc cổng <code>TCP 1515</code> trên <a href="android-tcp-stream-framing.html">TCP Stream Framing</a>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Cấu trúc gói gửi và phản hồi qua RS-232C/TCP; mã phát sóng 0xFE không ACK và tổng kiểm tra khử dấu bằng and 0xFF" src="../android/diagrams/samsung-mdc-packet-frame.png"></p>
+<p>Gói gửi đi gồm byte đầu <code>0xAA</code>, mã lệnh, ID màn hình, độ dài, dữ liệu và byte <code>checksum</code>. Lệnh hỏi trạng thái và đổi cài đặt dùng chung mã lệnh, chỉ khác độ dài dữ liệu bằng 0 hay có giá trị. Khung trả lời gồm <code>0xAA</code>, <code>0xFF</code>, ID, độ dài, chữ <code>A</code> (thành công) hoặc <code>N</code> (lỗi), mã lệnh và <code>checksum</code>. Với mã phát sóng <code>0xFE</code>, mọi màn hình làm theo nhưng không trả lời; đời máy mới có thêm <code>TLS</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Cộng dồn 8 bit làm <code>checksum</code> rất nhẹ, nhưng đổi chỗ hai byte thì tổng không đổi nên thua <code>CRC</code>. Đường truyền cũng chỉ xử lý được một lệnh tại một lúc, nên app của bạn phải tự làm <a href="android-ble-android-pitfalls.html">hàng đợi tuần tự</a>. Bạn buộc phải khóa luồng gửi bằng <code>Mutex</code> hoặc <a href="kotlin-coroutine-context-and-dispatchers.html">Coroutine Dispatcher</a> đơn luồng để các lệnh không giẫm lên nhau.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Trên kênh bán song công (half-duplex), bên điều khiển phải hỏi từng câu và đợi trả lời xong (hoặc hết giờ chờ) mới gửi tiếp.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Dù <code>Byte</code> có dấu biến <code>0xAA</code> thành số âm, cộng dồn rồi <code>and 0xFF</code> vẫn ra đúng <code>checksum</code> do phần dấu là bội của 256.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>MDC giống như máy bộ đàm một chiều giữa đài chỉ huy và các tàu biển. Chỉ huy đọc lệnh cho một tàu rồi đợi tàu đó xác nhận xong mới đọc tiếp lệnh cho tàu khác.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun buildMdcPacket(cmd: Byte, id: Byte, data: ByteArray = byteArrayOf()): ByteArray {
+    var sum = cmd.toInt() + id.toInt() + data.size
+    for (b in data) sum += b.toInt()
+    val checksum = (sum and 0xFF).toByte()
+    return byteArrayOf(0xAA.toByte(), cmd, id, data.size.toByte(), *data, checksum)
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Trong Java, <code>byte == 0xAA</code> luôn ra <code>false</code> vì <code>byte</code> có dấu đổi thành số âm khi sang <code>Int</code> (sign-extension); Kotlin chặn lỗi này lúc biên dịch. Muốn so sánh đúng trong Kotlin, bạn phải khử phần dấu âm bằng cách viết <code>(byte.toInt() and 0xFF) == 0xAA</code>. Nếu gửi nhiều lệnh không chờ nhau, các byte trả về sẽ trộn lẫn làm lệnh trước đọc nhầm kết quả. Giao thức này chịu trễ do xếp hàng lệnh, và dữ liệu trên 255 byte phải cắt nhỏ vì ô độ dài chỉ 1 byte.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao cộng các byte âm trong mảng rồi <code>and 0xFF</code> vẫn ra đúng tổng kiểm tra?
+Khi <code>Byte</code> âm sang <code>Int</code> 32 bit, các byte cao lấp đầy bit 1, tức cộng thêm bội số của 256. Lúc bạn lấy 8 bit cuối bằng phép <code>and 0xFF</code>, toàn bộ phần bội số của 256 đó bị cắt bỏ sạch. Nhờ vậy, 8 bit còn lại giống hệt như khi bạn cộng các số không dấu từ đầu.</p>
+<p><strong>Hỏi:</strong> Có thể bắn đồng thời nhiều lệnh MDC trên cùng một kết nối TCP không?
+Không. Màn hình trả lời lần lượt trên cùng một dòng byte, mà gói trả về không có mã riêng cho từng lần gọi. Nếu bắn hai lệnh cùng lúc, byte phản hồi nối đuôi nhau làm không rõ gói nào của lệnh nào, nên phải xếp hàng.</p>
+<p><strong>Hỏi:</strong> Khi dùng mã phát sóng <code>0xFE</code>, ứng dụng có nhận được phản hồi ACK từ màn hình không?
+Không. Khi nhận lệnh có ID là <code>0xFE</code>, mọi màn hình đều làm theo lệnh nhưng được quy định là không gửi gói trả lời về. Quy ước này giúp hàng chục màn hình nối chung cáp không phát tín hiệu ngược cùng lúc gây loạn đường truyền.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Trình bày được cấu trúc gói tin MDC gồm byte đầu 0xAA, mã lệnh, ID, độ dài, dữ liệu và checksum.</li>
+<li>Giải thích được vì sao byte 0xAA bị đổi thành số âm khi sang Int và cách dùng <code>and 0xFF</code> để lấy lại đúng 8 bit cuối.</li>
+<li>Nêu được lý do phải xếp hàng gửi từng lệnh một và vì sao mã phát sóng 0xFE không trả lời ACK.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://github.com/vgavro/samsung-mdc" target="_blank" rel="noopener">Tài liệu giao thức Samsung MDC</a></li>
+<li><a href="https://en.wikipedia.org/wiki/RS-232" target="_blank" rel="noopener">Chuẩn truyền thông nối tiếp RS-232</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Checksum" target="_blank" rel="noopener">Tổng kiểm tra Checksum — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-tcp-stream-framing.html">TCP Stream Framing</a></li>
+<li><a href="android-ble-android-pitfalls.html">BLE Android Pitfalls</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-samsung-mdc-protocol" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State Holders | ConceptDive</title>
+<meta name="description" content="Khi người dùng xoay màn hình, dữ liệu gắn chặt vào giao diện sẽ bị mất hoặc làm sập ứng dụng. State Holder đứng tách riêng để giữ dữ liệu an toàn qua những lần màn hình bị hủy và tạo lại. Nó gom logic">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-state-holders.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="State Holders | ConceptDive">
+<meta property="og:description" content="Khi người dùng xoay màn hình, dữ liệu gắn chặt vào giao diện sẽ bị mất hoặc làm sập ứng dụng. State Holder đứng tách riêng để giữ dữ liệu an toàn qua những lần màn hình bị hủy và tạo lại. Nó gom logic">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-state-holders.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/state-holder-repeat-on-lifecycle.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>State Holders</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi người dùng xoay màn hình, dữ liệu gắn chặt vào giao diện sẽ bị mất hoặc làm sập ứng dụng. <code>State Holder</code> đứng tách riêng để giữ dữ liệu an toàn qua những lần màn hình bị hủy và tạo lại. Nó gom logic chuẩn bị dữ liệu hiển thị và phát luồng trạng thái xuống cho Activity hoặc <a href="android-fragment-lifecycle.html">Fragment</a> vẽ lên màn hình.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2017 tại Google I/O, Google ra mắt <code>LiveData</code> để chặn lỗi bắn dữ liệu vào View đã bị hủy. Trước đó, nhiều dự án dùng RxJava hay quên hủy đăng ký trong <code>onDestroy</code>, gây rò rỉ bộ nhớ và sập app.</p>
+<p>Tuy nhiên, <code>LiveData</code> lại bị cột chặt vào luồng chính Main Thread và thư viện Android SDK. Bạn không thể mang nó xuống tầng domain thuần Kotlin hay dùng chung cho dự án đa nền tảng Kotlin Multiplatform (<code>KMP</code>).</p>
+<p>Khi Kotlin Coroutines phổ biến, JetBrains đưa ra bộ ba <code>Flow</code>, <code>SharedFlow</code> và <code>StateFlow</code>. Chúng thay thế trọn vẹn <code>LiveData</code> mà không phụ thuộc vào bất kỳ thư viện Android nào.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>StateFlow</code> không phải là một công cụ tách biệt hoàn toàn với <code>SharedFlow</code>. Thật ra, <code>StateFlow</code> chính là một <code>SharedFlow</code> đã khóa sẵn các tham số cấu hình để chuyên giữ trạng thái hiện tại của màn hình.</p>
+<pre><code class="language-kotlin">interface StateFlow&lt;out T&gt; : SharedFlow&lt;T&gt; {
+    val value: T
+}
+</code></pre>
+<h2>Cơ chế</h2>
+<p><img alt="repeatOnLifecycle cổng chặn thu thập StateFlow theo vòng đời STARTED và STOPPED, kết hợp WhileSubscribed 5 giây giữ nguồn phát" src="../android/diagrams/state-holder-repeat-on-lifecycle.png"></p>
+<p><code>LiveData</code> tự biết nhìn <a href="android-activity-lifecycle.html">Activity Lifecycle</a> và chỉ phát dữ liệu khi màn hình đang ở trạng thái <code>STARTED</code> hoặc <code>RESUMED</code>. Ngược lại, <code>SharedFlow</code> là kênh phát cho nhiều nơi cùng nghe với bộ đệm và số lượng giá trị phát lại (<code>replay</code>) tùy bạn chọn. Còn <code>StateFlow</code> là <code>SharedFlow</code> đặc biệt với <code>replay = 1</code> và có giá trị đầu. Nó tự bỏ qua nếu giá trị mới trùng giá trị cũ qua <code>equals</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Dùng <code>StateFlow</code> giúp bạn tách sạch code khỏi Android SDK để viết unit test nhanh và dùng chung trên <code>KMP</code>. Khi ghép <code>stateIn(WhileSubscribed)</code> với <code>repeatOnLifecycle</code>, luồng dữ liệu phía trên cũng tự tạm nghỉ lúc người dùng ẩn app xuống nền. Đổi lại, bạn phải bọc <code>repeatOnLifecycle</code> ở giao diện, còn <code>LiveData</code> vẫn gọn hơn cho dự án Java thuần.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Theo nguyên lý <a href="architecture-state-vs-event.html">State vs Event</a>, thông báo từ ViewModel nên là một trường trong trạng thái màn hình. Khi giao diện hiện xong thì báo lại để xóa đi.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><a href="android-viewmodel.html">ViewModel</a> không phải nơi chứa mọi biến của màn hình: chỉ trạng thái nghiệp vụ cần sống qua lúc xoay máy mới đặt ở đó.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>State là bảng hiện nhiệt độ phòng, ai bước vào trễ đều thấy cùng nhiệt độ đó. Event là tiếng chuông cửa reo, chỉ ai có mặt lúc chuông kêu mới nghe thấy.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// ViewModel
+fun userMessageShown() = _uiState.update { it.copy(userMessage = null) }
+
+// Activity
+lifecycleScope.launch {
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.uiState.collect { state -&gt;
+            render(state)
+            state.userMessage?.let { showMessage(it); viewModel.userMessageShown() }
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu đưa thông báo vào <code>StateFlow</code> theo <a href="architecture-state-vs-event.html">State vs Event</a> mà quên xóa sau khi hiện, Toast sẽ bật lại khi xoay máy. Gọi <code>flow.collect</code> trong <code>lifecycleScope.launch</code> mà thiếu <code>repeatOnLifecycle</code> khiến luồng ngầm chạy tiếp khi ẩn app, gây tốn CPU và pin. Cũng đừng bắn thông báo một lần qua <code>SharedFlow</code> hay <code>Channel</code>, vì sự kiện dễ mất lúc xoay màn hình.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có nên bỏ hết LiveData để chuyển sang StateFlow trong mọi dự án không?
+Không cần thiết. Với dự án Java cũ chỉ chạy trên Android, <code>LiveData</code> vẫn làm tốt và ít sợ quên bọc vòng đời. Bạn nên dùng <code>StateFlow</code> khi dự án viết bằng Kotlin, cần biến đổi luồng dữ liệu bằng Coroutines hoặc chia sẻ code sang <code>KMP</code>.</p>
+<p><strong>Hỏi:</strong> Dùng StateFlow hay SharedFlow để bắn Toast thông báo, làm sao biết?
+Hãy dùng <code>StateFlow</code>, theo đúng hướng dẫn của đội ngũ Android. Bạn thêm trường thông báo vào <code>UiState</code>, khi màn hình hiện Toast xong thì gọi ngay <code>userMessageShown()</code> để đặt nó về <code>null</code>. Nếu dùng <code>SharedFlow</code> hay <code>Channel</code>, thông báo bắn ra lúc đang xoay máy có thể bị mất luôn.</p>
+<p><strong>Hỏi:</strong> Gom hết trạng thái màn hình vào một data class UiState duy nhất có hại gì không?
+Có thể gây vẽ lại thừa nếu bạn truyền nguyên cục <code>UiState</code> đó xuống cho mọi hàm Composable con. Khi một trường nhỏ đổi, cả đối tượng <code>UiState</code> được tạo mới khiến mọi hàm con nhận nó đều phải chạy lại. Bạn chỉ nên tách và truyền cho mỗi hàm con đúng trường dữ liệu mà nó thực sự đọc.</p>
+<p><strong>Hỏi:</strong> Tham số WhileSubscribed(5000) trong stateIn có tác dụng thực sự gì?
+Nó giữ cho luồng dữ liệu phía trên sống thêm 5 giây sau khi người nghe cuối cùng ngừng thu thập. Lúc xoay máy, Activity mới nối lại chỉ mất vài trăm mili giây nên luồng mạng hay DB không bị ngắt. Còn nếu người dùng bấm Home thoát ra ngoài quá 5 giây, luồng phía trên mới thực sự dừng để tiết kiệm tài nguyên.</p>
+<p><strong>Hỏi:</strong> Thu thập StateFlow trong Activity tại sao phải bọc bằng repeatOnLifecycle?
+Vì <code>StateFlow</code> là thư viện Kotlin thuần nên tự nó không biết lúc nào màn hình Android bị che khuất. Chỉ gọi <code>collect</code> trong <code>lifecycleScope.launch</code> làm coroutine vẫn thức nhận dữ liệu khi app xuống nền, gây tốn CPU và pin. Bọc <code>repeatOnLifecycle(Lifecycle.State.STARTED)</code> sẽ tự hủy thu thập khi màn hình <code>STOPPED</code> và tự thu thập lại khi màn hình lên <code>STARTED</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được StateFlow thực chất là SharedFlow có replay = 1, có giá trị khởi tạo và lọc trùng bằng equals.</li>
+<li>Trình bày được cách biến sự kiện thông báo thành một trường trong UiState rồi gọi hàm xóa về null sau khi đã hiển thị.</li>
+<li>Nêu được bẫy quên xóa sự kiện làm Toast hiện lặp khi xoay máy và bẫy thiếu repeatOnLifecycle làm coroutine chạy ngầm tốn pin.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/architecture/ui-layer/stateholders" target="_blank" rel="noopener">State holders and UI state</a></li>
+<li><a href="https://developer.android.com/kotlin/flow/stateflow-and-sharedflow" target="_blank" rel="noopener">StateFlow and SharedFlow on Android</a></li>
+<li><a href="https://developer.android.com/topic/libraries/architecture/livedata" target="_blank" rel="noopener">LiveData overview — Android Developers</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/" target="_blank" rel="noopener">StateFlow API reference — Kotlin</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-state-holders" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

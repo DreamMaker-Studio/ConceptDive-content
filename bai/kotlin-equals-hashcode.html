@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>equals &amp; hashCode | ConceptDive</title>
+<meta name="description" content="Khi tìm người dùng trong HashMap hay HashSet, máy dùng hashCode chọn ngăn chứa rồi gọi equals so từng món. Vì vậy hai đối tượng bằng nhau qua equals bắt buộc phải trả về cùng một số hashCode. Nếu làm ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-equals-hashcode.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="equals &amp; hashCode | ConceptDive">
+<meta property="og:description" content="Khi tìm người dùng trong HashMap hay HashSet, máy dùng hashCode chọn ngăn chứa rồi gọi equals so từng món. Vì vậy hai đối tượng bằng nhau qua equals bắt buộc phải trả về cùng một số hashCode. Nếu làm ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-equals-hashcode.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/hashset-bucket-lookup.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>equals &amp; hashCode</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi tìm người dùng trong <code>HashMap</code> hay <code>HashSet</code>, máy dùng <code>hashCode</code> chọn ngăn chứa rồi gọi <code>equals</code> so từng món. Vì vậy hai đối tượng bằng nhau qua <code>equals</code> bắt buộc phải trả về cùng một số <code>hashCode</code>. Nếu làm sai luật này, bạn vừa thêm đối tượng vào xong tìm lại ngay cũng không thấy.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1953, Hans Peter Luhn tại IBM tạo ra bảng băm (hash table) để tìm dữ liệu với tốc độ O(1). Nhờ vậy, máy không phải dò từng ô từ đầu mảng với tốc độ O(N). Hàm băm biến mỗi khóa thành một số thứ tự ngăn chứa (<code>bucket index</code>) trong mảng.</p>
+<p>Năm 1995, Java đưa hai hàm <code>equals</code> và <code>hashCode</code> vào lớp gốc <code>Object</code> cho mọi đối tượng. Từ đó có một luật bắt buộc: nếu <code>a.equals(b)</code> trả về <code>true</code> thì <code>a.hashCode()</code> và <code>b.hashCode()</code> phải ra cùng một con số.</p>
+<p>Rất nhiều người mới học chỉ viết lại hàm <code>equals</code> để so nội dung mà quên viết lại hàm <code>hashCode</code>. Khi đó, <code>HashMap</code> và <code>HashSet</code> cất vào một ngăn nhưng tìm ở ngăn khác, làm đối tượng như bốc hơi.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Luật đi đôi giữa <code>equals</code> và <code>hashCode</code> không phải để học vẹt, mà là điều kiện để bảng băm chạy đúng. Bạn cứ hình dung <code>hashCode</code> giúp nhảy tới đúng ngăn tủ, còn <code>equals</code> giúp nhìn mặt từng món đồ trong ngăn đó. Trong Kotlin, khi khai báo <a href="kotlin-sealed-vs-data-class.html">data class</a>, trình biên dịch tự sinh hai hàm này theo các thuộc tính trong ngoặc tròn.</p>
+<h2>Cơ chế</h2>
+<p><img alt="HashSet tính chỉ số ngăn từ hashCode rồi dùng equals so khớp; sửa var làm lệch ngăn dẫn tới mất tích đối tượng" src="../kotlin/diagrams/hashset-bucket-lookup.png"></p>
+<p>Khi bạn cất đối tượng vào <code>HashSet</code>, nó gọi <code>hashCode()</code> rồi chia lấy dư (hoặc lọc bit) để tính ra số thứ tự ngăn chứa. Tới đúng ngăn đó, nó mới gọi <code>equals()</code> so với các phần tử đang nằm sẵn xem có bị trùng không. Lúc bạn gọi <code>contains()</code> để kiểm tra, <code>HashSet</code> cũng tính lại số ngăn từ <code>hashCode()</code> y hệt như vậy. Nếu hai đối tượng bằng nhau lại có mã băm khác nhau, máy mở nhầm ngăn và báo không có.</p>
+<h2>Đánh đổi</h2>
+<p>Nhờ chia ngăn bằng mã băm, việc tìm kiếm hay kiểm tra trùng lặp đạt tốc độ O(1) dù có hàng vạn phần tử. Đổi lại, mọi thuộc tính dùng để tính <code>hashCode</code> bắt buộc phải giữ nguyên (<code>val</code>) suốt thời gian đối tượng nằm trong bảng. Nếu dùng thuộc tính <code>var</code> rồi sửa giá trị, đối tượng kẹt ở ngăn cũ và không thể tìm hay xóa.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Thay vì lục tung kho hàng lớn, ta chia thành nhiều ngăn đánh số. Khi tìm chỉ cần lục một ngăn (spatial partitioning).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Hai đối tượng bằng nhau bắt buộc phải cùng hashCode; sửa biến tạo hashCode sau khi lưu vào HashSet sẽ làm mất tích đối tượng.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class UserId(val value: String) {
+    override fun equals(other: Any?): Boolean =
+        other is UserId &amp;&amp; other.value == value
+
+    override fun hashCode(): Int = value.hashCode()
+}
+
+val set = hashSetOf(UserId(&quot;A&quot;))
+val exists = set.contains(UserId(&quot;A&quot;))
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy hay gặp nhất là dùng đối tượng có thuộc tính <code>var</code> làm khóa (<code>key</code>) của <code>HashMap</code> rồi sửa biến đó. Khi đổi giá trị, mã băm trỏ sang ngăn mới nên <code>map[key]</code> trả về <code>null</code>, dù đối tượng cũ vẫn chiếm RAM. Bẫy thứ hai là viết <code>fun equals(other: UserId)</code> thiếu <code>override</code> và kiểu <code>Any?</code>, thành nạp chồng thay vì ghi đè. Đừng bao giờ lấy đối tượng có thuộc tính <code>var</code> tham gia tính mã băm đi làm khóa cho <code>HashMap</code> hay phần tử của <code>HashSet</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Hai đối tượng có cùng <code>hashCode</code> thì chắc chắn sẽ bằng nhau qua <code>equals</code> đúng không?
+Không, vì <code>hashCode</code> chỉ là số nguyên 32-bit nên hai đối tượng khác nhau vẫn có thể trùng mã (đụng độ băm). Khi đó <code>HashMap</code> xếp cả hai vào chung một ngăn, rồi gọi tiếp <code>equals()</code> từng cái để lấy ra đúng đối tượng bạn cần.</p>
+<p><strong>Hỏi:</strong> Mọi thuộc tính khai báo trong <code>data class</code> đều tự động tham gia vào <code>equals</code> và <code>hashCode</code> à?
+Không, trình biên dịch chỉ lấy các thuộc tính khai báo trong ngoặc tròn của hàm khởi tạo chính (<code>primary constructor</code>). Thuộc tính viết trong ngoặc nhọn thân lớp sẽ bị bỏ qua. Hai đối tượng khác nhau ở phần thân vẫn được coi là bằng nhau.</p>
+<p><strong>Hỏi:</strong> <code>data class</code> chứa thuộc tính kiểu mảng <code>Array</code> hoặc <code>ByteArray</code> có gì nguy hiểm?
+Hàm <code>equals</code> tự sinh sẽ so sánh địa chỉ bộ nhớ của mảng chứ không so từng phần tử bên trong. Do mảng trên JVM không so nội dung, hai đối tượng chứa hai mảng giống hệt nhau vẫn bị báo khác nhau. Khi có mảng trong <code>data class</code>, bạn phải tự viết lại <code>equals</code> và <code>hashCode</code> bằng <code>contentEquals()</code> và <code>contentHashCode()</code>.</p>
+<p><strong>Hỏi:</strong> Khi nào tuyệt đối không được dùng một object làm key trong <code>HashMap</code>?
+Khi đối tượng đó dùng biến <code>var</code> có thể thay đổi để tính <code>hashCode</code>. Nếu bạn nhét nó vào <code>HashMap</code> rồi mới sửa biến <code>var</code> đó, lần sau tìm lại hàm <code>hashCode()</code> sẽ chỉ sang một ngăn khác. Lúc đó gọi <code>get()</code> sẽ trả về <code>null</code>, còn đối tượng cũ thì nằm kẹt mãi trong ngăn cũ gây rò rỉ bộ nhớ.</p>
+<p><strong>Hỏi:</strong> Điều gì xảy ra nếu ta luôn cho hàm <code>hashCode()</code> trả về một hằng số cố định như 0?
+Code vẫn chạy ra kết quả đúng, nhưng mọi phần tử bạn thêm vào đều bị dồn hết vào chung một ngăn số 0. Từ Java 8, nếu ngăn quá 8 phần tử và khóa cài đặt <code>Comparable</code>, <code>HashMap</code> chuyển ngăn thành cây đỏ đen O(log N). Còn nếu khóa không so sánh lớn nhỏ được, tốc độ tìm kiếm sẽ tụt về dò từng cái O(N) như một danh sách thường.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được luật bắt buộc: hai đối tượng bằng nhau qua equals thì phải trả về cùng một số hashCode.</li>
+<li>Trình bày được vì sao sửa thuộc tính var sau khi đưa vào HashSet lại làm đối tượng bị kẹt ở ngăn cũ và tìm không thấy.</li>
+<li>Chỉ ra được lỗi viết fun equals(other: UserId) thay vì override fun equals(other: Any?) và bẫy dùng mảng trong data class.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html" target="_blank" rel="noopener">java.lang.Object API reference — Oracle</a></li>
+<li><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/" target="_blank" rel="noopener">kotlin.Any API reference — Kotlin</a></li>
+<li><a href="https://openjdk.org/jeps/180" target="_blank" rel="noopener">JEP 180: HashMap Balanced Trees</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Hash_table" target="_blank" rel="noopener">Hash table — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-sealed-vs-data-class.html">Sealed class vs data class</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-equals-hashcode" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

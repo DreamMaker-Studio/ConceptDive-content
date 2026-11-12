@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clean Architecture &amp; Use Cases | ConceptDive</title>
+<meta name="description" content="Nếu bạn dồn hết logic tính toán vào ViewModel hoặc Repository, code sẽ dính chặt vào thư viện Android và rất khó viết test. Clean Architecture tách riêng một tầng Domain thuần Kotlin ở giữa, gồm các l">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-clean-architecture-and-use-cases.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Clean Architecture &amp; Use Cases | ConceptDive">
+<meta property="og:description" content="Nếu bạn dồn hết logic tính toán vào ViewModel hoặc Repository, code sẽ dính chặt vào thư viện Android và rất khó viết test. Clean Architecture tách riêng một tầng Domain thuần Kotlin ở giữa, gồm các l">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-clean-architecture-and-use-cases.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/architecture/diagrams/clean-architecture-dependency-rule.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kiến trúc</p>
+<h1>Clean Architecture &amp; Use Cases</h1>
+<h2>Bản 30 giây</h2>
+<p>Nếu bạn dồn hết logic tính toán vào <code>ViewModel</code> hoặc <code>Repository</code>, code sẽ dính chặt vào thư viện Android và rất khó viết test. Clean Architecture tách riêng một tầng <code>Domain</code> thuần Kotlin ở giữa, gồm các lớp nhỏ gọi là <code>Use Case</code>. Mỗi <code>Use Case</code> chỉ lo đúng một việc nghiệp vụ nên bạn chạy unit test trên máy tính cực nhanh mà không cần máy ảo.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+<li><a href="architecture-mvvm-vs-mvi.html">MVVM vs MVI</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2012, Robert C. Martin giới thiệu Clean Architecture để trị căn bệnh code nghiệp vụ dính chặt vào thư viện bên ngoài. Nhiều dự án cứ đổi thư viện cơ sở dữ liệu hay giao diện là phải viết lại cả phần tính toán.</p>
+<p>Trên Android, ban đầu <code>ViewModel</code> chỉ nhận dữ liệu từ <code>Repository</code> rồi đưa lên màn hình. Nhưng khi tính năng phức tạp dần, <code>ViewModel</code> phình thành lớp khổng lồ hàng ngàn dòng vừa tính tiền giỏ hàng vừa lo chuyển trang.</p>
+<p>Tách tầng <code>Domain</code> với các <code>Use Case</code> riêng giúp bạn cắt nhỏ từng luồng nghiệp vụ ra khỏi <code>ViewModel</code>. Code gọn hẳn lại, dễ đọc và nhiều người có thể chia nhau viết các <code>Use Case</code> cùng lúc mà không đụng hàng.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Use Case</code> không phải là một lớp trung gian vô bổ chỉ đứng giữa gọi lại đúng một hàm của <code>Repository</code>. Nó là nơi giữ quy tắc nghiệp vụ cốt lõi và gom dữ liệu từ hai hay nhiều <code>Repository</code> lại với nhau. Tầng <code>Domain</code> chứa <code>Use Case</code> tuyệt đối không được <code>import</code> bất kỳ lớp nào của thư viện Android.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Tầng UI và Data phụ thuộc hướng tâm vào Domain thuần Kotlin theo nguyên lý đảo ngược phụ thuộc" src="../architecture/diagrams/clean-architecture-dependency-rule.png"></p>
+<p>Quy tắc phụ thuộc (<em>Dependency Rule</em>) bắt buộc tầng ngoài chỉ được gọi vào tầng trong, không bao giờ đi chiều ngược lại. Tầng <code>Domain</code> ở trong chỉ khai báo <code>interface</code> của <code>Repository</code> chứ không cần biết dữ liệu lấy từ mạng hay từ máy. Tầng <code>Data</code> ở ngoài sẽ viết code thực thi các <code>interface</code> đó theo nguyên lý <a href="architecture-dependency-injection.html">đảo ngược phụ thuộc</a>. Mỗi <code>Use Case</code> thường đặt tên hàm là <code>operator fun invoke</code> để bạn gọi thẳng đối tượng gọn như gọi một hàm.</p>
+<h2>Đánh đổi</h2>
+<p>Tách tầng như vậy giúp bạn chạy unit test mất vài phần nghìn giây và dùng lại được <code>Use Case</code> ở nhiều màn hình. Khi đi cùng mô hình <a href="architecture-offline-first-repository.html">Offline-First</a>, <code>Use Case</code> cũng giúp bạn ghép nối các nguồn dữ liệu rất gọn. Đổi lại, dự án sẽ đẻ thêm khá nhiều file và lớp chuyển đổi dữ liệu trung gian. Với những màn hình chỉ đọc rồi hiện danh sách đơn giản (CRUD), tạo thêm <code>Use Case</code> chỉ để gọi một dòng <code>Repository</code> là vẽ việc.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Nguyên lý đơn trách nhiệm: mỗi lớp chỉ nên có một lý do duy nhất để phải sửa code. Khi tách rời khỏi công cụ hiển thị, logic tính toán của bạn vẫn giữ nguyên dù sau này đổi sang framework giao diện khác.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Use Case</code> không phải lớp bọc gọi hộ <code>Repository</code>, mà là bức tường ngăn thư viện Android tràn vào làm bẩn logic nghiệp vụ.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class GetEligibleDiscountsUseCase(
+    private val userRepository: UserRepository,
+    private val promoRepository: PromoRepository
+) {
+    suspend operator fun invoke(userId: String): List&lt;Discount&gt; {
+        val user = userRepository.getUser(userId)
+        return promoRepository.getPromos().filter { it.isApplicable(user) }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Tạo hàng loạt <code>Use Case</code> mà bên trong chỉ gọi lại đúng một dòng của <code>Repository</code> là bẫy vẽ việc (<em>Over-engineering</em>) hay gặp nhất. Bạn cũng tuyệt đối không được <code>import</code> các lớp của Android như <code>Context</code> hay <code>Bundle</code> vào tầng <code>Domain</code>. Nếu vi phạm, chạy unit test trên JVM sẽ nổ lỗi <code>Method not mocked</code>, dự án phình to và không đem sang Kotlin Multiplatform (<em>KMP</em>) được.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có bắt buộc mọi hàm trong ViewModel đều phải đi qua Use Case không?
+Không bắt buộc. Nếu màn hình chỉ lấy danh sách hiển thị mà không tính toán hay lọc điều kiện, <code>ViewModel</code> cứ gọi thẳng <code>Repository</code>.</p>
+<p><strong>Hỏi:</strong> Tại sao tầng Domain trong Clean Architecture tuyệt đối cấm import thư viện Android?
+Để giữ cho phần nghiệp vụ chạy độc lập với hệ điều hành. Khi không dính tới Android SDK, bạn chạy được toàn bộ unit test thẳng trên JVM của máy tính trong chớp mắt.</p>
+<p><strong>Hỏi:</strong> Một Use Case có thể gọi một Use Case khác không?
+Có thể, nhưng bạn nên hạn chế. Chỉ nên gọi khi một luồng nghiệp vụ lớn cần dùng lại một bước kiểm tra hay tính toán đã viết sẵn ở <code>Use Case</code> nhỏ.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao tầng Domain và Use Case phải thuần Kotlin, không import thư viện Android.</li>
+<li>Trình bày được Dependency Rule: tầng UI và Data ở ngoài phụ thuộc ngược vào tầng Domain ở trong.</li>
+<li>Chỉ ra được bẫy tạo Use Case rỗng chỉ gọi chuyển tiếp một dòng cho Repository (Over-engineering).</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/architecture/domain-layer" target="_blank" rel="noopener">Domain layer — Android App Architecture</a></li>
+<li><a href="https://developer.android.com/topic/architecture" target="_blank" rel="noopener">Guide to app architecture — Android</a></li>
+<li><a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank" rel="noopener">The Clean Architecture — Robert Martin</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+<li><a href="architecture-mvvm-vs-mvi.html">MVVM vs MVI</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+<li><a href="architecture-offline-first-repository.html">Offline-First Repository &amp; SSOT</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Darchitecture-clean-architecture-and-use-cases" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

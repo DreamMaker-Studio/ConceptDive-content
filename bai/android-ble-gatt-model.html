@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLE GATT Model | ConceptDive</title>
+<meta name="description" content="Khi bạn kết nối điện thoại với vòng tay đo nhịp tim, BLE không mở sẵn một đường truyền chảy liên tục. Thiết bị ngoại vi lưu dữ liệu thành cây mục nhỏ, và điện thoại chỉ đọc, ghi hoặc chờ báo tin khi s">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-ble-gatt-model.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="BLE GATT Model | ConceptDive">
+<meta property="og:description" content="Khi bạn kết nối điện thoại với vòng tay đo nhịp tim, BLE không mở sẵn một đường truyền chảy liên tục. Thiết bị ngoại vi lưu dữ liệu thành cây mục nhỏ, và điện thoại chỉ đọc, ghi hoặc chờ báo tin khi s">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-ble-gatt-model.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/ble-gatt-hierarchy.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>BLE GATT Model</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn kết nối điện thoại với vòng tay đo nhịp tim, BLE không mở sẵn một đường truyền chảy liên tục. Thiết bị ngoại vi lưu dữ liệu thành cây mục nhỏ, và điện thoại chỉ đọc, ghi hoặc chờ báo tin khi số đo đổi. Cách gửi từng mẩu tin ngắn lúc có thay đổi giúp viên pin cúc áo chạy được rất lâu.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Bluetooth cổ điển (BR/EDR) được làm cho các luồng dữ liệu chảy liên tục như tai nghe nhạc. Nó bắt hai bên giữ sóng liên tục nên làm cạn viên pin cúc áo chỉ sau vài ngày.</p>
+<p>Năm 2006, Nokia giới thiệu công nghệ Wibree dành cho những thiết bị cần tiêu thụ thật ít điện. Năm 2010, tổ chức Bluetooth SIG đưa Wibree vào chuẩn Bluetooth 4.0 dưới tên gọi BLE.</p>
+<p>BLE cần cách trao đổi dữ liệu gọn nhẹ, cất từng mẩu thông tin vào các mục riêng lẻ. Giao thức GATT ra đời để sắp xếp các mục dữ liệu đó trên nền giao thức thuộc tính ATT.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>GATT không phải là một đường ống chảy liên tục như Bluetooth cổ điển. Nó giống bảng dữ liệu nhỏ nằm ngay trên thiết bị ngoại vi để điện thoại hỏi hoặc chờ báo tin khi có số mới.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Cấu trúc phân tầng Profile, Service, Characteristic và ghi cờ kích hoạt vào Descriptor CCCD 0x2902 để nhận thông báo" src="../android/diagrams/ble-gatt-hierarchy.png"></p>
+<p>Tầng GAP chia việc kết nối: <code>Central</code> đi quét và nối vào, còn <code>Peripheral</code> phát tín hiệu quảng bá. Sang tầng GATT, <code>Server</code> giữ bảng dữ liệu còn <code>Client</code> gửi lệnh đọc hoặc ghi. Bảng này xếp thành 3 tầng mang mã <code>UUID</code>: <code>Profile</code> gom các <code>Service</code>, <code>Service</code> chứa <code>Characteristic</code>, và mỗi <code>Characteristic</code> gắn thêm <code>Descriptor</code>. Muốn thiết bị tự báo tin mới, <code>Client</code> phải ghi cờ bật thông báo vào <code>Descriptor</code> CCCD mã <code>0x2902</code> trên <code>Server</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Nhờ chỉ gửi những gói tin ngắn lúc cần, BLE giúp cảm biến chạy hàng năm bằng một viên pin cúc áo. Đổi lại, tốc độ truyền rất thấp và gói tin <code>ATT MTU</code> mặc định 23 byte chỉ chở được 20 byte dữ liệu. Muốn gửi gói dài hơn, bạn phải dùng Long Write hoặc gọi <code>requestMtu</code> để xin gói lớn hơn (Android 14 tự xin mức 517 byte).</p>
+<h2>Nguyên lý gốc</h2>
+<p>Thay vì giữ dòng chảy liên tục, thiết bị tách trạng thái thành từng ô nhỏ, ô nào đổi mới gửi.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Bật thông báo BLE không chỉ gọi hàm trên Android: bạn bắt buộc phải ghi cờ kích hoạt vào descriptor CCCD của thiết bị.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>GATT giống bảng hộp thư ở sảnh chung cư: mỗi tầng là một <code>Service</code>, mỗi căn hộ là một <code>Characteristic</code>. Bạn phải gạt công tắc đăng ký ở cửa hộp thư (ghi CCCD) thì chủ nhà mới báo cho bạn mỗi khi có thư mới.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// Bat Notify tren Characteristic va ghi Descriptor CCCD 0x2902
+gatt.setCharacteristicNotification(characteristic, true)
+val cccdUuid = UUID.fromString(&quot;00002902-0000-1000-8000-00805f9b34fb&quot;)
+val descriptor = characteristic.getDescriptor(cccdUuid)
+descriptor?.let {
+    it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+    gatt.writeDescriptor(it)
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn chỉ gọi <code>setCharacteristicNotification</code> mà quên ghi CCCD <code>0x2902</code>, bạn sẽ dính <a href="android-ble-android-pitfalls.html">bẫy BLE</a> làm app không nhận được gói tin nào. Kiểu Write Without Response vẫn được tầng liên kết xác nhận gói, nhưng bỏ phản hồi ATT nên ghi dồn nhanh sẽ tràn bộ đệm. Cũng đừng tự truyền âm thanh hay video qua đặc tính GATT, vì âm thanh trên BLE phải đi qua kênh riêng của LE Audio. Khi gửi quá cỡ mà chưa xin tăng <code>MTU</code>, gói tin sẽ bị cắt còn 20 byte hoặc lệnh ghi trả lỗi bận.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vai trò GAP khác gì vai trò GATT trong một kết nối BLE?
+GAP lo chuyện tìm nhau và bắt tay: <code>Central</code> đi quét và kết nối, còn <code>Peripheral</code> phát quảng bá. GATT lo chuyện đọc ghi dữ liệu sau khi đã nối xong: <code>Server</code> giữ bảng dữ liệu, còn <code>Client</code> gửi lệnh hỏi. Hai cặp vai trò này tách biệt nhau.</p>
+<p><strong>Hỏi:</strong> Tại sao gửi mảng 50 byte qua Characteristic lại bị cắt cụt còn 20 byte?
+Vì gói tin <code>ATT MTU</code> mặc định của một kết nối BLE chỉ dài 23 byte. Mất 3 byte đầu cho phần tiêu đề ATT, nên chỗ chứa dữ liệu của bạn chỉ còn đúng 20 byte.</p>
+<p><strong>Hỏi:</strong> Làm thế nào để gửi gói tin BLE lớn hơn 20 byte mà không phải cắt mảng thủ công?
+Bạn có thể dùng cơ chế Long Write hoặc gọi <code>gatt.requestMtu(517)</code> để xin nới rộng gói tin. Từ Android 14, hệ điều hành tự xin mức 517 byte ngay ở yêu cầu <code>MTU</code> đầu tiên.</p>
+<p><strong>Hỏi:</strong> Notify khác gì Indicate khi thiết bị ngoại vi truyền dữ liệu về điện thoại?
+Với <code>Notify</code>, thiết bị cứ gửi dữ liệu mà không chờ điện thoại xác nhận ở tầng ATT nên gửi được nhanh hơn. Với <code>Indicate</code>, điện thoại phải trả lời đã nhận xong gói trước thì thiết bị mới gửi tiếp gói sau, chậm hơn nhưng chắc chắn.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được vai trò kết nối của GAP (Central/Peripheral) với vai trò dữ liệu của GATT (Client/Server).</li>
+<li>Giải thích được vì sao bật Notify phải vừa gọi hàm Android SDK vừa ghi cờ vào Descriptor CCCD 0x2902.</li>
+<li>Nêu được giới hạn gói ATT MTU mặc định 23 byte (chở 20 byte dữ liệu) và cách tăng bằng requestMtu.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/connectivity/bluetooth/ble/ble-overview" target="_blank" rel="noopener">Bluetooth Low Energy overview — Android</a></li>
+<li><a href="https://developer.android.com/about/versions/14/behavior-changes-all" target="_blank" rel="noopener">Android 14 behavior changes: MTU 517</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Bluetooth_Low_Energy" target="_blank" rel="noopener">Bluetooth Low Energy — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-ble-android-pitfalls.html">BLE Android Pitfalls</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-ble-gatt-model" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

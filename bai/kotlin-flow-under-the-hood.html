@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow: Bản chất Cold Stream | ConceptDive</title>
+<meta name="description" content="Khi đọc cảm biến hay cơ sở dữ liệu liên tục, chạy sẵn lúc chưa ai xem sẽ rất tốn pin. Flow là luồng dữ liệu nguội (Cold Stream), nghĩa là khối code bên trong chỉ bắt đầu chạy khi có nơi gọi collect. D">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-flow-under-the-hood.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Flow: Bản chất Cold Stream | ConceptDive">
+<meta property="og:description" content="Khi đọc cảm biến hay cơ sở dữ liệu liên tục, chạy sẵn lúc chưa ai xem sẽ rất tốn pin. Flow là luồng dữ liệu nguội (Cold Stream), nghĩa là khối code bên trong chỉ bắt đầu chạy khi có nơi gọi collect. D">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-flow-under-the-hood.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/flow-flowon-channel.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Flow: Bản chất Cold Stream</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi đọc cảm biến hay cơ sở dữ liệu liên tục, chạy sẵn lúc chưa ai xem sẽ rất tốn pin. <code>Flow</code> là luồng dữ liệu nguội (<code>Cold Stream</code>), nghĩa là khối code bên trong chỉ bắt đầu chạy khi có nơi gọi <code>collect</code>. Do <code>emit</code> và <code>collect</code> đều là hàm <code>suspend</code>, bên phát tự chờ khi bên nhận chậm mà khỏi cấu hình bộ đệm.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-stateflow-vs-sharedflow.html">StateFlow vs SharedFlow</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2019, lập trình viên Android thường dùng RxJava để xử lý các luồng dữ liệu phát liên tục (<code>Reactive Streams</code>). RxJava rất mạnh nhưng thư viện lớn, nhiều kiểu dữ liệu và toán tử nên khó học và khó lần dấu lỗi.</p>
+<p>Khi bên phát bắn dữ liệu nhanh hơn tốc độ bên nhận xử lý, dữ liệu bị ứ đọng gọi là áp lực ngược (<code>Backpressure</code>). Bạn phải tự chọn giữ trong bộ đệm hay bỏ bớt. Nếu quên, ứng dụng rất dễ sập vì tràn bộ nhớ.</p>
+<p>Đội ngũ Kotlin tạo ra <code>Flow</code> gọn nhẹ ngay trên nền Coroutine. Nhờ cơ chế tạm dừng của hàm <code>suspend</code>, bên phát tự chờ bên nhận xử lý xong mới phát tiếp. Do đó, bạn không cần bộ điều tiết cồng kềnh.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Flow</code> không phải là một luồng đang chạy ngầm sẵn hay một danh sách chứa sẵn dữ liệu trong bộ nhớ. Thật ra, nó chỉ là một khối lệnh <code>suspend</code> được gói bên trong một giao diện có đúng một hàm <code>collect</code>.</p>
+<p>Mỗi lần một màn hình gọi <code>collect</code>, toàn bộ khối lệnh bên trong <code>flow { ... }</code> mới bắt đầu chạy lại từ dòng đầu tiên.</p>
+<h2>Cơ chế</h2>
+<p><img alt="flowOn tách luồng phát và luồng nhận thành hai coroutine độc lập nối qua Channel buffer để bảo toàn ngữ cảnh" src="../kotlin/diagrams/flow-flowon-channel.png"></p>
+<p>Khi khối <code>flow</code> gọi <code>emit(value)</code>, nó gọi thẳng vào hàm của <code>collect</code> và tạm dừng chờ bên nhận chạy xong. Để giữ đúng ngữ cảnh (<code>Context Preservation</code>), <code>Flow</code> cấm bạn tự ý bọc <code>withContext</code> đổi luồng ngay bên trong khối <code>flow { ... }</code>.</p>
+<p>Để đọc dữ liệu trên luồng khác, bạn gắn <code>flowOn</code> nhằm tạo kênh <code>Channel</code> nối giữa hai coroutine riêng. Nhờ vậy, coroutine phát và coroutine nhận chạy trên hai <a href="kotlin-coroutine-context-and-dispatchers.html"><code>Dispatcher</code></a> khác nhau mà vẫn an toàn.</p>
+<h2>Đánh đổi</h2>
+<p>Là luồng nguội, <code>Flow</code> không tốn pin hay RAM khi chưa gọi <code>collect</code>, và tự dừng khi coroutine bị hủy. Đổi lại, nếu 3 nơi cùng gọi <code>collect</code> trên một <code>Flow</code> gọi API, khối lệnh sẽ gọi mạng 3 lần riêng.</p>
+<p>Ngoài ra, mỗi lần bạn dùng <code>flowOn</code> để đổi luồng, hệ thống phải tạo thêm <code>Channel</code> và đối tượng trung gian trên Heap.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chỉ tạo dữ liệu khi có nơi yêu cầu lấy. Bên phát phải đi theo đúng tốc độ của bên nhận.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Flow</code> không tự chạy ngầm, mà chỉ là một công thức đóng gói sẵn, mỗi lần gọi <code>collect</code> mới bắt đầu chạy từ đầu.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun fetchSensorData(): Flow&lt;SensorEvent&gt; = flow {
+    while (currentCoroutineContext().isActive) {
+        val event = readHardwareSensor()
+        emit(event)
+    }
+}.flowOn(Dispatchers.IO)
+
+// Thu thập tại tầng UI hoặc ViewModel:
+viewModelScope.launch {
+    fetchSensorData().collect { event -&gt; process(event) }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn bọc <code>withContext(Dispatchers.IO)</code> quanh lệnh <code>emit</code> bên trong khối <code>flow { ... }</code>, ứng dụng sẽ sập ngay với lỗi <code>IllegalStateException</code>. Đừng dùng <code>Flow</code> thường thay <a href="kotlin-stateflow-vs-sharedflow.html"><code>StateFlow</code></a> khi nhiều nơi cùng nghe kết quả mạng, vì mỗi nơi sẽ gọi lại API. Triệu chứng là crash lúc phát dữ liệu, gọi mạng lặp lại nhiều lần, hoặc giật giao diện do quên gắn <code>flowOn(Dispatchers.IO)</code> khi đọc đĩa.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Tại sao không được dùng withContext để đổi luồng bên trong khối flow builder?
+Vì <code>Flow</code> tuân thủ bảo toàn ngữ cảnh (<code>Context Preservation</code>), nên lệnh <code>emit</code> phải chạy đúng luồng nơi gọi <code>collect</code>. Nếu <code>withContext</code> tự đổi luồng bên trong, khối <code>collect { ... }</code> ở tầng giao diện sẽ chạy nhầm trên luồng phụ và gây lỗi. Muốn đổi luồng cho phần việc phía trên, bạn bắt buộc phải viết <code>.flowOn(...)</code> ở bên ngoài khối <code>flow</code>.</p>
+<p><strong>Hỏi:</strong> Điều gì sẽ xảy ra nếu nhiều nơi cùng gọi collect trên một Cold Flow?
+Khối code bên trong <code>flow { ... }</code> sẽ chạy lại từ đầu và hoàn toàn độc lập cho từng nơi gọi <code>collect</code>. Ví dụ <code>Flow</code> mở kết nối đọc file hay gọi API. Khi 2 nơi gọi <code>collect</code>, máy sẽ chạy 2 lần riêng.</p>
+<p><strong>Hỏi:</strong> Flow giải quyết bài toán Backpressure như thế nào so với RxJava?
+<code>Flow</code> tận dụng ngay việc hàm <code>emit</code> là một hàm <code>suspend</code> thay vì phải dựng bộ điều tiết riêng như RxJava. Khi khối <code>collect</code> còn bận xử lý phần tử trước, lệnh <code>emit</code> ở bên phát sẽ tự tạm dừng và nhả luồng. Chỉ khi bên nhận xử lý xong phần tử đó thì dòng lệnh sau <code>emit</code> mới được đánh thức để tạo phần tử kế tiếp.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được Cold Flow chỉ là khối lệnh đóng gói sẵn, chỉ chạy khi có nơi gọi collect và chạy lại từ đầu cho mỗi người nhận.</li>
+<li>Trình bày được quy tắc Context Preservation cấm bọc withContext quanh emit và cách flowOn dùng Channel để đổi luồng an toàn.</li>
+<li>Nêu được cách Flow tự động hãm tốc độ bên phát theo bên nhận (Backpressure) nhờ hàm emit là hàm suspend.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/coroutines-flow.html" target="_blank" rel="noopener">Asynchronous Flow — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-flow/" target="_blank" rel="noopener">Flow API reference — kotlinx.coroutines</a></li>
+<li><a href="https://developer.android.com/kotlin/flow" target="_blank" rel="noopener">Kotlin flows on Android</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-stateflow-vs-sharedflow.html">StateFlow vs SharedFlow</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-flow-under-the-hood" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

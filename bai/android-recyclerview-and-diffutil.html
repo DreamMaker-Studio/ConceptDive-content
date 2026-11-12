@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RecyclerView &amp; DiffUtil | ConceptDive</title>
+<meta name="description" content="Khi bạn cuộn danh sách dài hàng ngàn mục, điện thoại sẽ hết sạch RAM nếu tạo riêng từng View một. RecyclerView chỉ tạo vừa đủ số ô hiện trên màn hình rồi lấy lại ô vừa cuộn khuất để gắn dữ liệu mới. Đ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-recyclerview-and-diffutil.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RecyclerView &amp; DiffUtil | ConceptDive">
+<meta property="og:description" content="Khi bạn cuộn danh sách dài hàng ngàn mục, điện thoại sẽ hết sạch RAM nếu tạo riêng từng View một. RecyclerView chỉ tạo vừa đủ số ô hiện trên màn hình rồi lấy lại ô vừa cuộn khuất để gắn dữ liệu mới. Đ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-recyclerview-and-diffutil.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/recyclerview-viewholder-recycling.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>RecyclerView &amp; DiffUtil</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn cuộn danh sách dài hàng ngàn mục, điện thoại sẽ hết sạch RAM nếu tạo riêng từng View một. <code>RecyclerView</code> chỉ tạo vừa đủ số ô hiện trên màn hình rồi lấy lại ô vừa cuộn khuất để gắn dữ liệu mới. Đi cùng nó, <code>DiffUtil</code> so sánh danh sách cũ và mới để chỉ vẽ lại đúng những ô vừa đổi.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2009 tại Google I/O, kỹ sư Romain Guy chỉ ra <code>ListView</code> rất dễ bị giật khi bạn cuộn danh sách. Nhiều lập trình viên tạo View mới liên tục và gọi <code>findViewById</code> ở mỗi dòng, làm bộ thu gom rác chạy dồn dập. Dù mẫu <code>ViewHolder</code> đã được khuyên dùng, <code>ListView</code> không bắt buộc viết theo và cũng không hỗ trợ hoạt ảnh khi thêm bớt mục.</p>
+<p>Tháng 10 năm 2014, Google đưa <code>RecyclerView</code> vào Support Library 21.0.0 và bắt buộc bạn phải dùng <code>ViewHolder</code>. Tuy vậy, khi dữ liệu đổi, gọi <code>notifyDataSetChanged</code> vẫn bắt mọi ô trên màn hình phải nạp lại từ đầu. Cách này làm mất hoạt ảnh chuyển động và tốn công vẽ lại cả những ô không đổi.</p>
+<p>Tháng 8 năm 2016, Support Library 24.2.0 bổ sung thêm <code>DiffUtil</code> dựa trên thuật toán của Eugene Myers năm 1986. Công cụ này tự tìm ra đúng mục nào thêm, bớt hay đổi chỗ để chỉ cập nhật những ô đó.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>RecyclerView</code> không tự mình ôm hết mọi việc như <code>ListView</code> ngày xưa, mà chia rõ cho ba thành phần phối hợp. <code>LayoutManager</code> tính vị trí các ô, <code>Adapter</code> gắn dữ liệu, còn <code>ViewHolder</code> giữ tham chiếu tới các View con. Sang Jetpack Compose, <code>LazyColumn</code> cũng giữ nguyên cách làm này, và bạn cần truyền <code>key</code> để định danh từng mục.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Ô cuộn tràn màn hình đưa vào bộ đệm tái chế để ô mới dùng lại View cũ, chỉ gọi onBindViewHolder nạp dữ liệu" src="../android/diagrams/recyclerview-viewholder-recycling.png"></p>
+<p>Khi bạn cuộn làm một ô trôi khuất khỏi mép màn hình, <code>RecyclerView</code> cất nó vào kho tái chế thay vì xóa bỏ. Ô mới trồi lên ở mép kia sẽ lấy lại chính View cũ đó và chỉ gọi <code>onBindViewHolder</code> để điền dữ liệu mới. Khi danh sách thay đổi, <code>DiffUtil</code> so hai danh sách cũ mới để tìm ra chuỗi thao tác thêm, xóa hoặc dời chỗ ngắn nhất. Nếu bạn dùng <code>ListAdapter</code>, phép tính <code>DiffUtil</code> sẽ tự chạy trên luồng nền rồi mới gửi kết quả về luồng chính để sửa giao diện.</p>
+<h2>Đánh đổi</h2>
+<p><code>DiffUtil</code> tốn thêm thời gian CPU để so sánh, tùy theo độ dài danh sách và số mục bị thay đổi. Đổi lại, bạn không phải tạo lại hàng loạt View và màn hình không bị nháy trắng mỗi lần cập nhật dữ liệu.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chỉ tạo đủ đối tượng giao diện cho phần đang hiển thị, cộng thêm vài ô dự phòng ở hai đầu.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>notifyDataSetChanged</code> báo rằng mọi ô đều có thể đã đổi, nên bắt buộc phải nạp lại tất cả và làm mất hoạt ảnh.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class UserAdapter : ListAdapter&lt;User, UserViewHolder&gt;(UserDiffCallback) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        UserViewHolder(ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+
+    override fun onBindViewHolder(holder: UserViewHolder, position: Int) =
+        holder.bind(getItem(position))
+}
+
+object UserDiffCallback : DiffUtil.ItemCallback&lt;User&gt;() {
+    override fun areItemsTheSame(oldItem: User, newItem: User) = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: User, newItem: User) = oldItem == newItem
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn tự chạy <code>DiffUtil</code> ngay trên luồng chính với danh sách hàng ngàn mục, màn hình sẽ khựng lại và dễ dính lỗi <a href="android-main-thread-and-anr.html">ANR</a>. Sang <code>LazyColumn</code> của Compose, nếu bạn quên truyền <code>key</code>, các ô sẽ giữ nhầm trạng thái cũ khi có mục chèn lên đầu danh sách. Cũng đừng dùng <code>RecyclerView</code> cho màn hình tĩnh có vài mục cố định, vì phải viết nhiều lớp phụ thừa.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Nếu areItemsTheSame trả về true nhưng areContentsTheSame trả về false thì RecyclerView làm gì với ViewHolder?
+<code>RecyclerView</code> hiểu đây vẫn là mục đó nhưng nội dung bên trong đã đổi, nên gọi lại <code>onBindViewHolder</code>. Nếu bạn có trả về <code>payload</code>, nó dùng lại ngay <code>ViewHolder</code> đang đứng đó để sửa đúng chỗ vừa đổi. Nếu thiếu <code>payload</code>, bộ dựng hoạt ảnh có thể mượn thêm một <code>ViewHolder</code> để làm hiệu ứng mờ dần.</p>
+<p><strong>Hỏi:</strong> Tại sao gọi notifyDataSetChanged lại bị xem là giải pháp tồi tệ trong RecyclerView?
+Lệnh này không chỉ ra ô nào vừa đổi, nên <code>RecyclerView</code> đành phải gọi <code>onBindViewHolder</code> lại cho mọi ô trên màn hình. Tất cả hoạt ảnh thêm, sửa, xóa đều bị hủy bỏ. Với danh sách dài hoặc ô có bố cục nặng, bạn sẽ thấy màn hình khựng lại rõ rệt.</p>
+<p><strong>Hỏi:</strong> Quên truyền tham số key trong LazyColumn của Jetpack Compose gây ra lỗi gì?
+Khi không có <code>key</code>, Compose đành lấy số thứ tự vị trí của ô trong danh sách làm khóa định danh. Lúc thêm hoặc xóa mục ở đầu, các ô dưới bị lệch thứ tự nên nhận nhầm trạng thái nhau. Người dùng sẽ thấy ô đánh dấu hoặc chữ đang gõ nhảy sang dòng khác.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách ViewHolder giữ tham chiếu View con và được tái sử dụng khi cuộn để không phải gọi findViewById lại.</li>
+<li>Phân biệt được việc nạp lại toàn bộ của notifyDataSetChanged với việc chỉ cập nhật đúng ô thay đổi nhờ DiffUtil.</li>
+<li>Nêu được vai trò của tham số key trong LazyColumn để giữ đúng trạng thái khi danh sách thêm bớt phần tử.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/views/layout/recyclerview" target="_blank" rel="noopener">Create dynamic lists with RecyclerView</a></li>
+<li><a href="https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil" target="_blank" rel="noopener">DiffUtil API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/recyclerview/widget/ListAdapter" target="_blank" rel="noopener">ListAdapter API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-recyclerview-and-diffutil" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

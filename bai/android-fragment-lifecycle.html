@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fragment Lifecycle &amp; View Lifecycle | ConceptDive</title>
+<meta name="description" content="Một Fragment có hai vòng đời riêng: vòng đời của đối tượng Fragment và vòng đời của cây View bên trong. Khi bạn bấm sang trang mới và đẩy Fragment cũ vào ngăn xếp lùi, cây View bị hủy nhưng đối tượng ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-fragment-lifecycle.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fragment Lifecycle &amp; View Lifecycle | ConceptDive">
+<meta property="og:description" content="Một Fragment có hai vòng đời riêng: vòng đời của đối tượng Fragment và vòng đời của cây View bên trong. Khi bạn bấm sang trang mới và đẩy Fragment cũ vào ngăn xếp lùi, cây View bị hủy nhưng đối tượng ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-fragment-lifecycle.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/fragment-vs-view-lifecycle.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Fragment Lifecycle &amp; View Lifecycle</h1>
+<h2>Bản 30 giây</h2>
+<p>Một <code>Fragment</code> có hai vòng đời riêng: vòng đời của đối tượng <code>Fragment</code> và vòng đời của cây <code>View</code> bên trong. Khi bạn bấm sang trang mới và đẩy <code>Fragment</code> cũ vào ngăn xếp lùi, cây <code>View</code> bị hủy nhưng đối tượng <code>Fragment</code> vẫn sống. Vì vậy, bạn phải dùng <code>viewLifecycleOwner</code> và gán biến <code>binding</code> về <code>null</code> để tránh rò rỉ bộ nhớ.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Tháng 2 năm 2011, kỹ sư Dianne Hackborn giới thiệu <code>Fragment</code> trên Android 3.0 Honeycomb. Mục tiêu là chia nhỏ màn hình để ghép linh hoạt trên cả điện thoại và máy tính bảng. Nhưng cách Android cất <code>Fragment</code> vào ngăn xếp điều hướng đã đẻ ra một rắc rối lớn.</p>
+<p>Khi bị đẩy vào ngăn xếp lùi, cây <code>View</code> bị hủy để nhường RAM nhưng đối tượng <code>Fragment</code> vẫn nằm lại trong bộ nhớ. Thời kỳ đầu, bạn chỉ có thể truyền chính <code>Fragment</code> làm chủ vòng đời khi đăng ký lắng nghe dữ liệu. Khi người dùng bấm nút Back quay lại, hàm tạo <code>View</code> chạy lại và gắn chồng thêm một bộ lắng nghe mới nữa.</p>
+<p>Tháng 9 năm 2018, AndroidX Fragment 1.0.0 bổ sung thuộc tính <code>viewLifecycleOwner</code>. Nó tách riêng một vòng đời chỉ sống từ lúc tạo <code>View</code> tới lúc hủy <code>View</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Fragment</code> không phải là một khung giao diện đơn thuần. Thực ra, nó quản lý hai vòng đời lồng nhau: vòng đời đối tượng <code>Fragment</code> và vòng đời cây <code>View</code>. Vòng đời của cây <code>View</code> chỉ bắt đầu ở <code>onCreateView</code> và kết thúc ngay tại <code>onDestroyView</code>. Trong khi đó, đối tượng <code>Fragment</code> sống từ <code>onCreate</code> tới tận lúc bị gỡ hẳn ở <code>onDestroy</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Khi vào backstack cây View bị huỷ ở onDestroyView trong khi Fragment vẫn sống, bắt buộc dùng viewLifecycleOwner và gán null binding" src="../android/diagrams/fragment-vs-view-lifecycle.png"></p>
+<p>Khi <code>Fragment</code> lùi vào ngăn xếp, hệ thống gọi <code>onDestroyView</code> để dọn cây <code>View</code> khỏi RAM. Nếu bạn đăng ký lắng nghe dữ liệu qua <code>viewLifecycleOwner</code>, hệ thống sẽ tự gỡ bộ lắng nghe ngay khi <code>View</code> bị hủy. Riêng biến <code>ViewBinding</code> vẫn giữ tham chiếu tới cây <code>View</code> cũ nên bạn phải tự gán nó bằng <code>null</code> trong <code>onDestroyView</code>. Nếu quên bước này, cả cây <code>View</code> cồng kềnh sẽ bị giữ lại trên bộ nhớ Heap.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn phải tự tay viết thêm vài dòng gán biến <code>ViewBinding</code> về <code>null</code> bên trong hàm <code>onDestroyView</code>. Đổi lại, điện thoại tiết kiệm được rất nhiều RAM khi người dùng mở chồng nhiều màn hình trong ngăn xếp.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Phần giao diện tốn nhiều bộ nhớ phải được hủy sớm hơn đối tượng giữ trạng thái điều khiển nó.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Vòng đời của Fragment luôn dài hơn vòng đời của View khi nằm trong ngăn xếp điều hướng.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class ProfileFragment : Fragment(R.layout.fragment_profile) {
+    private var _binding: FragmentProfileBinding? = null
+    private val binding get() = _binding!!
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        _binding = FragmentProfileBinding.bind(view)
+        viewModel.user.observe(viewLifecycleOwner) { binding.name.text = it.name }
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Truyền <code>this</code> thay vì <code>viewLifecycleOwner</code> khi lắng nghe <code>LiveData</code> sẽ làm hàm cập nhật chạy lặp nhiều lần khi người dùng bấm quay lại. Quên gán <code>_binding = null</code> trong <code>onDestroyView</code> sẽ giữ chặt cây <code>View</code> cũ trên Heap và gây <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>. Còn nếu bạn cố đọc biến <code>binding</code> qua <code>_binding!!</code> sau khi <code>onDestroyView</code> đã chạy, ứng dụng sẽ sập vì lỗi <code>NullPointerException</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Điều gì sẽ xảy ra nếu đăng ký lắng nghe LiveData trong onViewCreated bằng this thay vì viewLifecycleOwner?
+Bộ lắng nghe sẽ bị gắn chồng lên nhau sau mỗi lần chuyển trang. Khi <code>Fragment</code> lùi vào ngăn xếp, đối tượng <code>Fragment</code> chưa chết nên bộ lắng nghe gắn với <code>this</code> không được gỡ. Khi bấm Back quay lại, <code>onViewCreated</code> chạy lại và gắn thêm bộ lắng nghe thứ hai, khiến sự kiện chạy hai lần.</p>
+<p><strong>Hỏi:</strong> Tại sao phải gán biến _binding về null trong onDestroyView?
+Để bộ dọn rác thu hồi được cây giao diện vừa bị hủy. Khi <code>Fragment</code> nằm trong ngăn xếp lùi, đối tượng <code>Fragment</code> vẫn sống trên RAM dù các nút bấm và chữ nghĩa đã biến mất. Nếu biến <code>_binding</code> trên <code>Fragment</code> vẫn chỉ vào cây <code>View</code> cũ, bộ dọn rác sẽ không dọn được bất kỳ <code>View</code> con nào.</p>
+<p><strong>Hỏi:</strong> Có thể dùng lifecycleScope của Fragment để thu thập Flow cập nhật giao diện không?
+Bạn không nên gọi trực tiếp trên <code>lifecycleScope</code> của <code>Fragment</code> vì nó vẫn chạy khi <code>View</code> đã bị hủy. Hãy gọi <code>viewLifecycleOwner.lifecycleScope</code> kèm <code>repeatOnLifecycle</code> để việc thu thập tự dừng khi màn hình khuất đi. Cách này giúp bạn không bao giờ gán nhầm dữ liệu vào những <code>View</code> đã bị dọn khỏi màn hình.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao đối tượng Fragment sống lâu hơn cây View khi nằm trong ngăn xếp lùi.</li>
+<li>Nêu được lý do phải dùng viewLifecycleOwner thay cho this khi lắng nghe dữ liệu trong onViewCreated.</li>
+<li>Trình bày được cách biến ViewBinding làm rò rỉ cây View nếu không gán về null ở onDestroyView.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/fragments/lifecycle" target="_blank" rel="noopener">Fragment lifecycle — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/fragment/app/Fragment" target="_blank" rel="noopener">Fragment API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/topic/libraries/view-binding" target="_blank" rel="noopener">View binding — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-fragment-lifecycle" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

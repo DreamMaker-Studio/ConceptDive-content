@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GC Roots &amp; Chuỗi Tham chiếu Android | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng chạy, bộ thu gom rác cần biết đối tượng nào bạn còn dùng và đối tượng nào đã bỏ đi. Nó bắt đầu từ các điểm gốc luôn sống gọi là GC Roots, rồi lần theo từng biến tham chiếu để đánh dấu. Bấ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-gc-roots.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GC Roots &amp; Chuỗi Tham chiếu Android | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng chạy, bộ thu gom rác cần biết đối tượng nào bạn còn dùng và đối tượng nào đã bỏ đi. Nó bắt đầu từ các điểm gốc luôn sống gọi là GC Roots, rồi lần theo từng biến tham chiếu để đánh dấu. Bấ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-gc-roots.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/gc-roots-reachability-graph.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>GC Roots &amp; Chuỗi Tham chiếu Android</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng chạy, bộ thu gom rác cần biết đối tượng nào bạn còn dùng và đối tượng nào đã bỏ đi. Nó bắt đầu từ các điểm gốc luôn sống gọi là <code>GC Roots</code>, rồi lần theo từng biến tham chiếu để đánh dấu. Bất kỳ đối tượng nào không nối về được một <code>GC Root</code> nào đều sẽ bị dọn khỏi bộ nhớ.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>McCarthy làm bộ thu gom rác Mark-and-Sweep cho Lisp năm 1959, công bố năm 1960.</p>
+<p>Trước đó, cách đếm số tham chiếu chịu thua khi hai đối tượng trỏ chéo vào nhau, vì số đếm không bao giờ về không. Lỗi tham chiếu vòng này làm các thiết bị ít RAM nhanh chóng hết sạch bộ nhớ và sập tiến trình.</p>
+<p>Năm 2008, Android đưa máy ảo Dalvik rồi sau đó là ART vào quản lý bộ nhớ tự động. Cách duyệt từ <code>GC Roots</code> giải quyết gọn tham chiếu vòng bằng cách chỉ giữ lại những đối tượng nối được về điểm gốc.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Bộ thu gom rác trên Android không đi đếm xem mỗi đối tượng có bao nhiêu mũi tên trỏ vào. Thay vào đó, nó đi duyệt các mũi tên xuất phát từ một nhóm điểm gốc đặc biệt gọi là <code>GC Roots</code>. Ba nhóm <code>GC Roots</code> chính là biến trên ngăn xếp của luồng đang chạy, biến <code>static</code>, và tham chiếu toàn cục từ JNI. Nếu một đối tượng không còn đường tham chiếu mạnh nào nối từ ít nhất một <code>GC Root</code>, nó được coi là rác.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Đồ thị từ Thread stack, biến static và JNI; tham chiếu vòng cô lập bị thu hồi, chuỗi neo giữ gây rò rỉ Activity" src="../android/diagrams/gc-roots-reachability-graph.png"></p>
+<p>Khi dọn dẹp, bộ thu gom rác đi từ các <code>GC Roots</code> và lần theo tham chiếu để đánh dấu đối tượng sống. Nhờ vậy, hai đối tượng dù trỏ chéo nhau nhưng đã đứt đường nối với <code>GC Roots</code> vẫn bị thu hồi như thường. Trên máy ảo ART hiện nay, hệ thống chép các đối tượng còn sống sang vùng nhớ mới rồi xóa trắng vùng cũ. Ngược lại, <a href="android-memory-leak.html">rò rỉ bộ nhớ</a> xảy ra khi màn hình đã đóng nhưng vẫn dính vào một <code>GC Root</code> qua chuỗi tham chiếu mạnh.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn không phải tự viết lệnh giải phóng bộ nhớ và tránh được lỗi truy cập vào vùng nhớ đã xóa. Đổi lại, máy ảo phải tốn CPU để duyệt đồ thị đối tượng và chép dữ liệu sang vùng nhớ mới. Nếu bạn tạo và vứt đối tượng liên tục, việc dọn rác dồn dập sẽ chiếm CPU và làm màn hình bị giật.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Đối tượng sống hay chết không phụ thuộc vào chính nó. Nó phụ thuộc vào việc từ <code>GC Roots</code> có còn đường đi tới nó hay không (Reachability Analysis).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Tham chiếu vòng không ngăn được dọn rác: đối tượng chỉ sống khi được neo vào luồng đang chạy, biến tĩnh hoặc JNI.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Hãy tưởng tượng một con tàu đã hỏng nằm dưới biển nhưng vẫn nối xích vào chiếc mỏ neo cắm chặt dưới đáy đá. Chỉ khi bạn cắt đứt sợi xích nối với mỏ neo đó, sóng biển mới cuốn con tàu đi được.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// Minh họa Thread đóng vai trò GC Root vô tình giữ chặt Activity
+class LeakActivity : Activity() {
+    private var data = &quot;Dữ liệu&quot;
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Thread {
+            // Thread là GC Root neo giữ lambda truy cập data ngầm giữ this
+            Thread.sleep(60_000)
+            println(data)
+        }.start()
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy hay gặp nhất là mở một luồng hoặc khối lambda chạy ngầm thật lâu bên trong <code>Activity</code>. Khi khối lambda đó đọc một biến của <code>Activity</code>, trình biên dịch sẽ ngầm giữ luôn tham chiếu <code>this</code> tới cả màn hình. Vì vậy, đừng tạo <code>Thread</code> tự do hay dùng <code>GlobalScope</code> mà không hủy khi <code>Activity</code> đóng lại. Hãy chạy việc ngầm trong <code>lifecycleScope</code> để nó tự hủy và cắt đứt đường nối về <code>GC Root</code> ngay khi người dùng thoát màn hình.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Hai đối tượng trỏ chéo lẫn nhau thì bộ dọn rác có chịu thua không?
+Không. Bộ dọn rác trên Android đi từ các <code>GC Roots</code> ra ngoài, chứ không đếm số mũi tên trỏ vào từng đối tượng. Khi cả cụm hai đối tượng đó không còn đường nào nối về <code>GC Roots</code>, bộ dọn rác sẽ thu hồi cả hai.</p>
+<p><strong>Hỏi:</strong> Một Thread đang ngủ Thread.sleep() có được coi là GC Root không?
+Có. Chừng nào luồng chưa chạy xong hàm <code>run()</code>, ngăn xếp của nó vẫn sống và được tính là một <code>GC Root</code>. Vì vậy, mọi đối tượng mà khối lệnh trong luồng đó đang nắm giữ đều không thể được dọn đi.</p>
+<p><strong>Hỏi:</strong> Gán biến bằng null có ép được Garbage Collector dọn dẹp ngay không?
+Không. Gán <code>null</code> chỉ cắt đứt một sợi dây nối từ biến đó tới đối tượng trên vùng nhớ Heap. Máy ảo chỉ thu hồi đối tượng khi nó mất sạch mọi đường nối về <code>GC Roots</code> và đến đúng đợt dọn rác của hệ thống.</p>
+<p><strong>Hỏi:</strong> Đọc báo cáo rò rỉ của LeakCanary thì tìm GC Root ở đâu?
+Bạn nhìn ngay dòng đầu tiên trên cùng của chuỗi tham chiếu trong báo cáo. Dòng đó chính là <code>GC Root</code> đang giữ chặt màn hình của bạn, thường là một biến <code>static</code> hoặc một luồng đang chạy. Việc của bạn là đọc từ trên xuống để tìm mắt xích giữ tham chiếu thừa và cắt nó đi.</p>
+<p><strong>Hỏi:</strong> Biến static trong class có bị GC thu hồi bao giờ không?
+Biến <code>static</code> chỉ được thu hồi khi chính <code>ClassLoader</code> đã nạp lớp đó bị gỡ khỏi bộ nhớ. Trên Android, <code>ClassLoader</code> chính sống suốt vòng đời tiến trình nên biến <code>static</code> hầu như không bao giờ mất. Mọi thứ gán vào biến <code>static</code> sẽ nằm trong RAM tới khi bạn gán <code>null</code> hoặc tắt ứng dụng.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Kể được ba nguồn GC Roots quan trọng nhất: ngăn xếp luồng đang chạy (Thread Stack), biến static và tham chiếu JNI toàn cục.</li>
+<li>Phân biệt được cách duyệt từ gốc (Tracing GC) với cách đếm tham chiếu (Reference Counting) khi gặp tham chiếu vòng.</li>
+<li>Giải thích được cách một luồng chạy ngầm trở thành GC Root giữ chặt chuỗi tham chiếu tới Activity đã đóng.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://source.android.com/docs/core/runtime/gc-debug" target="_blank" rel="noopener">Debug ART garbage collection — AOSP</a></li>
+<li><a href="https://developer.android.com/topic/performance/memory-overview" target="_blank" rel="noopener">Overview of memory management — Android</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Tracing_garbage_collection" target="_blank" rel="noopener">Tracing garbage collection — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-gc-roots" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

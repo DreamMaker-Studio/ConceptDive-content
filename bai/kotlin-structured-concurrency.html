@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Structured Concurrency | ConceptDive</title>
+<meta name="description" content="Khi gọi 3 API cùng lúc mà một cái bị lỗi, các coroutine còn lại dễ chạy thừa nếu thiếu quản lý. Đồng quy có cấu trúc (structured concurrency) gắn vòng đời của mọi coroutine con vào một Job cha theo hì">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-structured-concurrency.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Structured Concurrency | ConceptDive">
+<meta property="og:description" content="Khi gọi 3 API cùng lúc mà một cái bị lỗi, các coroutine còn lại dễ chạy thừa nếu thiếu quản lý. Đồng quy có cấu trúc (structured concurrency) gắn vòng đời của mọi coroutine con vào một Job cha theo hì">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-structured-concurrency.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/job-tree.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Structured Concurrency</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi gọi 3 API cùng lúc mà một cái bị lỗi, các coroutine còn lại dễ chạy thừa nếu thiếu quản lý. Đồng quy có cấu trúc (<em>structured concurrency</em>) gắn vòng đời của mọi coroutine con vào một <code>Job</code> cha theo hình cây. Khi <code>Job</code> cha bị hủy hoặc một nhánh con ném lỗi, toàn bộ các nhánh liên quan đều tự dừng lại.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+<li><a href="thread.html">Thread</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2018, Nathaniel J. Smith viết bài luận ví lệnh bắn luồng tự do giống như lệnh nhảy <code>goto</code> dễ gây rối của thập niên 1960. Một việc chạy ngầm không gắn vào đâu thường bị bỏ quên khi hàm gọi nó gặp lỗi.</p>
+<p>Trên điện thoại, người dùng đã đóng màn hình nhưng các luồng tải mạng bên dưới vẫn cứ chạy tiếp. Ứng dụng vừa tốn pin, rò rỉ bộ nhớ, lại vừa dễ sập khi cố vẽ kết quả lên màn hình đã đóng.</p>
+<p>Tháng 9 năm 2018, Roman Elizarov đưa mô hình này vào <code>kotlinx.coroutines 0.26.0</code>. Phiên bản này đánh dấu lỗi thời (<em>deprecated</em>) các hàm khởi chạy tự do và đưa vào <code>CoroutineScope</code> cùng <code>GlobalScope</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Đồng quy có cấu trúc không phải một loại luồng mới hay mẹo làm CPU chạy nhanh hơn. Nó là quy tắc quản lý vòng đời bằng cách xếp các đối tượng <code>Job</code> thành một cây cha con.</p>
+<p>Khối lệnh cha chỉ xong việc khi mọi coroutine con bên trong nó đã chạy xong.</p>
+<p>Nếu nhánh con ném lỗi chưa bắt, nó sẽ hủy cả cha lẫn các nhánh anh em, trừ khi dùng <a href="kotlin-coroutine-context-and-dispatchers.html">SupervisorJob</a> hoặc <code>supervisorScope</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Khi async getNews ném lỗi, coroutineScope nhận lỗi và huỷ async getUser; huỷ viewModelScope thì tín hiệu huỷ lan xuống cả cây." src="../kotlin/diagrams/job-tree.png"></p>
+<p>Mỗi khi bạn gọi <code>launch</code> hay <code>async</code> từ một <code>CoroutineScope</code>, hàm đó tạo ra một đối tượng <code>Job</code> mới. <code>Job</code> mới này tự gắn vào danh sách con của <code>Job</code> cha để tạo thành một cây phân cấp.</p>
+<p>Khi bạn hủy <code>Job</code> cha, tín hiệu hủy đi từ trên xuống dưới tới mọi <code>Job</code> con.</p>
+<p>Ngược lại, khi một <code>Job</code> con gặp lỗi không bắt được, nó báo ngược lên <code>Job</code> cha để hủy hết các nhánh còn lại.</p>
+<h2>Đánh đổi</h2>
+<p>Cách tổ chức hình cây giúp bạn không bao giờ bỏ sót một coroutine nào chạy ngầm ngoài ý muốn. Đổi lại, chỉ cần một việc phụ bị lỗi mà quên bắt lại thì cả công việc chính cũng bị hủy theo.</p>
+<p>Ứng dụng cũng phải giữ danh sách liên kết các đối tượng <code>Job</code> trên bộ nhớ Heap trong lúc chúng đang chạy.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Một hàm chỉ được phép kết thúc khi mọi việc con mà nó đẻ ra bên trong đã dừng hẳn.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Đồng quy có cấu trúc gom các coroutine rời rạc vào một cây <code>Job</code> cha con để tự chờ nhau và tự hủy cùng nhau.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Một người quản lý dự án giao việc cho ba nhân viên cấp dưới. Người quản lý chỉ được về khi nhân viên làm xong, và khi dự án bị hủy thì cả nhóm ngừng làm việc.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">suspend fun fetchDashboard(): Dashboard = coroutineScope {
+    val userDeferred = async { api.getUser() }
+    val newsDeferred = async { api.getNews() }
+    Dashboard(userDeferred.await(), newsDeferred.await())
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn gọi <code>GlobalScope.launch</code>, coroutine đó nằm ngoài cây <code>Job</code> của màn hình nên dễ chạy mãi và gây rò rỉ bộ nhớ. Cũng đừng truyền thẳng <code>Job()</code> mới vào trong <code>launch(Job())</code>, vì làm vậy là tự cắt đứt dây nối với <code>Job</code> cha hiện tại. Nếu bạn muốn một nhánh con lỗi mà các nhánh anh em vẫn chạy tiếp, hãy bọc bằng <code>supervisorScope</code> hoặc dùng <code>SupervisorJob</code>. Triệu chứng khi làm sai là bị <a href="android-memory-leak.html">Memory leak</a>, hoặc một API phụ bị lỗi làm hủy luôn cả màn hình chính.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao <code>launch(Job())</code> bên trong <code>viewModelScope</code> vẫn chạy tiếp sau khi màn hình đã đóng?
+Vì đối tượng <code>Job()</code> bạn mới tạo nhảy vào thay thế vị trí cha và cắt đứt liên kết với <code>Job</code> của <code>viewModelScope</code>. Khi màn hình đóng, lệnh hủy từ <code>viewModelScope</code> không còn đường nào để truyền xuống coroutine đó nữa. Vì vậy, bạn đừng tự truyền <code>Job()</code> mới vào hàm <code>launch</code>.</p>
+<p><strong>Hỏi:</strong> Khối <code>runBlocking</code> hoặc <code>coroutineScope</code> có chờ các coroutine con không gắn <code>await</code> kết thúc không?
+Có. Khối cha luôn tự tạm dừng và đợi mọi coroutine con bên trong chạy xong rồi mới đi tiếp. Bạn không cần gọi <code>join</code> cho từng nhánh con, trừ khi muốn nhánh này phải xong trước nhánh kia.</p>
+<p><strong>Hỏi:</strong> Việc truyền <code>CoroutineScope(Job())</code> vào ViewModel có gây rò rỉ bộ nhớ không?
+Rất dễ rò rỉ. Nếu bạn quên tự gọi <code>cancel()</code> khi <a href="android-viewmodel.html">ViewModel</a> bị đóng, các coroutine bên trong sẽ cứ thế chạy tiếp. Tốt nhất bạn hãy dùng sẵn <code>viewModelScope</code> để nó tự hủy công việc khi người dùng thoát hẳn màn hình.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách các đối tượng Job xếp thành cây cha con và quy tắc cha luôn chờ mọi con chạy xong.</li>
+<li>Trình bày được hai chiều truyền tín hiệu hủy: từ cha xuống con khi bị cancel, và từ con lên cha khi ném lỗi.</li>
+<li>Chỉ ra được bẫy truyền Job() mới vào launch làm đứt dây nối với viewModelScope và cách dùng supervisorScope.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/coroutines-basics.html" target="_blank" rel="noopener">Coroutines basics: Structured concurrency — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-job/" target="_blank" rel="noopener">Job API reference — kotlinx.coroutines</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-supervisor-job.html" target="_blank" rel="noopener">SupervisorJob API reference — kotlinx.coroutines</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Structured_concurrency" target="_blank" rel="noopener">Structured concurrency — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-coroutine-context-and-dispatchers.html">CoroutineContext &amp; Dispatchers</a></li>
+<li><a href="thread.html">Thread</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-structured-concurrency" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

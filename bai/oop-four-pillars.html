@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bốn tính chất OOP | ConceptDive</title>
+<meta name="description" content="Khi phần mềm lớn dần, việc phụ thuộc trực tiếp vào chi tiết của nhau sẽ gây đổ vỡ dây chuyền. Thay vì tự do truy cập, chương trình giao tiếp qua các thông điệp và giao diện trừu tượng được bảo vệ. Bốn">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-four-pillars.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bốn tính chất OOP | ConceptDive">
+<meta property="og:description" content="Khi phần mềm lớn dần, việc phụ thuộc trực tiếp vào chi tiết của nhau sẽ gây đổ vỡ dây chuyền. Thay vì tự do truy cập, chương trình giao tiếp qua các thông điệp và giao diện trừu tượng được bảo vệ. Bốn">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-four-pillars.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/oop/diagrams/four-pillars.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · OOP</p>
+<h1>Bốn tính chất OOP</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi phần mềm lớn dần, việc phụ thuộc trực tiếp vào chi tiết của nhau sẽ gây đổ vỡ dây chuyền. Thay vì tự do truy cập, chương trình giao tiếp qua các thông điệp và giao diện trừu tượng được bảo vệ. Bốn tính chất là bộ khung giúp cô lập biến động và kiểm soát ranh giới phụ thuộc lúc chạy.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1967, Ole-Johan Dahl và Kristen Nygaard phát triển ngôn ngữ Simula 67 để mô phỏng các sự kiện rời rạc. Khi viết kiểu thủ tục với biến rời rạc, theo dõi trạng thái nhiều thực thể cùng lúc rất dễ rối. Hai ông gom luôn biến và hàm xử lý vào chung một khối gọi là đối tượng (object).</p>
+<p>Khoảng năm 1966 đến 1967, Alan Kay đặt ra thuật ngữ lập trình hướng đối tượng tại Đại học Utah trước khi làm Smalltalk. Ông xem cốt lõi là đối tượng gửi thông điệp (message passing), giữ kín trạng thái và nối hàm muộn (late binding).</p>
+<p>Đến thập niên 1990, C++ và Java bùng nổ trong các trường đại học. Sách giáo trình đúc kết lại thành bốn tính chất: đóng gói, trừu tượng, kế thừa và đa hình. Cách dạy này biến chúng thành bài học cú pháp, làm người học quên mất ý tưởng gửi thông điệp ban đầu của Kay.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Bốn tính chất OOP không phải là định nghĩa gốc của Alan Kay. Chúng là cách sách giáo trình thập niên 1990 gom nhóm lại để dạy các ngôn ngữ xoay quanh <code>class</code>. Thay vì xoay quanh việc gửi thông điệp, bốn tính chất này đặt ranh giới để code không phụ thuộc bừa vào nhau.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Bốn trụ cột OOP: đóng gói giấu dữ liệu, trừu tượng chỉ lộ vài hàm, kế thừa nhận sẵn trường và hàm, đa hình chọn hàm lúc chạy" src="../oop/diagrams/four-pillars.png"></p>
+<p>Đóng gói dùng từ khóa <code>private</code> khóa biến lại bên trong, còn trừu tượng chỉ mở ra vài hàm cần thiết cho bên ngoài gọi. Kế thừa chép cấu trúc ô nhớ (memory layout) từ lớp cha, khác với hợp đồng trong <a href="oop-abstract-class-vs-interface.html">Abstract class đối lập Interface</a>. Đa hình dựa vào <a href="jvm-virtual-method-dispatch.html">bảng phương thức ảo (vtable)</a> để chọn đúng hàm cần chạy lúc ứng dụng đang mở. Nhờ vậy, nơi gọi hàm không bị khóa cứng vào một lớp cụ thể nào.</p>
+<h2>Đánh đổi</h2>
+<p>Code được chia thành từng khối rõ ràng và biến bên trong không bị sửa bậy. Đổi lại, bạn phải đọc qua nhiều lớp trung gian hơn để lần ra nơi chạy thật. Máy ảo cũng tốn thêm bộ nhớ Heap cho đối tượng và tốn một bước tra bảng <code>vtable</code> khi gọi hàm. Nếu lạm dụng kế thừa thay vì lắp ghép (composition), lớp con sẽ dính chặt lớp cha và hỏng tính đóng gói.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Nguyên lý giấu thông tin của David Parnas năm 1972: mỗi khối tự giấu cách làm và chỉ mở cửa giao tiếp nhỏ nhất.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>OOP không nhằm tái sử dụng mã qua kế thừa, mà để cô lập biến động bằng ranh giới đóng gói và đa hình.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>Với chiếc ô tô, đóng gói là giấu động cơ dưới nắp capo, còn trừu tượng là chỉ lộ vô lăng và phanh. Kế thừa là xe điện và xe xăng cùng thuộc dòng ô tô. Đa hình là bạn cứ đạp phanh thì xe nào cũng dừng, dù bên dưới dùng má phanh cơ hay phanh điện tái sinh.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// Minh họa đóng gói, kế thừa và điểm gọi đa hình
+open class Vehicle(private var speed: Int) {
+    fun drive() { speed += 10 }
+    open fun horn(): String = &quot;Beep&quot;
+}
+class Truck : Vehicle(0) {
+    override fun horn(): String = &quot;Honk&quot;
+}
+fun alert(v: Vehicle): String = v.horn()
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu coi kế thừa là trung tâm thay vì gửi thông điệp, bạn dễ dính bẫy lớp cha dễ vỡ (Fragile Base Class). Khi ghi đè hàm thêm danh sách, lớp cha lại tự gọi hàm thêm từng phần tử làm kết quả đếm nhân đôi. Để chặn bẫy này, Kotlin khóa mọi <code>class</code> mặc định là <code>final</code> và cho phép ủy quyền qua từ khóa <code>by</code>. Đừng kế thừa chỉ để lấy lại vài dòng code; hãy dùng lắp ghép (composition) để giữ an toàn cho lớp.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Mục đích chính của OOP có phải là để tái sử dụng code thông qua kế thừa không?
+Không phải. Mục đích chính của OOP là giữ cho khi bạn sửa một chỗ thì không làm hỏng dây chuyền sang chỗ khác. Nếu lạm dụng kế thừa chỉ để dùng lại code, lớp con sẽ dính chặt vào ruột lớp cha và làm hỏng tính đóng gói.</p>
+<p><strong>Hỏi:</strong> Khi nào nên dùng kế thừa, khi nào nên dùng lắp ghép (composition)?
+Bạn nên ưu tiên lắp ghép, và chỉ kế thừa khi lớp con thật sự là một loại của lớp cha (IS-A). Nếu chỉ cần dùng vài hàm của lớp khác, bạn hãy đặt nó làm một biến bên trong lớp mình. Trong Kotlin, bạn dùng thêm từ khóa <code>by</code> để chuyển tiếp hàm của <code>interface</code> mà không bị trói vào lớp cha.</p>
+<p><strong>Hỏi:</strong> Trừu tượng (Abstraction) khác Đóng gói (Encapsulation) chỗ nào khi cả hai đều giấu thông tin?
+Đóng gói là khóa biến dữ liệu lại, còn trừu tượng là giấu đi các bước xử lý rắc rối bên dưới. Bạn đóng gói bằng từ khóa <code>private</code> để bên ngoài không tự ý gán sai giá trị biến. Còn trừu tượng là bạn chỉ đưa ra một hàm gọn gàng để nơi khác gọi mà không cần biết thuật toán bên trong.</p>
+<p><strong>Hỏi:</strong> Đa hình (Polymorphism) vận hành ở tầng máy ảo như thế nào để biết phải gọi hàm nào?
+Lúc chạy, máy ảo tra địa chỉ hàm trong <a href="jvm-virtual-method-dispatch.html">bảng phương thức ảo (vtable)</a> gắn với đối tượng thực tế. Mỗi đối tượng trên Heap đều giữ một con trỏ chỉ tới thông tin lớp và bảng <code>vtable</code> của lớp đó. Khi gặp lệnh gọi hàm, CPU nhìn vào bảng này để nhảy tới đúng hàm mà lớp con đã ghi đè.</p>
+<p><strong>Hỏi:</strong> Vì sao Kotlin lại mặc định khoá mọi class bằng final thay vì mở như Java?
+Để tránh lỗi lớp cha dễ vỡ (Fragile Base Class) do thói quen kế thừa tùy tiện trong Java. Khi lớp cha chưa chuẩn bị cho kế thừa, sửa một hàm nhỏ ở cha cũng dễ làm lớp con chạy sai. Vì vậy Kotlin bắt gõ rõ từ khóa <code>open</code> để xác nhận lớp đã được thiết kế an toàn cho kế thừa.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được 4 tính chất là cách sách giáo trình đúc kết để dạy học, và kế thừa chép memory layout của lớp cha sang lớp con.</li>
+<li>Phân biệt được đóng gói là khóa biến bằng private, trừu tượng là giấu cách cài đặt, còn đa hình tra bảng vtable lúc chạy.</li>
+<li>Nêu được bẫy Fragile Base Class và lý do Kotlin để class mặc định là final kèm từ khóa ủy quyền by.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Object-oriented_programming" target="_blank" rel="noopener">Object-oriented programming — Wikipedia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Information_hiding" target="_blank" rel="noopener">Information hiding (David Parnas) — Wikipedia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Simula" target="_blank" rel="noopener">Simula — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="oop-solid.html">SOLID</a></li>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+<li><a href="oop-abstract-class-vs-interface.html">Abstract class đối lập Interface</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Doop-four-pillars" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

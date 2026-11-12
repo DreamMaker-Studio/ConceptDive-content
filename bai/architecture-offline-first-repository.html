@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offline-First Repository &amp; SSOT | ConceptDive</title>
+<meta name="description" content="Nếu chỉ lấy dữ liệu thẳng từ mạng, màn hình sẽ trắng xóa hoặc báo lỗi khi vào thang máy mất sóng. Kiến trúc Offline-First chọn cơ sở dữ liệu trong máy làm nguồn chân lý duy nhất (SSOT). Màn hình luôn ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-offline-first-repository.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Offline-First Repository &amp; SSOT | ConceptDive">
+<meta property="og:description" content="Nếu chỉ lấy dữ liệu thẳng từ mạng, màn hình sẽ trắng xóa hoặc báo lỗi khi vào thang máy mất sóng. Kiến trúc Offline-First chọn cơ sở dữ liệu trong máy làm nguồn chân lý duy nhất (SSOT). Màn hình luôn ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/architecture-offline-first-repository.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/architecture/diagrams/offline-first-ssot-flow.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kiến trúc</p>
+<h1>Offline-First Repository &amp; SSOT</h1>
+<h2>Bản 30 giây</h2>
+<p>Nếu chỉ lấy dữ liệu thẳng từ mạng, màn hình sẽ trắng xóa hoặc báo lỗi khi vào thang máy mất sóng. Kiến trúc Offline-First chọn cơ sở dữ liệu trong máy làm nguồn chân lý duy nhất (<em>SSOT</em>). Màn hình luôn đọc từ bộ nhớ máy, còn mạng chỉ tải dữ liệu mới về cất vào cơ sở dữ liệu đó.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+<li><a href="architecture-clean-architecture-and-use-cases.html">Clean Architecture &amp; Use Cases</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2017, hầu hết ứng dụng Android lấy kết quả trả về từ mạng (<em>HTTP Responses</em>) rồi vẽ thẳng lên màn hình. Cứ mở sang màn hình mới là người dùng lại phải nhìn vòng xoay <code>ProgressBar</code>, và hễ rớt mạng là màn hình trống trơn.</p>
+<p>Nếu hai màn hình cùng gọi API lấy thông tin một người dùng, dữ liệu rất dễ bị lệch nhau (<em>Data Inconsistency</em>). Bạn vừa đổi tên ở màn hình cài đặt xong, quay ra màn hình chính vẫn thấy hiện tên cũ.</p>
+<p>Sau đó, Google đưa ra tài liệu Hướng dẫn kiến trúc ứng dụng (<em>Guide to App Architecture</em>) để chuẩn hóa cách làm Offline-First. Cơ sở dữ liệu Room trở thành nơi duy nhất phát dữ liệu cho toàn bộ màn hình trong ứng dụng.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Nguồn chân lý duy nhất (<em>SSOT</em>) không có nghĩa là màn hình vừa đọc từ máy vừa đọc từ mạng. Nó là quy tắc một chiều: giao diện chỉ được phép lắng nghe dữ liệu từ cơ sở dữ liệu trong máy. Còn mạng internet chỉ đóng vai trò là nơi lấy dữ liệu mới về để ghi đè vào cơ sở dữ liệu đó.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Cơ sở dữ liệu cục bộ là nguồn chân lý duy nhất phát Flow lên UI, mạng chỉ nạp dữ liệu ngầm vào DB" src="../architecture/diagrams/offline-first-ssot-flow.png"></p>
+<p><code>Repository</code> trả về một dòng <a href="kotlin-flow-under-the-hood.html">Flow</a> nối trực tiếp với bảng dữ liệu trong Room. Khi cần làm mới dữ liệu, <code>Repository</code> gọi API mạng rồi cất thẳng kết quả vào bảng dữ liệu trong máy. Ngay khi bảng có dữ liệu mới, Room tự bắn bản cập nhật qua <code>Flow</code> để màn hình vẽ lại ngay. Nếu dữ liệu máy và mạng lệch nhau, bước đồng bộ hoặc máy chủ sẽ phân xử theo mốc thời gian.</p>
+<h2>Đánh đổi</h2>
+<p>Cách làm này giúp ứng dụng mở lên có chữ đọc ngay và vẫn dùng bình thường khi đi vào chỗ mất sóng. Đổi lại, ứng dụng tốn thêm bộ nhớ lưu trữ trên điện thoại và bạn phải viết thêm code đồng bộ dữ liệu. Bài toán khó nhất là xử lý xung đột khi người dùng sửa cùng một mục trên hai điện thoại lúc đang mất mạng.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Nguồn chân lý duy nhất: mỗi mẩu dữ liệu chỉ có đúng một nơi giữ bản gốc đáng tin cậy trong cả ứng dụng. Các màn hình chỉ đọc lại từ nơi đó chứ không tự giữ bản sao riêng lẻ.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Mạng internet không cấp dữ liệu trực tiếp cho màn hình, mà chỉ tải dữ liệu về cất vào cơ sở dữ liệu trong máy.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class ArticleRepository(
+    private val localDao: ArticleDao,
+    private val remoteApi: ArticleApi
+) {
+    fun getArticles(): Flow&lt;List&lt;Article&gt;&gt; = localDao.getArticlesFlow()
+
+    suspend fun syncArticles() {
+        val remoteData = remoteApi.fetchLatestArticles()
+        localDao.upsertArticles(remoteData)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu gán thẳng kết quả API vào <code>StateFlow</code> của <code>ViewModel</code> mà bỏ qua Database, dữ liệu giữa các màn hình sẽ lệch nhau. Cũng đừng gọi hàm đồng bộ mạng liên tục mỗi khi vẽ lại màn hình mà không kiểm tra thời gian chờ. Triệu chứng là hai màn hình hiện số khác nhau, danh sách chớp nháy và máy tụt pin nhanh vì gọi mạng mãi.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Tại sao ViewModel không nên nhận dữ liệu trực tiếp từ API mạng mà phải đọc qua Database?
+Để mọi màn hình luôn hiện khớp nhau. Khi cùng đọc một bảng Database, bạn sửa ở màn hình chi tiết thì màn hình danh sách bên ngoài tự đổi theo.</p>
+<p><strong>Hỏi:</strong> Xử lý thế nào nếu người dùng thực hiện thao tác sửa đổi khi đang hoàn toàn mất kết nối mạng?
+Bạn cứ lưu ngay thay đổi đó vào Database trong máy kèm một cờ đánh dấu "chờ gửi mạng" (<em>Optimistic Update</em>). Giao diện đổi ngay cho mượt, rồi khi có mạng lại thì tác vụ ngầm sẽ đẩy phần sửa lên máy chủ.</p>
+<p><strong>Hỏi:</strong> Room Database làm thế nào để tự động cập nhật dữ liệu mới lên màn hình mà không cần gọi lại hàm?
+Room có sẵn bộ theo dõi bảng dữ liệu tên là <code>InvalidationTracker</code>. Khi bảng có lệnh thêm, sửa hay xóa, Room tự chạy lại truy vấn rồi đẩy danh sách mới vào <code>Flow</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao cơ sở dữ liệu trong máy là nguồn chân lý duy nhất (SSOT) phát dữ liệu lên màn hình.</li>
+<li>Nêu được luồng chạy một chiều: API mạng chỉ ghi vào Database, rồi Database mới bắn Flow lên giao diện.</li>
+<li>Trình bày được cách lưu tạm bằng Optimistic Update khi mất mạng và cách InvalidationTracker của Room tự báo dữ liệu mới.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/architecture/data-layer/offline-first" target="_blank" rel="noopener">Build an offline-first app — Android</a></li>
+<li><a href="https://developer.android.com/topic/architecture/data-layer" target="_blank" rel="noopener">Data layer — Android App Architecture</a></li>
+<li><a href="https://developer.android.com/training/data-storage/room" target="_blank" rel="noopener">Save data using Room — Android</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="architecture-clean-architecture-and-use-cases.html">Clean Architecture &amp; Use Cases</a></li>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Darchitecture-offline-first-repository" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

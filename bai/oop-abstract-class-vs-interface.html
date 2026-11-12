@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abstract class đối lập Interface | ConceptDive</title>
+<meta name="description" content="Khi viết phần dùng chung cho nhiều lớp, bạn thường phân vân giữa kế thừa abstract class hay cài đặt interface. Interface cho phép một lớp nhận nhiều hợp đồng hành vi cùng lúc nhưng không được tạo ô nh">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-abstract-class-vs-interface.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Abstract class đối lập Interface | ConceptDive">
+<meta property="og:description" content="Khi viết phần dùng chung cho nhiều lớp, bạn thường phân vân giữa kế thừa abstract class hay cài đặt interface. Interface cho phép một lớp nhận nhiều hợp đồng hành vi cùng lúc nhưng không được tạo ô nh">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/oop-abstract-class-vs-interface.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/oop/diagrams/abstract-class-vs-interface.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · OOP</p>
+<h1>Abstract class đối lập Interface</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi viết phần dùng chung cho nhiều lớp, bạn thường phân vân giữa kế thừa <code>abstract class</code> hay cài đặt <code>interface</code>. <code>Interface</code> cho phép một lớp nhận nhiều hợp đồng hành vi cùng lúc nhưng không được tạo ô nhớ lưu biến. Còn <code>abstract class</code> giữ được biến trạng thái trên Heap nhưng bắt lớp con dùng mất suất kế thừa duy nhất.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Thập niên 1980, C++ cho phép một lớp kế thừa nhiều lớp cha nên dẫn đến bài toán kim cương (Diamond Problem). Khi hai lớp cha cùng có một biến trùng tên, lớp con kế thừa cả hai sẽ không biết dùng biến nào.</p>
+<p>Năm 1995, James Gosling thiết kế Java chỉ cho phép kế thừa một lớp để dẹp hẳn lỗi đụng độ biến trạng thái. Cùng lúc đó, ông tách riêng <code>interface</code> không giữ biến để một lớp nhận được nhiều khả năng hành vi.</p>
+<p>Đến Java 8 (2014) và Kotlin (2016), <code>interface</code> cũng viết được hàm có thân lệnh. Thay đổi này làm nhiều bạn tưởng nhầm hai thứ đã giống hệt nhau.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Khác biệt không nằm ở chuyện hàm có thân lệnh hay không, vì <code>interface</code> nay đã viết được thân hàm. Điểm khác thật sự là quyền có <code>constructor</code> và quyền giữ ô nhớ lưu biến (<code>backing field</code>) trên Heap. <code>Abstract class</code> cho biết đối tượng thuộc dòng họ nào (IS-A), còn <code>interface</code> chỉ gắn thêm khả năng làm việc (CAN-DO).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Lớp trừu tượng sở hữu constructor và backing field trên Heap; giao diện chỉ định hình hợp đồng năng lực không trạng thái" src="../oop/diagrams/abstract-class-vs-interface.png"></p>
+<p><code>Abstract class</code> cấp ô nhớ trên Heap để chứa biến và gọi <code>constructor</code> gán giá trị ban đầu. <code>Interface</code> không có trường dữ liệu nên không chiếm thêm ô nhớ nào trong đối tượng. Lúc chạy, máy ảo dùng lệnh <code>invokevirtual</code> nhảy thẳng tới vị trí cố định trong bảng <code>vtable</code> để gọi hàm của <code>abstract class</code>. Còn gọi hàm qua <code>interface</code> thì máy ảo dùng <code>invokeinterface</code> để dò bảng <code>itable</code> qua <a href="jvm-virtual-method-dispatch.html">Virtual method dispatch</a>.</p>
+<h2>Đánh đổi</h2>
+<p>Dùng <code>interface</code> rất linh hoạt vì một lớp có thể ghép bao nhiêu hợp đồng hành vi tùy ý. Đổi lại, lệnh <code>invokeinterface</code> tốn thêm bước dò bảng <code>itable</code> và không giữ được biến trạng thái chung. Còn <code>abstract class</code> cho dùng chung biến và gọi hàm nhanh hơn, nhưng lấy mất suất kế thừa duy nhất của lớp con.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Kế thừa nhiều nơi chỉ an toàn với lời hứa hành vi, còn rất nguy hiểm khi mang theo biến dữ liệu. Vì vậy ngôn ngữ tách riêng danh tính và khả năng làm việc. Thứ giữ biến trên bộ nhớ thì chỉ được nhận một cha, còn thứ chỉ hứa hành vi thì nhận bao nhiêu cũng được.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Khác biệt giữa <code>abstract class</code> và <code>interface</code> không nằm ở thân hàm, mà ở quyền có <code>constructor</code> và ô nhớ <code>backing field</code>.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p><code>Abstract class</code> giống căn cước công dân: mỗi người chỉ có một bản ghi rõ dòng máu và đặc điểm riêng. <code>Interface</code> giống bằng lái xe hay thẻ thư viện: một người có thể thi lấy bao nhiêu chứng chỉ tùy thích.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">interface Flyable { fun fly() = &quot;Flying&quot; }
+abstract class Animal(val name: String) { abstract fun sound(): String }
+class Duck(name: String) : Animal(name), Flyable {
+    override fun sound() = &quot;Quack&quot;
+}
+val d = Duck(&quot;Mallard&quot;)
+val action = &quot;${d.name}: ${d.sound()}, ${d.fly()}&quot;
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn tạo <code>abstract class</code> chỉ để gom vài hàm tiện ích, lớp con sẽ mất oan suất kế thừa duy nhất. Ngược lại, tưởng <code>interface</code> không viết được thân hàm sẽ làm bạn đẻ thêm các lớp bọc trung gian thừa thãi. Đừng kế thừa lớp khi chỉ cần chia sẻ hành vi mà không giữ biến trạng thái nào. Triệu chứng là cây kế thừa sâu nhiều tầng, sửa một dòng ở lớp cha làm hỏng dây chuyền lớp con (Fragile Base Class).</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Từ khi Interface cho phép viết hàm có thân thì Abstract Class đã hoàn toàn vô dụng?
+Không phải. <code>Interface</code> viết được hàm có thân nhưng vẫn không được có <code>constructor</code> hay ô nhớ lưu biến (<code>backing field</code>). Khi bạn cần giữ biến trạng thái chung hoặc chạy logic khởi tạo, <code>abstract class</code> vẫn là lựa chọn bắt buộc.</p>
+<p><strong>Hỏi:</strong> Làm sao biết khi nào nên tạo Interface, khi nào nên kế thừa Abstract Class?
+Hãy dùng <code>interface</code> khi gắn thêm khả năng làm việc, và dùng <code>abstract class</code> khi các lớp cùng một dòng họ có biến chung. Ví dụ khả năng bấm chọn hay gửi log nên viết thành <code>interface</code> để lớp con giữ lại suất kế thừa. Ngược lại, nếu các lớp con cùng bản chất và cần dùng chung biến trạng thái thì mới kế thừa <code>abstract class</code>.</p>
+<p><strong>Hỏi:</strong> Vì sao trên JVM, gọi hàm qua Interface lại chậm hơn gọi hàm qua Abstract Class?
+Nó chỉ chậm hơn một chút khi đoạn code đó chưa được trình biên dịch JIT tối ưu. Lệnh <code>invokeinterface</code> phải dò tìm trong bảng <code>itable</code> (hoặc <code>IMT</code> trên ART), còn <code>invokevirtual</code> lấy ngay theo vị trí cố định trong <code>vtable</code>. Khi chỗ gọi thực tế chỉ gặp một vài lớp cụ thể, JIT sẽ chép thẳng hàm vào nên tốc độ gần như bằng nhau.</p>
+<p><strong>Hỏi:</strong> Một lớp kế thừa hai Interface có hàm trùng tên và cùng có thân mã lệnh thì xử lý thế nào?
+Trình biên dịch sẽ báo lỗi ngay và bắt lớp con phải tự viết lại (<code>override</code>) hàm bị trùng đó. Bên trong hàm viết lại, bạn chỉ rõ muốn gọi bản của bên nào bằng cú pháp <code>super&lt;T&gt;.ham()</code>. Nhờ bắt chọn rõ ràng lúc biên dịch, ngôn ngữ tránh được cảnh nhập nhằng của bài toán kim cương trong C++.</p>
+<p><strong>Hỏi:</strong> Có nên tạo BaseViewModel hay BaseFragment dạng Abstract Class để dùng chung code không?
+Không nên lạm dụng. Nhét đủ thứ hàm dùng chung vào một lớp <code>Base</code> rất dễ làm sửa lớp cha thì vỡ lớp con (Fragile Base Class). Thay vì kế thừa, bạn nên <a href="oop-composition-over-inheritance.html">lắp ghép</a> các lớp nhỏ độc lập vào đúng màn hình nào thực sự cần.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được: abstract class có constructor và ô nhớ backing field trên Heap, còn interface chỉ giữ hợp đồng hành vi.</li>
+<li>Giải thích được bài toán kim cương: hai lớp cha có cùng biến thì con bị đụng độ, còn hợp đồng không biến thì ghép thoải mái.</li>
+<li>Nêu được cơ chế bytecode: invokevirtual tra vtable theo vị trí cố định, còn invokeinterface dò bảng itable qua <a href="jvm-virtual-method-dispatch.html">Virtual method dispatch</a>.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/interfaces.html" target="_blank" rel="noopener">Interfaces — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/classes.html" target="_blank" rel="noopener">Abstract classes — Kotlin Documentation</a></li>
+<li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/abstract.html" target="_blank" rel="noopener">Abstract Methods and Classes — Java</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="oop-four-pillars.html">Bốn tính chất OOP</a></li>
+<li><a href="jvm-virtual-method-dispatch.html">Virtual Method Table &amp; Dynamic Dispatch</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Doop-abstract-class-vs-interface" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

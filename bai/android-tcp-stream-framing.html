@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCP Stream Framing | ConceptDive</title>
+<meta name="description" content="Khi gửi hai gói tin qua socket TCP, mạng chỉ truyền một dòng byte nối liền và không giữ ranh giới. Một lần gọi hàm đọc ở bên nhận có thể lấy thiếu byte hoặc dính luôn cả mấy byte của gói kế tiếp. Do đ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-tcp-stream-framing.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TCP Stream Framing | ConceptDive">
+<meta property="og:description" content="Khi gửi hai gói tin qua socket TCP, mạng chỉ truyền một dòng byte nối liền và không giữ ranh giới. Một lần gọi hàm đọc ở bên nhận có thể lấy thiếu byte hoặc dính luôn cả mấy byte của gói kế tiếp. Do đ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-tcp-stream-framing.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/tcp-stream-framing-accumulator.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>TCP Stream Framing</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi gửi hai gói tin qua socket <code>TCP</code>, mạng chỉ truyền một dòng byte nối liền và không giữ ranh giới. Một lần gọi hàm đọc ở bên nhận có thể lấy thiếu byte hoặc dính luôn cả mấy byte của gói kế tiếp. Do đó, ứng dụng phải tự quy ước khung gói và đọc lặp tới khi gom đủ số byte của tin nhắn.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="jvm-stack-vs-heap.html">Stack vs Heap</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 1981, chuẩn RFC 793 định nghĩa <code>TCP</code> là dịch vụ truyền dòng byte tin cậy nhưng không giữ ranh giới giữa các lần gửi. Thiết kế này giúp tầng mạng tự do gom nhiều mẫu tin nhỏ hoặc cắt nhỏ dữ liệu theo đường truyền.</p>
+<p>Nhiều bạn quen làm việc với <code>UDP</code> hay tưởng rằng bên kia gửi một lần thì bên này gọi <code>read</code> một lần là nhận đủ. Khi ra mạng thật bị trễ hoặc gửi gói lớn, nửa đầu gói tin tới trước còn nửa sau tới trễ hơn một nhịp.</p>
+<p>Nếu ứng dụng đem mảng byte dở dang đi giải mã, chương trình sẽ báo lỗi hoặc đọc lẹm sang gói sau.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>TCP</code> không phải là người đưa thư giao từng phong bì rời rạc cho bạn. Nó chỉ là dòng chảy liên tục các byte (stream of octets) và không đánh dấu chỗ hết một lần gửi.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Dòng byte TCP không giữ ranh giới, ứng dụng đọc 2 byte độ dài rồi dùng readFully gom đủ thân gói" src="../android/diagrams/tcp-stream-framing-accumulator.png"></p>
+<p>Mỗi lần gọi <code>read</code> trên socket, hệ thống chỉ lấy byte có sẵn trong bộ đệm nên dễ trả về thiếu. Bạn phải tự viết vòng lặp đọc gom dần hoặc gọi thẳng <code>DataInputStream.readFully</code> để bắt nó đợi tới khi gom đủ số byte. Để biết độ dài gói tin, ứng dụng gắn vài byte độ dài ở đầu hoặc dùng byte đánh dấu như <a href="android-samsung-mdc-protocol.html">Samsung MDC Protocol</a>. Chương trình đọc phần đầu cố định để biết độ dài thân gói, rồi gọi <code>readFully</code> lấy tiếp đủ phần thân.</p>
+<h2>Đánh đổi</h2>
+<p>Tự đóng khung gói tin giúp bạn ghép lại đúng từng thông điệp hoàn chỉnh dù mạng bên dưới cắt ghép thế nào. Đổi lại, bên nhận phải cấp phát mảng đệm trên <a href="jvm-stack-vs-heap.html">Heap</a> và tốn thêm nhịp CPU để đọc độ dài hoặc dò byte đánh dấu. Nếu quên chặn giới hạn cho ô độ dài, một gói tin lỗi báo độ dài khổng lồ sẽ làm tràn bộ nhớ.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tầng <code>TCP</code> chỉ cam kết giao byte đúng thứ tự, còn việc cắt dòng byte thành bản tin thuộc về tầng ứng dụng.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>TCP</code> giữ đúng thứ tự từng byte nhưng không giữ ranh giới gói, nên một lần gọi <code>read</code> không bằng một lần gọi <code>write</code>.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p>TCP giống như băng chuyền chuyển than liên tục vào lò sấy. Người nhận phải dùng thùng chứa có kích thước định sẵn để xúc than theo từng mẻ chứ than không tự rơi thành từng bao.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">fun readLengthPrefixedFrame(input: DataInputStream, maxPayloadSize: Int = 4096): ByteArray {
+    val length = input.readUnsignedShort()
+    require(length &lt;= maxPayloadSize) { &quot;Payload $length bytes vượt quá giới hạn&quot; }
+    val payload = ByteArray(length)
+    input.readFully(payload)
+    return payload
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Hàm <code>read</code> trả thiếu byte xảy ra thường xuyên trên mạng thật, khiến code đọc một lần lấy dữ liệu cụt và lỗi. Ngược lại, nếu không giữ phần byte dư cho lần đọc kế, mọi gói tin phía sau sẽ bị đọc lệch vị trí. Cách đóng khung này tốn bộ nhớ đệm trên Heap, và không cần dùng với giao thức giữ sẵn ranh giới như <code>UDP</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao code socket chỉ gọi <code>read</code> một lần vẫn chạy tốt trên máy dev nhưng lại sập ở môi trường thật?
+Trên mạng nội bộ, đường truyền nhanh và gói tin nhỏ nên cả thông điệp thường gọn trong một gói <code>TCP</code>. Ra mạng di động chập chờn hoặc gửi dữ liệu lớn, tầng mạng cắt thông điệp thành nhiều mảnh gửi lệch nhịp. Lúc đó hàm <code>read</code> gọi một lần chỉ lấy được mảnh đầu tiên, làm code giải mã bị sập ngay.</p>
+<p><strong>Hỏi:</strong> Dấu hiệu điển hình của việc phân tách khung gói tin bị lệch pha là gì?
+Bộ giải mã sẽ liên tục báo lỗi dữ liệu rác, sai <code>checksum</code> hoặc mất byte mở đầu ở các gói sau. Chỉ cần gói trước đọc thiếu hoặc lố vài byte, vị trí đọc kế tiếp sẽ rơi vào giữa thân gói sau. Từ giây phút đó, toàn bộ dòng byte trên kết nối bị lệch nhịp cho tới khi đóng socket mở lại.</p>
+<p><strong>Hỏi:</strong> Vì sao bắt buộc phải kiểm tra giới hạn kích thước trước khi cấp phát bộ đệm từ trường độ dài?
+Để tránh việc ứng dụng bị sập vì tràn bộ nhớ <code>OutOfMemoryError</code> chỉ bởi một gói tin hỏng hoặc kẻ gian cố tình gửi bậy. Khi lệch pha hoặc nhận hai byte độ dài cực lớn, lệnh <code>ByteArray(length)</code> sẽ đòi cấp phát ngay ngần ấy bộ nhớ. Kiểm tra ngưỡng tối đa bằng <code>require</code> giúp bạn ngắt kết nối sớm trước khi bộ nhớ Heap bị vắt kiệt.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được bản chất dòng byte liên tục của TCP và vì sao nó không giữ ranh giới giữa các lần gửi.</li>
+<li>Trình bày được vì sao gọi read một lần dễ lấy thiếu byte hoặc làm lệch vị trí đọc của toàn bộ các gói tin phía sau.</li>
+<li>Nêu được nguy cơ tràn bộ nhớ Heap nếu tạo mảng ByteArray thẳng từ số đo độ dài mà không kiểm tra giới hạn tối đa.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc793" target="_blank" rel="noopener">RFC 793: Transmission Control Protocol</a></li>
+<li><a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInputStream.html" target="_blank" rel="noopener">DataInputStream API reference — Java SE</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank" rel="noopener">Transmission Control Protocol — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-samsung-mdc-protocol.html">Samsung MDC Protocol</a></li>
+<li><a href="jvm-stack-vs-heap.html">Stack vs Heap</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-tcp-stream-framing" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

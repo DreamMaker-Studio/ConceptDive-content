@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handler, Looper &amp; MessageQueue | ConceptDive</title>
+<meta name="description" content="Một luồng bình thường sẽ tự kết thúc và biến mất ngay sau khi chạy xong dòng lệnh cuối cùng trong hàm run(). Android giữ cho luồng chính sống suốt lúc mở ứng dụng nhờ vòng lặp Looper liên tục rút việc">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-handler-looper-message-queue.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Handler, Looper &amp; MessageQueue | ConceptDive">
+<meta property="og:description" content="Một luồng bình thường sẽ tự kết thúc và biến mất ngay sau khi chạy xong dòng lệnh cuối cùng trong hàm run(). Android giữ cho luồng chính sống suốt lúc mở ứng dụng nhờ vòng lặp Looper liên tục rút việc">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-handler-looper-message-queue.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/handler-looper-message-queue-loop.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Handler, Looper &amp; MessageQueue</h1>
+<h2>Bản 30 giây</h2>
+<p>Một luồng bình thường sẽ tự kết thúc và biến mất ngay sau khi chạy xong dòng lệnh cuối cùng trong hàm <code>run()</code>. Android giữ cho luồng chính sống suốt lúc mở ứng dụng nhờ vòng lặp <code>Looper</code> liên tục rút việc từ hàng đợi <code>MessageQueue</code>. Còn <code>Handler</code> là đầu mối để các luồng phụ gửi công việc về hàng đợi của luồng chính một cách an toàn.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="thread.html">Thread</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Hệ thống View của Android không an toàn khi truy cập đa luồng (<em>Not Thread-Safe</em>). Nếu hai luồng cùng lúc sửa một nút bấm, giao diện sẽ hiển thị sai lệch hoặc sập ứng dụng ngay.</p>
+<p>Để tránh việc phải đặt khóa đồng bộ ở mọi View, Google quy định chỉ một luồng duy nhất được phép sửa giao diện. Mọi lệnh vẽ màn hình và xử lý chạm tay đều phải đưa về luồng chính để chạy lần lượt.</p>
+<p>Bộ ba <code>Handler</code>, <code>Looper</code> và <code>MessageQueue</code> có mặt từ bản Android đầu tiên để chuyển việc giữa các luồng. Nhờ đó, luồng phụ tải dữ liệu xong có thể gửi kết quả về luồng chính để hiển thị.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Looper</code> không phải là một vòng lặp <code>while(true)</code> chạy rỗng liên tục làm tốn pin và nóng máy. Thực ra, bên dưới nó dùng lệnh <code>epoll_wait</code> của nhân Linux để cho luồng tạm ngủ khi rảnh.</p>
+<p>Khi hàng đợi <code>MessageQueue</code> không có việc nào cần chạy, luồng chính sẽ ngủ yên và nhường CPU cho việc khác. Ngay khi bạn chạm vào màn hình hoặc có tin nhắn mới gửi tới, nhân Linux mới đánh thức luồng dậy làm việc.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Handler gửi tin vào MessageQueue có rào cản đồng bộ, Looper liên tục lấy tin hoặc ngủ đông bằng epoll_wait nhường CPU" src="../android/diagrams/handler-looper-message-queue-loop.png"></p>
+<p>Mỗi <code>Thread</code> chỉ gắn được với tối đa một <code>Looper</code>, được cất riêng trong vùng nhớ <code>ThreadLocal</code> của luồng đó. Hàng đợi <code>MessageQueue</code> xếp các gói tin nhắn theo thứ tự thời điểm cần chạy từ sớm tới muộn.</p>
+<p>Vòng lặp <code>Looper.loop()</code> lần lượt lấy từng tin nhắn ra và giao cho đúng <code>Handler</code> đã gửi tin đó xử lý. Khi vẽ khung hình mới, hệ thống cắm chốt chặn (<em>Sync Barrier</em>) vào hàng đợi để ưu tiên chạy lệnh vẽ trước.</p>
+<h2>Đánh đổi</h2>
+<p>Chạy từng việc một trên một hàng đợi giúp cây giao diện không bao giờ bị hai luồng tranh chấp dữ liệu (<em>Race Condition</em>). Đổi lại, nếu một công việc ở đầu hàng chạy quá lâu, mọi việc xếp phía sau đều phải đứng chờ.</p>
+<p>Nếu giữ luồng chính quá 5 giây làm kẹt sự kiện chạm, hệ thống sẽ báo lỗi ứng dụng không phản hồi.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Giữ luồng sống lâu bằng một vòng lặp rút việc từ hàng đợi, và tách riêng luồng tính toán nặng khỏi luồng vẽ giao diện.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Looper không làm nóng máy nhờ lệnh chờ epoll, và Handler chỉ là cổng gửi nhận chứ không sở hữu luồng.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class WorkerThread : Thread() {
+    lateinit var handler: Handler
+    override fun run() {
+        Looper.prepare()
+        handler = Handler(Looper.myLooper()!!) { msg -&gt;
+            // Xử lý thông điệp trên luồng nền
+            true
+        }
+        Looper.loop()
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Tạo <code>Handler</code> ẩn danh trong <code>Activity</code> rồi gửi tin hẹn giờ sẽ giữ chặt <code>Activity</code> và gây <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>. Khi ứng dụng dưới nền gặp cảnh <a href="android-process-death-and-saved-state.html">tiêu diệt tiến trình</a>, mọi tin nhắn đang chờ trong <code>MessageQueue</code> cũng mất sạch. Tuyệt đối không đẩy việc đọc file lớn hay truy vấn cơ sở dữ liệu vào <code>Handler</code> của luồng chính. Triệu chứng dính bẫy là rò rỉ bộ nhớ, giật khung hình và <a href="android-main-thread-and-anr.html">lỗi ứng dụng không phản hồi (<em>ANR</em>)</a>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Tại sao vòng lặp vô tận Looper.loop() trên Main Thread không làm treo hay nóng máy điện thoại?
+Vì bên dưới nó gọi hàm <code>epoll_wait</code> của nhân Linux chứ không chạy vòng lặp rỗng. Khi <code>MessageQueue</code> hết tin nhắn cần chạy ngay, luồng chính tự ngủ và nhường hoàn toàn CPU cho các luồng khác.</p>
+<p><strong>Hỏi:</strong> Handler tạo trên luồng phụ có thể cập nhật giao diện trực tiếp được không?
+Không được, vì <code>Handler</code> gửi việc vào hàng đợi của <code>Looper</code> nào mà nó được gắn lúc khởi tạo. Muốn gửi việc từ luồng phụ về sửa giao diện, bạn phải truyền <code>Looper.getMainLooper()</code> vào lúc tạo <code>Handler</code>.</p>
+<p><strong>Hỏi:</strong> Rào cản đồng bộ (Sync Barrier) trong MessageQueue có tác dụng gì?
+Khi đến nhịp vẽ màn hình, hệ thống thả chốt <code>Sync Barrier</code> vào hàng đợi để tạm gác các tin nhắn thường sang một bên. Nhờ đó, tin nhắn vẽ khung hình được chạy vượt lên trước, giúp màn hình giữ được tốc độ 60 hoặc 120 hình mỗi giây.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao Looper.loop() không làm tốn CPU nhờ cơ chế ngủ epoll_wait của nhân Linux.</li>
+<li>Trình bày được cách Handler gắn với Looper qua ThreadLocal để gửi việc về đúng hàng đợi.</li>
+<li>Chỉ ra được bẫy Handler ẩn danh giữ tham chiếu Activity qua tin nhắn hẹn giờ gây rò rỉ bộ nhớ.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/components/processes-and-threads" target="_blank" rel="noopener">Processes and threads overview — Android</a></li>
+<li><a href="https://developer.android.com/reference/android/os/Looper" target="_blank" rel="noopener">Looper API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/os/Handler" target="_blank" rel="noopener">Handler API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/os/MessageQueue" target="_blank" rel="noopener">MessageQueue API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="thread.html">Thread</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="android-process-death-and-saved-state.html">Process Death &amp; SavedStateHandle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-handler-looper-message-queue" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

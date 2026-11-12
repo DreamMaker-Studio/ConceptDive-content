@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Process Death &amp; SavedStateHandle | ConceptDive</title>
+<meta name="description" content="Khi bạn rời ứng dụng sang dùng app khác, Android có thể âm thầm tắt tiến trình chạy ngầm để lấy lại RAM. Lúc đó dữ liệu trong ViewModel mất sạch, chỉ những giá trị bạn cất vào SavedStateHandle mới đượ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-process-death-and-saved-state.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Process Death &amp; SavedStateHandle | ConceptDive">
+<meta property="og:description" content="Khi bạn rời ứng dụng sang dùng app khác, Android có thể âm thầm tắt tiến trình chạy ngầm để lấy lại RAM. Lúc đó dữ liệu trong ViewModel mất sạch, chỉ những giá trị bạn cất vào SavedStateHandle mới đượ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-process-death-and-saved-state.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/savedstate-process-death-binder.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Process Death &amp; SavedStateHandle</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn rời ứng dụng sang dùng app khác, Android có thể âm thầm tắt tiến trình chạy ngầm để lấy lại RAM. Lúc đó dữ liệu trong ViewModel mất sạch, chỉ những giá trị bạn cất vào <code>SavedStateHandle</code> mới được giữ lại. Nhờ vậy, khi mở lại ứng dụng, màn hình vẫn hiện đúng trạng thái cũ dù tiến trình đã khởi động lại.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Năm 2008, Android ra đời trên những chiếc điện thoại có dung lượng RAM rất ít. Để chạy đa nhiệm, hệ thống phải tắt tiến trình nền nhằm nhường bộ nhớ cho ứng dụng trước mặt.</p>
+<p>Nhiều bạn mới đi làm tưởng ViewModel giữ được dữ liệu mãi mãi, nhưng thật ra nó chỉ sống qua lúc xoay màn hình. Khi tiến trình bị tắt ngầm, người dùng mở lại app sẽ thấy màn hình trắng trơn hoặc ứng dụng bị sập vì biến rỗng.</p>
+<p>Google đưa ra <code>SavedStateHandle</code> để nối thẳng kho lưu trạng thái của hệ thống vào trong ViewModel. Bạn không còn phải tự viết code đóng gói dữ liệu rườm rà trong các hàm vòng đời của Activity.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Process Death</code> không phải là lỗi tràn bộ nhớ (<code>OutOfMemory</code>) do code của bạn bị rò rỉ. Thật ra, nhân Linux chủ động tắt tiến trình chạy ngầm dựa vào điểm ưu tiên <code>oom_score_adj</code> khi máy thiếu RAM. Trước khi tắt, hệ thống chép dữ liệu trạng thái của bạn sang giữ ở tiến trình hệ thống <code>system_server</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Activity ghi Bundle dưới 1MB qua Binder sang system_server trước khi LMKD diệt tiến trình, nạp lại vào SavedStateHandle khi mở lại" src="../android/diagrams/savedstate-process-death-binder.png"></p>
+<p>Khi bạn vừa ẩn ứng dụng xuống nền, hệ điều hành bảo Activity gom các trạng thái cần giữ vào một gói <code>Bundle</code>. Gói dữ liệu này được gửi qua kênh liên tiến trình <code>Binder</code> sang nằm nhờ ở tiến trình <code>system_server</code>. <code>SavedStateHandle</code> chỉ là một bảng khóa - giá trị trong ViewModel giúp bạn đọc và ghi thẳng vào gói <code>Bundle</code> đó. Lúc bạn mở lại app, Android tạo tiến trình mới rồi trả gói <code>Bundle</code> này về để <code>SavedStateHandle</code> nạp lại dữ liệu cũ.</p>
+<h2>Đánh đổi</h2>
+<p>Dùng <code>SavedStateHandle</code> giúp bạn giữ nguyên màn hình đang dùng dở dù người dùng đã rời app hàng giờ liền. Khi tiến trình bị tắt, mọi tin nhắn đang xếp hàng trên <a href="android-handler-looper-message-queue.html">MessageQueue</a> của luồng chính cũng mất sạch.</p>
+<p>Đổi lại, kênh truyền <code>Binder</code> giới hạn tổng dung lượng gói dữ liệu ở mức khoảng một megabyte cho cả tiến trình. Nếu bạn cố nhét danh sách dài hay ảnh bitmap vào đây, ứng dụng sẽ sập ngay lúc người dùng bấm nút Home.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tiến trình có thể bị tắt bất cứ lúc nào. Vì vậy, trạng thái màn hình phải được cất ở nơi sống lâu hơn tiến trình đó.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>ViewModel mất sạch khi tiến trình bị tắt ngầm, chỉ dữ liệu gửi qua <code>SavedStateHandle</code> sang <code>system_server</code> mới còn sống.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class ProductDetailViewModel(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    val productId: StateFlow&lt;String&gt; = savedStateHandle
+        .getStateFlow(&quot;product_id&quot;, initialValue = &quot;&quot;)
+
+    fun updateProductId(id: String) {
+        savedStateHandle[&quot;product_id&quot;] = id
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn cất dữ liệu vượt ngưỡng một megabyte của bộ đệm <code>Binder</code>, giao dịch liên tiến trình sẽ bị tràn và ném lỗi ngay. Đừng bao giờ nhét cả đối tượng dữ liệu lớn vào <code>SavedStateHandle</code>, mà chỉ nên lưu mã định danh hoặc từ khóa đang tìm kiếm. Triệu chứng khi mắc bẫy là app sập với lỗi <code>TransactionTooLargeException</code>, mất sạch chữ vừa gõ dở, hoặc mở lại ra sai trang.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> ViewModel có sống sót qua việc hệ điều hành tiêu diệt tiến trình (Process Death) không?
+Không. Khi hệ thống tắt tiến trình, toàn bộ vùng nhớ RAM của app gồm cả ViewModel lẫn các biến singleton đều bị xóa sạch.</p>
+<p><strong>Hỏi:</strong> Làm thế nào để phân biệt xoay màn hình với việc bị tiêu diệt tiến trình?
+Khi bạn xoay màn hình, đối tượng ViewModel cũ vẫn nằm nguyên trên RAM và chỉ nối lại vào Activity mới. Còn sau <code>Process Death</code>, hệ thống phải tạo một đối tượng ViewModel mới tinh rồi nạp lại dữ liệu từ <code>SavedStateHandle</code>.</p>
+<p><strong>Hỏi:</strong> Có nên lưu danh sách phân trang vào SavedStateHandle không?
+Không nên. Bạn chỉ cần lưu mã ID hoặc số trang đang xem vào <code>SavedStateHandle</code> để lúc mở lại thì gọi lấy lại dữ liệu. Cách này giúp bạn không làm tràn bộ đệm 1MB của <code>Binder</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được xoay màn hình (ViewModel còn sống) và Process Death (ViewModel bị xóa cùng tiến trình).</li>
+<li>Giải thích được cách SavedStateHandle gửi Bundle qua Binder sang tiến trình system_server để giữ dữ liệu.</li>
+<li>Nêu được giới hạn 1MB của bộ đệm Binder và lỗi TransactionTooLargeException khi lưu dữ liệu quá lớn.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/libraries/architecture/saving-states" target="_blank" rel="noopener">Save UI states — Android Developers</a></li>
+<li><a href="https://developer.android.com/topic/libraries/architecture/viewmodel/viewmodel-savedstate" target="_blank" rel="noopener">Saved State module for ViewModel</a></li>
+<li><a href="https://developer.android.com/reference/android/os/TransactionTooLargeException" target="_blank" rel="noopener">TransactionTooLargeException API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-handler-looper-message-queue.html">Handler, Looper &amp; MessageQueue</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-process-death-and-saved-state" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

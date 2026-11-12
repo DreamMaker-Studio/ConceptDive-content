@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory leak | ConceptDive</title>
+<meta name="description" content="Khi đóng màn hình mà bộ nhớ không được trả lại, RAM trống sẽ cạn dần tới khi ứng dụng sập. Lỗi xảy ra vì đối tượng sống lâu giữ tham chiếu tới màn hình cũ, khiến bộ thu gom rác không xóa được. Bạn phả">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-memory-leak.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Memory leak | ConceptDive">
+<meta property="og:description" content="Khi đóng màn hình mà bộ nhớ không được trả lại, RAM trống sẽ cạn dần tới khi ứng dụng sập. Lỗi xảy ra vì đối tượng sống lâu giữ tham chiếu tới màn hình cũ, khiến bộ thu gom rác không xóa được. Bạn phả">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-memory-leak.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/memory-leak-activity-tree.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Memory leak</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi đóng màn hình mà bộ nhớ không được trả lại, RAM trống sẽ cạn dần tới khi ứng dụng sập. Lỗi xảy ra vì đối tượng sống lâu giữ tham chiếu tới màn hình cũ, khiến bộ thu gom rác không xóa được. Bạn phải cắt mọi tham chiếu trỏ tới màn hình ngay khi nó đóng lại.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>McCarthy làm bộ thu gom rác (Garbage Collection) cho Lisp năm 1959, công bố năm 1960. Cơ chế này tự động thu hồi vùng nhớ không còn dùng, thay cho việc lập trình viên phải tự xóa bằng tay.</p>
+<p>Năm 2008, Android ra mắt trên chiếc HTC Dream chỉ có 192MB RAM. Mỗi ứng dụng chỉ được cấp từ 16MB đến 24MB bộ nhớ Heap. Trong khi đó, mỗi <code>Activity</code> lại giữ cả cây <code>View</code> và ảnh bitmap nặng hàng megabyte.</p>
+<p>Nếu một biến <code>static</code> hay luồng chạy ngầm giữ lại <code>Activity</code> đã đóng, bộ thu gom rác sẽ không thu hồi được nó. Chỉ cần người dùng xoay ngang màn hình vài lần là ứng dụng tràn Heap và sập vì lỗi <code>OutOfMemoryError</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Rò rỉ bộ nhớ không phải là RAM bị hỏng hay dữ liệu tự dưng biến mất. Đó là những đối tượng đã dùng xong và bỏ đi. Tuy nhiên, bộ thu gom rác không xóa được vì vẫn còn đường nối từ <a href="android-gc-roots.html">GC Roots</a>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Singleton hoặc luồng ngầm neo giữ Activity đã đóng, kéo theo toàn bộ cây View trên Heap gây OutOfMemoryError" src="../android/diagrams/memory-leak-activity-tree.png"></p>
+<p>Bộ thu gom rác bắt đầu tìm kiếm từ các điểm gốc <a href="android-gc-roots.html">GC Roots</a> gồm biến <code>static</code>, luồng đang chạy và tham chiếu JNI. Bất kỳ đối tượng nào không còn đường nối về <code>GC Roots</code> sẽ bị dọn sạch. Nhưng nếu singleton hay luồng ngầm giữ biến trỏ tới <code>Activity</code>, cả cây <code>View</code> sẽ dính chặt vào <code>GC Root</code>. Vì thế, bộ thu gom rác buộc phải chừa toàn bộ màn hình cũ lại trên vùng nhớ <a href="jvm-stack-vs-heap.html">Heap</a>.</p>
+<h2>Đánh đổi</h2>
+<p>Có bộ thu gom rác tự động giúp bạn không phải tự xóa từng vùng nhớ bằng tay. Đổi lại, khi bộ nhớ gần đầy và phải dọn rác liên tục, máy ảo sẽ chiếm CPU và làm màn hình bị giật (jank). Vì máy ảo không đoán được biến nào bạn đã hết dùng, nó buộc phải giữ lại mọi đối tượng còn đường nối về <code>GC Root</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Một đối tượng chỉ được giữ lại trong bộ nhớ khi vẫn còn đường tham chiếu nối từ các điểm gốc <code>GC Root</code> tới nó.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Trình dọn rác không dọn thứ bạn không dùng, nó chỉ dọn thứ không thể chạm tới từ bất kỳ GC Root nào.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class ProfileActivity : ComponentActivity() {
+    fun loadData() {
+        lifecycleScope.launch {
+            val result = repository.fetchData()
+            updateUi(result)
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Gán <a href="android-context-application-vs-activity.html">Activity</a> vào biến trong <code>companion object</code> hay singleton là lỗi hay gặp nhất làm ứng dụng sập vì <code>OutOfMemoryError</code>. Bẫy thứ hai là mở coroutine trong <code>GlobalScope</code>, khiến luồng ngầm giữ chặt <code>Activity</code> cũ qua mỗi lần người dùng xoay màn hình. Bạn hãy chạy việc ngầm trong <code>lifecycleScope</code> theo <a href="android-activity-lifecycle.html">Activity Lifecycle</a> và <a href="android-viewmodel.html">ViewModel</a> để công việc tự hủy khi màn hình đóng. Đừng bọc <code>WeakReference</code> để chữa cháy tạm bợ thay vì cắt đứt tham chiếu đúng theo vòng đời màn hình.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Rò rỉ bộ nhớ có làm app sập ngay lập tức không?
+Không. Rò rỉ một vài đối tượng nhỏ ban đầu hầu như không làm ứng dụng có biểu hiện gì lạ. Lỗi chỉ nổ ra thành <code>OutOfMemoryError</code> khi người dùng mở đi mở lại hoặc xoay màn hình nhiều lần làm đầy tràn vùng nhớ Heap.</p>
+<p><strong>Hỏi:</strong> Bọc mọi biến vào WeakReference có giúp chống rò rỉ triệt để không?
+Không nên làm vậy. <code>WeakReference</code> chỉ là cách chữa cháy và bắt bạn kiểm tra <code>null</code> mọi nơi vì đối tượng có thể mất bất ngờ. Cách làm đúng là gắn công việc vào <a href="android-activity-lifecycle.html">Activity Lifecycle</a> qua <code>lifecycleScope</code> để nó tự hủy gọn gàng khi màn hình đóng.</p>
+<p><strong>Hỏi:</strong> Inner class khác gì static nested class mà hay gây rò rỉ Activity?
+Một <code>inner class</code> trong Kotlin (hoặc non-static inner class trong Java) luôn ngầm giữ một biến ẩn trỏ về <code>Activity</code> bọc ngoài nó. Nếu giao <code>inner class</code> cho luồng ngầm chạy lâu, biến ẩn này sẽ giữ chặt cả cây <code>View</code> của <code>Activity</code> trên Heap.</p>
+<p><strong>Hỏi:</strong> Khi nào nên dùng Application Context thay cho Activity Context, làm sao biết?
+Bạn hãy xem đối tượng nhận <code>Context</code> đó có sống lâu hơn một màn hình đơn lẻ hay không. Những thứ sống suốt lúc mở ứng dụng như singleton hay kho dữ liệu thì chỉ được nhận <code>applicationContext</code> để không giữ chân màn hình. Ngược lại, các việc vẽ giao diện hay bật hộp thoại thì bắt buộc phải truyền <code>Activity</code> để có đúng bảng màu <code>Theme</code>.</p>
+<p><strong>Hỏi:</strong> Màn hình đóng rồi thì coroutine trong viewModelScope có bị rò rỉ không?
+Không. Khi người dùng bấm thoát hẳn màn hình, hệ thống sẽ gọi <code>onCleared()</code> và hủy sạch mọi coroutine đang chạy trong <code>viewModelScope</code>. Miễn là <a href="android-viewmodel.html">ViewModel</a> không giữ biến trỏ thẳng tới <code>View</code> hay <code>Activity</code>, toàn bộ bộ nhớ màn hình sẽ được dọn sạch.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cơ chế GC Root: bộ thu gom rác chỉ xóa đối tượng khi đứt hết mọi đường dẫn từ gốc.</li>
+<li>Nêu được hậu quả khi giữ tham chiếu tới Activity đã đóng: kéo theo cả cây View và ảnh bitmap gây OutOfMemoryError.</li>
+<li>Chỉ ra được bẫy giữ Activity trong biến static hoặc GlobalScope và cách dùng lifecycleScope để tự hủy.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/performance/memory-overview" target="_blank" rel="noopener">Overview of memory management — Android</a></li>
+<li><a href="https://developer.android.com/studio/profile/memory-profiler" target="_blank" rel="noopener">Capture a heap dump — Android</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)" target="_blank" rel="noopener">Garbage collection (computer science) — Wikipedia</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="android-gc-roots.html">GC Roots &amp; Chuỗi Tham chiếu Android</a></li>
+<li><a href="android-context-application-vs-activity.html">Context: Application vs Activity</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-memory-leak" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

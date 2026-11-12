@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sealed class vs data class | ConceptDive</title>
+<meta name="description" content="Khi biểu diễn trạng thái màn hình, bạn cần giới hạn các trạng thái và cất dữ liệu bên trong. sealed đóng kín danh sách lớp con để compiler bắt bạn xử lý đủ mọi nhánh trong when. Còn data class tự sinh">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-sealed-vs-data-class.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sealed class vs data class | ConceptDive">
+<meta property="og:description" content="Khi biểu diễn trạng thái màn hình, bạn cần giới hạn các trạng thái và cất dữ liệu bên trong. sealed đóng kín danh sách lớp con để compiler bắt bạn xử lý đủ mọi nhánh trong when. Còn data class tự sinh">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-sealed-vs-data-class.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/sealed-hierarchy-exhaustive.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>Sealed class vs data class</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi biểu diễn trạng thái màn hình, bạn cần giới hạn các trạng thái và cất dữ liệu bên trong. <code>sealed</code> đóng kín danh sách lớp con để compiler bắt bạn xử lý đủ mọi nhánh trong <code>when</code>. Còn <code>data class</code> tự sinh các hàm so sánh nội dung và sao chép để bạn không phải viết tay.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong Java cũ, biểu diễn các trạng thái của một màn hình rất vướng. Dùng <code>enum</code> thì mọi nhánh có chung một cấu trúc nên không cất dữ liệu riêng cho từng nhánh được. Còn dùng class kế thừa tự do thì khối <code>switch</code> phải có nhánh <code>default</code>, nên thêm trạng thái mới rất dễ quên xử lý.</p>
+<p>Ngoài ra, mỗi lần tạo class chứa dữ liệu, bạn phải viết tay hàng chục dòng cho <code>equals</code>, <code>hashCode</code> và <code>toString</code>. Khi thêm một trường mới vào class mà quên sửa các hàm này, phép so sánh hai đối tượng sẽ chạy sai.</p>
+<p>Năm 2011, JetBrains tách hai việc này thành hai từ khóa riêng trong Kotlin. Từ khóa <code>sealed</code> khóa danh sách lớp con lại, còn <code>data</code> tự sinh toàn bộ hàm so sánh theo giá trị. Mãi đến năm 2021, Java 17 mới có <code>record</code> và <code>sealed</code> class tương tự.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>sealed class</code> và <code>data class</code> không phải hai cách đối lập để bạn chọn một bỏ một. <code>sealed</code> dùng để khóa danh sách các lớp con, còn <code>data</code> dùng để tự sinh hàm so sánh theo dữ liệu bên trong.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Sealed interface đóng kín cây kế thừa giúp compiler kiểm tra vét cạn trong when; data class tự sinh mã theo giá trị" src="../kotlin/diagrams/sealed-hierarchy-exhaustive.png"></p>
+<p>Trước Kotlin 1.5, các lớp con của <code>sealed</code> phải nằm trong cùng một file. Từ Kotlin 1.5, bạn có thêm <code>sealed interface</code> và được đặt lớp con ở file khác trong cùng package và module. Nhờ biết hết mọi lớp con lúc biên dịch, compiler kiểm tra được khối <code>when</code> đã xét đủ nhánh chưa (exhaustive) mà không cần <code>else</code>. Còn từ khóa <code>data</code> dựa vào các biến ở constructor chính để tự sinh bytecode cho <a href="kotlin-equals-hashcode.html">equals và hashCode</a>, <code>toString</code>, <code>componentN</code> và <code>copy</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn không phải viết code lặp lại và được compiler nhắc ngay khi quên xử lý một nhánh trạng thái. Đổi lại, mỗi khi thêm một lớp con vào <code>sealed</code>, bạn phải đi cập nhật mọi khối <code>when</code> liên quan trong dự án. Với <code>data class</code>, nếu bạn dùng biến <code>var</code> rồi sửa giá trị, đối tượng sẽ bị thất lạc khi đang nằm trong <code>HashMap</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Ghép kiểu chọn một trong nhiều nhánh (Sum Type) với kiểu gom nhiều trường dữ liệu lại (Product Type).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Đặt <code>sealed</code> đối lập <code>data</code> là sai tiền đề: chúng là hai trục độc lập thường kết hợp để biểu diễn trạng thái.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">sealed interface ScreenState {
+    data object Loading : ScreenState
+    data class Success(val items: List&lt;String&gt;) : ScreenState
+    data class Error(val message: String) : ScreenState
+}
+
+fun render(state: ScreenState): String = when (state) {
+    is ScreenState.Loading -&gt; &quot;Loading&quot;
+    is ScreenState.Success -&gt; &quot;Items: ${state.items.size}&quot;
+    is ScreenState.Error -&gt; state.message
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn khai báo <code>var</code> trong <code>data class</code>, việc đổi giá trị biến đó sẽ làm đổi <code>hashCode</code> và làm mất đối tượng trong <code>HashMap</code>. Bẫy thứ hai là viết thêm nhánh <code>else</code> vào khối <code>when</code> đang kiểm tra một <code>sealed class</code>. Khi có người thêm trạng thái mới, nó sẽ lọt vào nhánh <code>else</code> khiến compiler không báo lỗi cho bạn biết. Đừng dùng <code>data class</code> cho các đối tượng có vòng đời hoặc định danh riêng mà không so sánh bằng giá trị.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Data class có kế thừa được sealed class hay sealed interface không?
+Được. Hai từ khoá này làm hai việc khác nhau và thường đi cặp với nhau. Trong <a href="android-state-holders.html">State holders</a>, từng nhánh trạng thái có mang dữ liệu thường là một <code>data class</code> cài đặt <code>sealed interface</code> chung.</p>
+<p><strong>Hỏi:</strong> Khi nào không nên dùng data class mà phải dùng class thông thường?
+Khi đối tượng có định danh hoặc vòng đời riêng chứ không phải một gói dữ liệu thuần túy. Ví dụ như <a href="android-viewmodel.html">ViewModel</a> hay một kết nối mạng thì phải dùng class thường. Nếu dùng <code>data class</code>, hai đối tượng khác nhau có thể bị coi là một chỉ vì các biến bên trong tình cờ bằng nhau.</p>
+<p><strong>Hỏi:</strong> Vì sao trong biểu thức when với sealed class, thêm nhánh else lại bị coi là chống chỉ định?
+Vì nhánh <code>else</code> làm tắt mất bước kiểm tra đủ nhánh của compiler. Sau này bạn thêm một trạng thái mới vào <code>sealed class</code>, các khối <code>when</code> có <code>else</code> vẫn biên dịch êm ru mà không báo thiếu. Lúc chạy thật, trạng thái mới đó sẽ âm thầm rơi vào nhánh <code>else</code> và gây lỗi khó tìm.</p>
+<p><strong>Hỏi:</strong> Nên dùng sealed class hay sealed interface khi mô hình hoá trạng thái UI?
+Nên ưu tiên <code>sealed interface</code>, trừ khi các nhánh con cần dùng chung constructor hoặc biến có backing field. Dùng <code>sealed interface</code> thì lớp con vẫn còn nguyên quyền kế thừa một class khác và cài đặt được nhiều interface cùng lúc. Ngoài ra, interface không tạo constructor nên bytecode sinh ra cũng gọn hơn.</p>
+<p><strong>Hỏi:</strong> Data object khác data class chỗ nào khi dùng trong sealed hierarchy?
+<code>data object</code> dùng cho nhánh trạng thái không cầm theo dữ liệu nào, ví dụ như <code>Loading</code>. Nó chỉ tạo một đối tượng duy nhất trong bộ nhớ (singleton) thay vì cấp phát mới mỗi lần chuyển trạng thái. Hơn nữa, <code>data object</code> tự sinh sẵn hàm <code>toString()</code> in ra đúng tên lớp rất dễ đọc khi gỡ lỗi.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao sealed và data không đối lập nhau mà thường kết hợp để biểu diễn trạng thái màn hình.</li>
+<li>Nêu được cách sealed khóa danh sách lớp con để compiler kiểm tra đủ nhánh (exhaustive) trong khối when.</li>
+<li>Trình bày được các hàm mà data class tự sinh từ constructor chính, cùng hai cái bẫy dùng biến var và nhánh else.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://kotlinlang.org/docs/sealed-classes.html" target="_blank" rel="noopener">Sealed classes and interfaces — Kotlin</a></li>
+<li><a href="https://kotlinlang.org/docs/data-classes.html" target="_blank" rel="noopener">Data classes — Kotlin Documentation</a></li>
+<li><a href="https://kotlinlang.org/docs/whatsnew15.html" target="_blank" rel="noopener">Whats new in Kotlin 1.5.0</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-equals-hashcode.html">equals &amp; hashCode</a></li>
+<li><a href="android-state-holders.html">State Holders</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-sealed-vs-data-class" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

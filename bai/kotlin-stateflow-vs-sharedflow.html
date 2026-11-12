@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StateFlow vs SharedFlow | ConceptDive</title>
+<meta name="description" content="StateFlow và SharedFlow là hai luồng phát dữ liệu nóng (Hot Stream) trong thư viện Coroutines của Kotlin. StateFlow luôn giữ giá trị hiện tại để vẽ màn hình và chứa luôn các sự kiện trong UiState. Còn">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-stateflow-vs-sharedflow.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="StateFlow vs SharedFlow | ConceptDive">
+<meta property="og:description" content="StateFlow và SharedFlow là hai luồng phát dữ liệu nóng (Hot Stream) trong thư viện Coroutines của Kotlin. StateFlow luôn giữ giá trị hiện tại để vẽ màn hình và chứa luôn các sự kiện trong UiState. Còn">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/kotlin-stateflow-vs-sharedflow.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/kotlin/diagrams/stateflow-conflation-buffer.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kotlin</p>
+<h1>StateFlow vs SharedFlow</h1>
+<h2>Bản 30 giây</h2>
+<p><code>StateFlow</code> và <code>SharedFlow</code> là hai luồng phát dữ liệu nóng (<em>Hot Stream</em>) trong thư viện Coroutines của Kotlin. <code>StateFlow</code> luôn giữ giá trị hiện tại để vẽ màn hình và chứa luôn các sự kiện trong <code>UiState</code>. Còn <code>SharedFlow</code> phát sự kiện ở tầng dữ liệu cho nhiều nơi cùng nghe mà không bắt buộc lưu lại giá trị cũ.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước đây, lập trình viên Android dùng <code>LiveData</code> để đưa dữ liệu từ ViewModel lên màn hình. Nhưng <code>LiveData</code> dính chặt vào hệ điều hành Android nên không đem xuống tầng dữ liệu dùng chung đa nền tảng được.</p>
+<p>Còn nếu dùng luồng lạnh thông thường, cứ thêm một nơi thu thập là hàm lại chạy lại từ đầu. Nếu hai chỗ trên màn hình cùng nghe một luồng lạnh gọi API, ứng dụng sẽ bắn hai request giống hệt nhau.</p>
+<p>Năm 2020, JetBrains đưa <code>SharedFlow</code> và <code>StateFlow</code> vào <code>kotlinx.coroutines</code> 1.4.0. Hai luồng nóng này viết thuần bằng Kotlin, chạy được trên mọi nền tảng KMP và chia sẻ chung kết quả cho nhiều nơi nghe.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>StateFlow</code> không phải một cấu trúc hoàn toàn khác với <code>SharedFlow</code>. Thực ra, <code>StateFlow</code> chính là một <code>SharedFlow</code> được cài sẵn bộ đệm phát lại bằng 1 và bắt buộc có giá trị ban đầu.</p>
+<p>Cả hai đều là luồng nóng (<em>Hot Stream</em>), vẫn giữ và nhận dữ liệu mới ngay cả khi chưa có ai lắng nghe. Nhiều nơi có thể cùng nghe một luồng mà không làm code bên trong chạy lại từ đầu như <a href="kotlin-flow-under-the-hood.html">luồng lạnh</a>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Conflation nuốt giá trị trùng trong StateFlow và cấu hình Replay trong SharedFlow" src="../kotlin/diagrams/stateflow-conflation-buffer.png"></p>
+<p><code>SharedFlow</code> giữ một hàng đợi các giá trị gần nhất (<em>replay cache</em>) để gửi lại cho những nơi vào nghe sau.</p>
+<p><code>StateFlow</code> luôn giữ đúng 1 giá trị mới nhất và lấy hàm <code>equals</code> ra so sánh mỗi khi bạn gán giá trị mới. Nếu giá trị mới bằng hệt giá trị đang có, <code>StateFlow</code> bỏ qua không phát lại nữa (<em>conflation</em>). Còn ở <code>SharedFlow</code>, khi hàng đợi đầy, hàm <code>emit</code> mặc định sẽ tạm dừng chờ trừ khi bạn cấu hình bỏ bớt.</p>
+<h2>Đánh đổi</h2>
+<p>Nhờ viết thuần bằng Kotlin, bạn dùng được <code>StateFlow</code> và <code>SharedFlow</code> từ tầng dữ liệu tới ViewModel mà không phụ thuộc vào Android SDK. Đổi lại, chúng không tự dừng khi màn hình ẩn đi như <code>LiveData</code>, nên bạn phải bọc bằng <code>repeatOnLifecycle</code>.</p>
+<p>Nếu thu thập luồng nóng mà quên gắn với vòng đời màn hình, ứng dụng vẫn chạy ngầm gây tốn pin và mạng.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Bên phát chỉ đẩy dữ liệu vào đường ống chung, không cần biết có bao nhiêu bên đang lắng nghe ở đầu kia (<em>Publish-Subscribe</em>).</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>StateFlow</code> không phải luồng bắn sự kiện, mà là ô nhớ giữ trạng thái hiện tại và tự bỏ qua giá trị cũ.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class ChatViewModel : ViewModel() {
+    private val _uiState = MutableStateFlow&lt;ChatUiState&gt;(ChatUiState.Idle)
+    val uiState: StateFlow&lt;ChatUiState&gt; = _uiState.asStateFlow()
+
+    private val _incomingMessages = MutableSharedFlow&lt;Message&gt;(extraBufferCapacity = 64)
+    val incomingMessages: SharedFlow&lt;Message&gt; = _incomingMessages.asSharedFlow()
+
+    fun onReceive(msg: Message) = _incomingMessages.tryEmit(msg)
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn thu thập thẳng trong <code>lifecycleScope.launch</code> mà thiếu <code>repeatOnLifecycle</code>, luồng vẫn tiếp tục nhận dữ liệu khi người dùng đã ẩn ứng dụng. Hậu quả là máy hao pin và ứng dụng có thể sập vì cố cập nhật lên View đã bị hủy. Đừng nhét sự kiện như Toast vào một <code>StateFlow</code> riêng mà quên xóa, vì xoay màn hình sẽ hiện lại Toast đó. Cũng đừng dùng <code>SharedFlow</code> có <code>replay = 0</code> để điều hướng từ ViewModel, vì bắn lúc màn hình chưa kịp nghe là mất luôn.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Tại sao không nên dùng lifecycleScope.launch trực tiếp để thu thập StateFlow trong Fragment?
+Vì khi người dùng bấm Home đưa Fragment về trạng thái <code>STOPPED</code>, coroutine đó vẫn không dừng lại. Nó cứ chạy ngầm và cố vẽ lại giao diện đang bị che khuất. Bạn hãy bọc trong <code>repeatOnLifecycle(Lifecycle.State.STARTED)</code> để tự hủy khi ẩn màn hình và nghe lại khi mở lên.</p>
+<p><strong>Hỏi:</strong> StateFlow xử lý thế nào khi ViewModel liên tiếp phát hai giá trị giống hệt nhau?
+Nó bỏ qua lần gán thứ hai và không báo gì cho giao diện. Trước khi phát, <code>StateFlow</code> luôn gọi <code>equals</code> để kiểm tra xem giá trị mới có khác giá trị đang giữ hay không. Nếu bạn cần phát cả những lần trùng nhau, hãy dùng <code>SharedFlow</code>.</p>
+<p><strong>Hỏi:</strong> Có nên dùng SharedFlow với replay bằng 0 để làm sự kiện điều hướng màn hình không?
+Không nên, vì sự kiện đó rất dễ bị rơi mất. Nếu ViewModel bắn sự kiện lúc màn hình đang xoay hoặc chưa kịp thu thập, lệnh chuyển màn hình sẽ mất. Bạn nên đặt một trường cờ hoặc danh sách sự kiện ngay trong <code>UiState</code> của <code>StateFlow</code>, xử lý xong thì báo ViewModel xóa đi.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được StateFlow là dạng riêng của SharedFlow luôn có giá trị ban đầu và giữ lại 1 giá trị mới nhất.</li>
+<li>Nêu được cách StateFlow dùng equals để bỏ qua giá trị trùng (conflation) và cách SharedFlow xử lý khi đầy bộ đệm.</li>
+<li>Giải thích được vì sao phải dùng repeatOnLifecycle khi thu thập trên Android và vì sao sự kiện UI nên đưa vào UiState.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/kotlin/flow/stateflow-and-sharedflow" target="_blank" rel="noopener">StateFlow and SharedFlow on Android</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/" target="_blank" rel="noopener">StateFlow API reference — kotlinx.coroutines</a></li>
+<li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/" target="_blank" rel="noopener">SharedFlow API reference — kotlinx.coroutines</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="architecture-state-vs-event.html">State vs Event</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dkotlin-stateflow-vs-sharedflow" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>
