@@ -18,6 +18,7 @@ created: 2026-09-15
 
 ## Cần biết trước
 - kotlin-coroutines
+- kotlin-flow-under-the-hood
 - architecture-state-vs-event
 
 ## Vấn đề buộc nó ra đời

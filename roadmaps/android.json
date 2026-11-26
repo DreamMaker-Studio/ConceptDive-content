@@ -1,0 +1,958 @@
+{
+ "schema": 1,
+ "id": "android",
+ "title": {
+  "vi": "Lộ trình Android",
+  "en": "Android roadmap"
+ },
+ "summary": {
+  "vi": "Đi từ ngôn ngữ, xuống máy chạy code, rồi lên app, giao diện và kiến trúc.",
+  "en": "From the language, down to where code runs, then up to the app, UI and architecture."
+ },
+ "seeAlso": [
+  {
+   "label": "roadmap.sh/android",
+   "url": "https://roadmap.sh/android"
+  }
+ ],
+ "groups": [
+  {
+   "id": "kotlin",
+   "title": {
+    "vi": "Ngôn ngữ Kotlin",
+    "en": "The Kotlin language"
+   },
+   "question": {
+    "vi": "Kotlin chặn những lỗi nào mà Java để lọt?",
+    "en": "Which bugs does Kotlin stop that Java lets through?"
+   },
+   "nodes": [
+    {
+     "id": "kotlin-why-over-java",
+     "article": "kotlin-why-over-java",
+     "title": {
+      "vi": "Vì sao Kotlin thay Java trên Android",
+      "en": "Vì sao Kotlin thay Java trên Android"
+     }
+    },
+    {
+     "id": "kotlin-null-safety",
+     "article": "kotlin-null-safety",
+     "title": {
+      "vi": "Null safety",
+      "en": "Null safety"
+     }
+    },
+    {
+     "id": "kotlin-val-vs-const",
+     "article": "kotlin-val-vs-const",
+     "title": {
+      "vi": "Val vs Const Val",
+      "en": "Val vs Const Val"
+     }
+    },
+    {
+     "id": "kotlin-lateinit-vs-lazy",
+     "article": "kotlin-lateinit-vs-lazy",
+     "title": {
+      "vi": "lateinit var vs by lazy",
+      "en": "lateinit var vs by lazy"
+     }
+    },
+    {
+     "id": "kotlin-inline-function",
+     "article": "kotlin-inline-function",
+     "title": {
+      "vi": "Inline Functions",
+      "en": "Inline Functions"
+     }
+    },
+    {
+     "id": "kotlin-scope-functions",
+     "article": "kotlin-scope-functions",
+     "title": {
+      "vi": "Scope functions",
+      "en": "Scope functions"
+     }
+    },
+    {
+     "id": "kotlin-extension-and-object",
+     "article": "kotlin-extension-and-object",
+     "title": {
+      "vi": "Extension Function & Object Declaration",
+      "en": "Extension Function & Object Declaration"
+     }
+    },
+    {
+     "id": "kotlin-sealed-vs-data-class",
+     "article": "kotlin-sealed-vs-data-class",
+     "title": {
+      "vi": "Sealed class vs data class",
+      "en": "Sealed class vs data class"
+     }
+    },
+    {
+     "id": "kotlin-equals-hashcode",
+     "article": "kotlin-equals-hashcode",
+     "title": {
+      "vi": "equals & hashCode",
+      "en": "equals & hashCode"
+     }
+    },
+    {
+     "id": "kotlin-generics-variance",
+     "article": "kotlin-generics-variance",
+     "title": {
+      "vi": "Generics & Variance",
+      "en": "Generics & Variance"
+     }
+    },
+    {
+     "id": "kotlin-collections-and-sequences",
+     "article": "kotlin-collections-and-sequences",
+     "title": {
+      "vi": "Collections & Sequence",
+      "en": "Collections & Sequence"
+     },
+     "why": {
+      "vi": "List, Set, Map và Sequence: khi nào xử lý ngay, khi nào xử lý lười, và chi phí của từng cách.",
+      "en": "List, Set, Map and Sequence: when work runs eagerly or lazily, and what each costs."
+     },
+     "requires": [
+      "kotlin-inline-function"
+     ],
+     "docs": [
+      {
+       "label": "kotlinlang.org/docs/collections-overview.html",
+       "url": "https://kotlinlang.org/docs/collections-overview.html"
+      },
+      {
+       "label": "kotlinlang.org/docs/sequences.html",
+       "url": "https://kotlinlang.org/docs/sequences.html"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "runtime",
+   "title": {
+    "vi": "Máy chạy code",
+    "en": "Where code runs"
+   },
+   "question": {
+    "vi": "Bộ nhớ và luồng thật sự vận hành ra sao?",
+    "en": "How do memory and threads really work?"
+   },
+   "nodes": [
+    {
+     "id": "thread",
+     "article": "thread",
+     "title": {
+      "vi": "Thread",
+      "en": "Thread"
+     }
+    },
+    {
+     "id": "jvm-stack-vs-heap",
+     "article": "jvm-stack-vs-heap",
+     "title": {
+      "vi": "Stack vs Heap",
+      "en": "Stack vs Heap"
+     }
+    },
+    {
+     "id": "android-gc-roots",
+     "article": "android-gc-roots",
+     "title": {
+      "vi": "GC Roots & Chuỗi Tham chiếu Android",
+      "en": "GC Roots & Chuỗi Tham chiếu Android"
+     }
+    },
+    {
+     "id": "jvm-race-condition-memory-model",
+     "article": "jvm-race-condition-memory-model",
+     "title": {
+      "vi": "Race Condition & Memory Model",
+      "en": "Race Condition & Memory Model"
+     }
+    },
+    {
+     "id": "jvm-virtual-method-dispatch",
+     "article": "jvm-virtual-method-dispatch",
+     "title": {
+      "vi": "Virtual Method Table & Dynamic Dispatch",
+      "en": "Virtual Method Table & Dynamic Dispatch"
+     }
+    }
+   ]
+  },
+  {
+   "id": "design",
+   "title": {
+    "vi": "OOP và thiết kế",
+    "en": "OOP and design"
+   },
+   "question": {
+    "vi": "Vì sao code dễ sửa lại khác code chạy được?",
+    "en": "Why is code that is easy to change different from code that runs?"
+   },
+   "nodes": [
+    {
+     "id": "oop-four-pillars",
+     "article": "oop-four-pillars",
+     "title": {
+      "vi": "Bốn tính chất OOP",
+      "en": "Bốn tính chất OOP"
+     }
+    },
+    {
+     "id": "oop-abstract-class-vs-interface",
+     "article": "oop-abstract-class-vs-interface",
+     "title": {
+      "vi": "Abstract class đối lập Interface",
+      "en": "Abstract class đối lập Interface"
+     }
+    },
+    {
+     "id": "oop-composition-over-inheritance",
+     "article": "oop-composition-over-inheritance",
+     "title": {
+      "vi": "Composition over Inheritance",
+      "en": "Composition over Inheritance"
+     }
+    },
+    {
+     "id": "oop-solid",
+     "article": "oop-solid",
+     "title": {
+      "vi": "SOLID",
+      "en": "SOLID"
+     }
+    },
+    {
+     "id": "oop-design-patterns",
+     "article": "oop-design-patterns",
+     "title": {
+      "vi": "Builder, Factory, Observer",
+      "en": "Builder, Factory, Observer"
+     },
+     "why": {
+      "vi": "Ba mẫu thiết kế gặp hằng ngày trong Android: dựng đối tượng nhiều tham số, giấu cách tạo, báo tin khi dữ liệu đổi.",
+      "en": "Three patterns you meet daily on Android: objects with many parameters, hidden creation, notifying on change."
+     },
+     "requires": [
+      "oop-four-pillars",
+      "oop-abstract-class-vs-interface"
+     ],
+     "docs": [
+      {
+       "label": "refactoring.guru/design-patterns/catalog",
+       "url": "https://refactoring.guru/design-patterns/catalog"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "app",
+   "title": {
+    "vi": "App sống trên Android",
+    "en": "How an app lives on Android"
+   },
+   "question": {
+    "vi": "Hệ điều hành quyết định số phận app thế nào?",
+    "en": "How does the OS decide an app's fate?"
+   },
+   "nodes": [
+    {
+     "id": "android-activity-lifecycle",
+     "article": "android-activity-lifecycle",
+     "title": {
+      "vi": "Activity Lifecycle",
+      "en": "Activity Lifecycle"
+     }
+    },
+    {
+     "id": "android-intent",
+     "article": "android-intent",
+     "title": {
+      "vi": "Intent & intent filter",
+      "en": "Intent & intent filter"
+     },
+     "why": {
+      "vi": "Cách các màn hình và các app gọi nhau mà không cần biết lớp của nhau.",
+      "en": "How screens and apps call each other without knowing each other's classes."
+     },
+     "requires": [
+      "android-activity-lifecycle"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/guide/components/intents-filters",
+       "url": "https://developer.android.com/guide/components/intents-filters"
+      }
+     ]
+    },
+    {
+     "id": "android-tasks-and-back-stack",
+     "article": "android-tasks-and-back-stack",
+     "title": {
+      "vi": "Task & back stack",
+      "en": "Task & back stack"
+     },
+     "why": {
+      "vi": "Hệ thống xếp các màn hình đã mở thành chồng; nút Back và launchMode quyết định chồng đó ra sao.",
+      "en": "The system stacks opened screens; Back and launchMode decide what happens to that stack."
+     },
+     "requires": [
+      "android-activity-lifecycle",
+      "android-intent"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/guide/components/activities/tasks-and-back-stack",
+       "url": "https://developer.android.com/guide/components/activities/tasks-and-back-stack"
+      }
+     ]
+    },
+    {
+     "id": "android-fragment-lifecycle",
+     "article": "android-fragment-lifecycle",
+     "title": {
+      "vi": "Fragment Lifecycle & View Lifecycle",
+      "en": "Fragment Lifecycle & View Lifecycle"
+     }
+    },
+    {
+     "id": "android-context-application-vs-activity",
+     "article": "android-context-application-vs-activity",
+     "title": {
+      "vi": "Context: Application vs Activity",
+      "en": "Context: Application vs Activity"
+     }
+    },
+    {
+     "id": "android-handler-looper-message-queue",
+     "article": "android-handler-looper-message-queue",
+     "title": {
+      "vi": "Handler, Looper & MessageQueue",
+      "en": "Handler, Looper & MessageQueue"
+     }
+    },
+    {
+     "id": "android-main-thread-and-anr",
+     "article": "android-main-thread-and-anr",
+     "title": {
+      "vi": "Main Thread & ANR",
+      "en": "Main Thread & ANR"
+     }
+    },
+    {
+     "id": "android-memory-leak",
+     "article": "android-memory-leak",
+     "title": {
+      "vi": "Memory leak",
+      "en": "Memory leak"
+     }
+    },
+    {
+     "id": "android-process-death-and-saved-state",
+     "article": "android-process-death-and-saved-state",
+     "title": {
+      "vi": "Process Death & SavedStateHandle",
+      "en": "Process Death & SavedStateHandle"
+     }
+    },
+    {
+     "id": "android-service",
+     "article": "android-service",
+     "title": {
+      "vi": "Service",
+      "en": "Service"
+     },
+     "why": {
+      "vi": "Chạy việc khi không có màn hình nào mở, và vì sao Android ngày càng siết loại việc này.",
+      "en": "Running work with no screen open, and why Android keeps restricting it."
+     },
+     "requires": [
+      "android-activity-lifecycle",
+      "android-main-thread-and-anr"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/develop/background-work/services",
+       "url": "https://developer.android.com/develop/background-work/services"
+      }
+     ]
+    },
+    {
+     "id": "android-broadcast-receiver",
+     "article": "android-broadcast-receiver",
+     "title": {
+      "vi": "Broadcast receiver",
+      "en": "Broadcast receiver"
+     },
+     "why": {
+      "vi": "Nhận tin từ hệ thống (pin yếu, đổi mạng, khởi động xong) và giới hạn thời gian xử lý.",
+      "en": "Receiving system events (low battery, network change, boot) and the time limit to handle them."
+     },
+     "requires": [
+      "android-intent",
+      "android-main-thread-and-anr"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/develop/background-work/background-tasks/broadcasts",
+       "url": "https://developer.android.com/develop/background-work/background-tasks/broadcasts"
+      }
+     ]
+    },
+    {
+     "id": "android-content-provider",
+     "article": "android-content-provider",
+     "title": {
+      "vi": "Content provider",
+      "en": "Content provider"
+     },
+     "why": {
+      "vi": "Cửa chia sẻ dữ liệu có kiểm quyền giữa các app, như danh bạ hay ảnh.",
+      "en": "A permission-checked door for sharing data between apps, like contacts or photos."
+     },
+     "requires": [
+      "android-intent"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/guide/topics/providers/content-providers",
+       "url": "https://developer.android.com/guide/topics/providers/content-providers"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": {
+    "vi": "Bất đồng bộ",
+    "en": "Asynchrony"
+   },
+   "question": {
+    "vi": "Làm việc lâu mà không treo màn hình bằng cách nào?",
+    "en": "How do you do long work without freezing the screen?"
+   },
+   "nodes": [
+    {
+     "id": "kotlin-coroutines",
+     "article": "kotlin-coroutines",
+     "title": {
+      "vi": "Coroutines",
+      "en": "Coroutines"
+     }
+    },
+    {
+     "id": "kotlin-coroutine-state-machine",
+     "article": "kotlin-coroutine-state-machine",
+     "title": {
+      "vi": "Continuation & Compiler State Machine",
+      "en": "Continuation & Compiler State Machine"
+     }
+    },
+    {
+     "id": "kotlin-coroutine-context-and-dispatchers",
+     "article": "kotlin-coroutine-context-and-dispatchers",
+     "title": {
+      "vi": "CoroutineContext & Dispatchers",
+      "en": "CoroutineContext & Dispatchers"
+     }
+    },
+    {
+     "id": "kotlin-structured-concurrency",
+     "article": "kotlin-structured-concurrency",
+     "title": {
+      "vi": "Structured Concurrency",
+      "en": "Structured Concurrency"
+     }
+    },
+    {
+     "id": "kotlin-flow-under-the-hood",
+     "article": "kotlin-flow-under-the-hood",
+     "title": {
+      "vi": "Flow: Bản chất Cold Stream",
+      "en": "Flow: Bản chất Cold Stream"
+     }
+    },
+    {
+     "id": "kotlin-stateflow-vs-sharedflow",
+     "article": "kotlin-stateflow-vs-sharedflow",
+     "title": {
+      "vi": "StateFlow vs SharedFlow",
+      "en": "StateFlow vs SharedFlow"
+     }
+    },
+    {
+     "id": "android-workmanager",
+     "article": "android-workmanager",
+     "title": {
+      "vi": "WorkManager",
+      "en": "WorkManager"
+     },
+     "why": {
+      "vi": "Việc phải chạy xong kể cả khi app bị tắt hay máy khởi động lại, có điều kiện mạng và pin.",
+      "en": "Work that must finish even if the app is killed or the device reboots, with network and battery constraints."
+     },
+     "requires": [
+      "kotlin-coroutines",
+      "android-process-death-and-saved-state"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/develop/background-work/background-tasks/persistent",
+       "url": "https://developer.android.com/develop/background-work/background-tasks/persistent"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ui",
+   "title": {
+    "vi": "Giao diện",
+    "en": "User interface"
+   },
+   "question": {
+    "vi": "Dữ liệu đổi thì màn hình biết vẽ lại chỗ nào?",
+    "en": "When data changes, how does the screen know what to redraw?"
+   },
+   "nodes": [
+    {
+     "id": "compose-layout-basics",
+     "article": "compose-layout-basics",
+     "title": {
+      "vi": "Layout Compose: Row, Column, LazyColumn",
+      "en": "Compose layout: Row, Column, LazyColumn"
+     },
+     "why": {
+      "vi": "Ba khối dựng hầu hết màn hình, đo và đặt con ra sao, và vì sao danh sách dài phải dùng Lazy.",
+      "en": "The three blocks behind most screens, how they measure and place children, and why long lists need Lazy."
+     },
+     "docs": [
+      {
+       "label": "developer.android.com/develop/ui/compose/layouts/basics",
+       "url": "https://developer.android.com/develop/ui/compose/layouts/basics"
+      },
+      {
+       "label": "developer.android.com/develop/ui/compose/lists",
+       "url": "https://developer.android.com/develop/ui/compose/lists"
+      }
+     ]
+    },
+    {
+     "id": "compose-recomposition-and-state",
+     "article": "compose-recomposition-and-state",
+     "title": {
+      "vi": "Compose: Recomposition & State",
+      "en": "Compose: Recomposition & State"
+     }
+    },
+    {
+     "id": "compose-side-effects",
+     "article": "compose-side-effects",
+     "title": {
+      "vi": "Compose: Side Effects",
+      "en": "Compose: Side Effects"
+     }
+    },
+    {
+     "id": "android-state-holders",
+     "article": "android-state-holders",
+     "title": {
+      "vi": "State Holders",
+      "en": "State Holders"
+     }
+    },
+    {
+     "id": "compose-navigation",
+     "article": "compose-navigation",
+     "title": {
+      "vi": "Navigation",
+      "en": "Navigation"
+     },
+     "why": {
+      "vi": "Đi giữa các màn hình, truyền tham số và giữ back stack đúng khi xoay máy hay app bị tắt.",
+      "en": "Moving between screens, passing arguments and keeping the back stack right across rotation and process death."
+     },
+     "requires": [
+      "compose-recomposition-and-state",
+      "android-tasks-and-back-stack"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/develop/ui/compose/navigation",
+       "url": "https://developer.android.com/develop/ui/compose/navigation"
+      }
+     ]
+    },
+    {
+     "id": "android-recyclerview-and-diffutil",
+     "article": "android-recyclerview-and-diffutil",
+     "title": {
+      "vi": "RecyclerView & DiffUtil",
+      "en": "RecyclerView & DiffUtil"
+     }
+    },
+    {
+     "id": "compose-animation",
+     "article": "compose-animation",
+     "title": {
+      "vi": "Animations",
+      "en": "Animations"
+     },
+     "why": {
+      "vi": "Chuyển động gắn với state: animate*AsState, AnimatedVisibility, và chi phí recomposition của chúng.",
+      "en": "Motion driven by state: animate*AsState, AnimatedVisibility, and their recomposition cost."
+     },
+     "requires": [
+      "compose-recomposition-and-state"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/develop/ui/compose/animation/introduction",
+       "url": "https://developer.android.com/develop/ui/compose/animation/introduction"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "architecture",
+   "title": {
+    "vi": "Kiến trúc",
+    "en": "Architecture"
+   },
+   "question": {
+    "vi": "Đặt logic ở đâu để app lớn lên không vỡ?",
+    "en": "Where does logic go so the app can grow without breaking?"
+   },
+   "nodes": [
+    {
+     "id": "android-viewmodel",
+     "article": "android-viewmodel",
+     "title": {
+      "vi": "ViewModel",
+      "en": "ViewModel"
+     }
+    },
+    {
+     "id": "architecture-state-vs-event",
+     "article": "architecture-state-vs-event",
+     "title": {
+      "vi": "State vs Event",
+      "en": "State vs Event"
+     }
+    },
+    {
+     "id": "architecture-mvvm-vs-mvi",
+     "article": "architecture-mvvm-vs-mvi",
+     "title": {
+      "vi": "MVVM vs MVI",
+      "en": "MVVM vs MVI"
+     }
+    },
+    {
+     "id": "architecture-dependency-injection",
+     "article": "architecture-dependency-injection",
+     "title": {
+      "vi": "Dependency Injection",
+      "en": "Dependency Injection"
+     }
+    },
+    {
+     "id": "android-hilt-and-koin",
+     "article": "android-hilt-and-koin",
+     "title": {
+      "vi": "Hilt & Koin",
+      "en": "Hilt & Koin"
+     },
+     "why": {
+      "vi": "Hai cách làm DI phổ biến trên Android: sinh code lúc biên dịch hay tra cứu lúc chạy.",
+      "en": "The two common DI approaches on Android: code generated at compile time or lookup at runtime."
+     },
+     "requires": [
+      "architecture-dependency-injection",
+      "android-viewmodel"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/training/dependency-injection/hilt-android",
+       "url": "https://developer.android.com/training/dependency-injection/hilt-android"
+      },
+      {
+       "label": "insert-koin.io/docs/quickstart/android",
+       "url": "https://insert-koin.io/docs/quickstart/android/"
+      }
+     ]
+    },
+    {
+     "id": "architecture-clean-architecture-and-use-cases",
+     "article": "architecture-clean-architecture-and-use-cases",
+     "title": {
+      "vi": "Clean Architecture & Use Cases",
+      "en": "Clean Architecture & Use Cases"
+     }
+    },
+    {
+     "id": "architecture-offline-first-repository",
+     "article": "architecture-offline-first-repository",
+     "title": {
+      "vi": "Offline-First Repository & SSOT",
+      "en": "Offline-First Repository & SSOT"
+     }
+    }
+   ]
+  },
+  {
+   "id": "data",
+   "title": {
+    "vi": "Dữ liệu, mạng, thiết bị",
+    "en": "Data, network, devices"
+   },
+   "question": {
+    "vi": "Dữ liệu đi vào, nằm lại và đi ra khỏi app thế nào?",
+    "en": "How does data enter, stay in and leave the app?"
+   },
+   "nodes": [
+    {
+     "id": "android-room",
+     "article": "android-room",
+     "title": {
+      "vi": "Room",
+      "en": "Room"
+     },
+     "why": {
+      "vi": "Lưu dữ liệu có cấu trúc bằng SQLite, kiểm câu SQL lúc biên dịch và trả Flow khi bảng đổi.",
+      "en": "Structured storage on SQLite, with SQL checked at compile time and Flow updates when tables change."
+     },
+     "requires": [
+      "kotlin-coroutines",
+      "kotlin-flow-under-the-hood"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/training/data-storage/room",
+       "url": "https://developer.android.com/training/data-storage/room"
+      }
+     ]
+    },
+    {
+     "id": "android-datastore",
+     "article": "android-datastore",
+     "title": {
+      "vi": "DataStore",
+      "en": "DataStore"
+     },
+     "why": {
+      "vi": "Lưu cài đặt nhỏ thay SharedPreferences: ghi bất đồng bộ, không chặn main thread, đọc bằng Flow.",
+      "en": "Small settings storage replacing SharedPreferences: async writes, no main-thread blocking, read as Flow."
+     },
+     "requires": [
+      "kotlin-flow-under-the-hood",
+      "android-main-thread-and-anr"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/topic/libraries/architecture/datastore",
+       "url": "https://developer.android.com/topic/libraries/architecture/datastore"
+      }
+     ]
+    },
+    {
+     "id": "android-retrofit-and-okhttp",
+     "article": "android-retrofit-and-okhttp",
+     "title": {
+      "vi": "Retrofit & OkHttp",
+      "en": "Retrofit & OkHttp"
+     },
+     "why": {
+      "vi": "Gọi API: OkHttp lo kết nối, timeout, cache; Retrofit biến interface thành lời gọi mạng.",
+      "en": "Calling APIs: OkHttp handles connections, timeouts and cache; Retrofit turns an interface into network calls."
+     },
+     "requires": [
+      "kotlin-coroutines"
+     ],
+     "docs": [
+      {
+       "label": "square.github.io/okhttp",
+       "url": "https://square.github.io/okhttp/"
+      },
+      {
+       "label": "square.github.io/retrofit",
+       "url": "https://square.github.io/retrofit/"
+      }
+     ]
+    },
+    {
+     "id": "android-tcp-stream-framing",
+     "article": "android-tcp-stream-framing",
+     "title": {
+      "vi": "TCP Stream Framing",
+      "en": "TCP Stream Framing"
+     }
+    },
+    {
+     "id": "android-ble-gatt-model",
+     "article": "android-ble-gatt-model",
+     "title": {
+      "vi": "BLE GATT Model",
+      "en": "BLE GATT Model"
+     }
+    },
+    {
+     "id": "android-ble-android-pitfalls",
+     "article": "android-ble-android-pitfalls",
+     "title": {
+      "vi": "BLE Android Pitfalls",
+      "en": "BLE Android Pitfalls"
+     }
+    },
+    {
+     "id": "android-samsung-mdc-protocol",
+     "article": "android-samsung-mdc-protocol",
+     "title": {
+      "vi": "Samsung MDC Protocol",
+      "en": "Samsung MDC Protocol"
+     }
+    }
+   ]
+  },
+  {
+   "id": "quality",
+   "title": {
+    "vi": "Chất lượng và phát hành",
+    "en": "Quality and release"
+   },
+   "question": {
+    "vi": "Làm sao biết app chạy đúng trước khi người dùng biết?",
+    "en": "How do you know the app works before users find out?"
+   },
+   "nodes": [
+    {
+     "id": "android-testing",
+     "article": "android-testing",
+     "title": {
+      "vi": "Unit test & UI test",
+      "en": "Unit tests & UI tests"
+     },
+     "why": {
+      "vi": "Test logic thuần trên JVM, test giao diện trên máy, và test nào đáng viết.",
+      "en": "Pure logic tests on the JVM, UI tests on device, and which tests are worth writing."
+     },
+     "requires": [
+      "android-viewmodel",
+      "kotlin-coroutines"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/training/testing/fundamentals",
+       "url": "https://developer.android.com/training/testing/fundamentals"
+      }
+     ]
+    },
+    {
+     "id": "android-debugging-and-profiling",
+     "article": "android-debugging-and-profiling",
+     "title": {
+      "vi": "Debug: LeakCanary, Profiler",
+      "en": "Debugging: LeakCanary, Profiler"
+     },
+     "why": {
+      "vi": "Tìm rò bộ nhớ, giật khung hình và chỗ tốn pin bằng công cụ thay vì đoán.",
+      "en": "Finding leaks, jank and battery drain with tools instead of guessing."
+     },
+     "requires": [
+      "android-memory-leak",
+      "android-main-thread-and-anr"
+     ],
+     "docs": [
+      {
+       "label": "square.github.io/leakcanary",
+       "url": "https://square.github.io/leakcanary/"
+      },
+      {
+       "label": "developer.android.com/studio/profile",
+       "url": "https://developer.android.com/studio/profile"
+      }
+     ]
+    },
+    {
+     "id": "android-gradle-build",
+     "article": "android-gradle-build",
+     "title": {
+      "vi": "Gradle & build variant",
+      "en": "Gradle & build variants"
+     },
+     "why": {
+      "vi": "App được biên dịch thế nào: module, dependency, build type, flavor.",
+      "en": "How the app is compiled: modules, dependencies, build types, flavors."
+     },
+     "docs": [
+      {
+       "label": "developer.android.com/build",
+       "url": "https://developer.android.com/build"
+      }
+     ]
+    },
+    {
+     "id": "android-release-r8-signing",
+     "article": "android-release-r8-signing",
+     "title": {
+      "vi": "R8, ký app, lên Play",
+      "en": "R8, signing, Play release"
+     },
+     "why": {
+      "vi": "Thu nhỏ code bằng R8, ký app, và đưa bản phát hành lên Google Play.",
+      "en": "Shrinking code with R8, signing, and shipping a release to Google Play."
+     },
+     "requires": [
+      "android-gradle-build"
+     ],
+     "docs": [
+      {
+       "label": "developer.android.com/build/shrink-code",
+       "url": "https://developer.android.com/build/shrink-code"
+      },
+      {
+       "label": "developer.android.com/studio/publish/app-signing",
+       "url": "https://developer.android.com/studio/publish/app-signing"
+      }
+     ]
+    },
+    {
+     "id": "android-crashlytics-and-fcm",
+     "article": "android-crashlytics-and-fcm",
+     "title": {
+      "vi": "Crashlytics & FCM",
+      "en": "Crashlytics & FCM"
+     },
+     "why": {
+      "vi": "Biết app sập ở đâu trên máy người dùng, và gửi thông báo đẩy.",
+      "en": "Knowing where the app crashes on users' devices, and sending push notifications."
+     },
+     "requires": [
+      "android-release-r8-signing"
+     ],
+     "docs": [
+      {
+       "label": "firebase.google.com/docs/crashlytics",
+       "url": "https://firebase.google.com/docs/crashlytics"
+      },
+      {
+       "label": "firebase.google.com/docs/cloud-messaging",
+       "url": "https://firebase.google.com/docs/cloud-messaging"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

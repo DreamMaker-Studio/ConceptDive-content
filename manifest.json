@@ -1,7 +1,7 @@
 {
  "version": 1,
- "generatedAt": "2026-10-29T04:28:57+00:00",
- "sourceCommit": "049b483",
+ "generatedAt": "2026-11-26T08:17:37+00:00",
+ "sourceCommit": "5872768",
  "files": [
   {
    "path": "android/activity-lifecycle.md",
@@ -375,8 +375,8 @@
   },
   {
    "path": "kotlin/flow-under-the-hood.md",
-   "sha256": "0273a035bc608c7ca9d5c76cca32a46cd3f8c18d77b38a2d0fc3a723d4292f80",
-   "size": 6950
+   "sha256": "6309752a5030666b640c39a140c5c37e3555d88320e5fee0e4b35ae1a3b83db1",
+   "size": 6917
   },
   {
    "path": "kotlin/generics-variance.md",
@@ -410,8 +410,8 @@
   },
   {
    "path": "kotlin/stateflow-vs-sharedflow.md",
-   "sha256": "4b9442d46da2854393c82d7d5446a1f3d09f3ce15ca179c7995d7115f48bee8b",
-   "size": 7029
+   "sha256": "2ed687b8847679a871a48beef6ecaeb2d1a2628c04f7840fdd7b39b90dac50ab",
+   "size": 7058
   },
   {
    "path": "kotlin/structured-concurrency.md",
@@ -467,6 +467,11 @@
    "path": "oop/solid.md",
    "sha256": "7069ca4298154cab84db7271839d31a49b1a2afe5c7b1ceaba37d3c520e5b1df",
    "size": 7105
+  },
+  {
+   "path": "roadmaps/android.json",
+   "sha256": "b45aeed06a2fdccec80001a3ce5dbff6be71e9c7289884c2677e691da9493167",
+   "size": 26858
   }
  ]
 }

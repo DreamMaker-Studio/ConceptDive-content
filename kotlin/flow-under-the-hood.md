@@ -18,7 +18,6 @@ Khi đọc cảm biến hay cơ sở dữ liệu liên tục, chạy sẵn lúc 
 
 ## Cần biết trước
 - kotlin-coroutines
-- kotlin-stateflow-vs-sharedflow
 - kotlin-coroutine-context-and-dispatchers
 
 ## Vấn đề buộc nó ra đời
