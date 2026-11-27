@@ -31,7 +31,7 @@ Khi nhúng nhiều thư viện, tệp thực thi `classes.dex` nhanh chóng ch�
 Khi bật `isMinifyEnabled = true`, `R8` đi từ các điểm neo trong `AndroidManifest.xml` và các luật `-keep` trong `proguard-rules.pro` để lần theo đồ thị gọi hàm. Lớp không nối tới điểm neo bị xóa, còn tên lớp sống sót bị đổi thành `a.b.a` và ghi sổ đối chiếu vào `mapping.txt`. Nếu bật thêm `isShrinkResources = true`, công cụ xóa tiếp ảnh và XML thừa trước khi bạn đóng gói tệp `.aab` ký bằng `Upload Key`. Từ gói `.aab` tải lên Play Console, Google Play sinh các `Split APKs` vừa khít cấu hình máy người dùng và đóng dấu bằng `App Signing Key`.
 
 ## Đánh đổi
-Ứng dụng giảm mạnh dung lượng, tránh chạm trần 65.536 hàm và cho phép xin cấp lại `Upload Key` nếu bạn lỡ mất tệp `.jks`. Đổi lại, stack trace khi sập sẽ toàn tên `a.b.a` nếu thiếu `mapping.txt`. Các lớp gọi ngầm lúc chạy cũng sẽ bị xóa nhầm nếu thiếu luật `-keep`.
+Ứng dụng giảm mạnh dung lượng, tránh chạm trần 65.536 hàm và cho phép xin cấp lại `Upload Key` nếu bạn lỡ mất tệp `.jks`. Đổi lại, [stack trace khi sập](concept:android-crashlytics-and-fcm) sẽ toàn tên `a.b.a` nếu thiếu `mapping.txt`. Các lớp gọi ngầm lúc chạy cũng sẽ bị xóa nhầm nếu thiếu luật `-keep`.
 
 ## Nguyên lý gốc
 Chỉ đóng gói đúng những nhánh mã và tài nguyên mà thiết bị đích thực sự chạm tới. Đồng thời, luôn tách khóa người gửi khỏi khóa phân phối.

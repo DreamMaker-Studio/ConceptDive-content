@@ -68,7 +68,7 @@ val c: Consumer<String> = Box<Any>(123)
 ```
 
 ## Bẫy & ranh giới
-Khi ép kiểu cưỡng bức `list as List<Int>`, lúc ép không báo lỗi vì đã xóa kiểu, nhưng lúc đọc phần tử mới sập `ClassCastException`. Cũng đừng gắn `out` cho những lớp vừa đọc vừa ghi như danh sách `MutableList` hay bộ nhớ đệm. Nếu lạm dụng `List<*>` khắp nơi, bạn sẽ không thêm được phần tử nào và đọc ra chỉ nhận kiểu `Any?`. Triệu chứng là trình biên dịch báo đỏ khi truyền danh sách vào hàm, hoặc sập `ClassCastException` lúc đọc phần tử.
+Khi ép kiểu cưỡng bức `list as List<Int>`, lúc ép không báo lỗi vì đã xóa kiểu, nhưng lúc đọc phần tử mới sập `ClassCastException`. Cũng đừng gắn `out` cho những lớp vừa đọc vừa ghi như danh sách [`MutableList`](concept:kotlin-collections-and-sequences) hay bộ nhớ đệm. Nếu lạm dụng `List<*>` khắp nơi, bạn sẽ không thêm được phần tử nào và đọc ra chỉ nhận kiểu `Any?`. Triệu chứng là trình biên dịch báo đỏ khi truyền danh sách vào hàm, hoặc sập `ClassCastException` lúc đọc phần tử.
 
 ## Câu hỏi thực chiến
 **Hỏi:** Vì sao trong Kotlin `List` kiểu `String` gán được cho `List` kiểu `Any`, nhưng `MutableList` kiểu `String` lại không gán được cho `MutableList` kiểu `Any`?

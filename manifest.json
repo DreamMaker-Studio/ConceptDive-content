@@ -1,12 +1,12 @@
 {
  "version": 1,
- "generatedAt": "2026-11-27T01:29:02+00:00",
- "sourceCommit": "eb5708b",
+ "generatedAt": "2026-11-27T01:52:22+00:00",
+ "sourceCommit": "892025a",
  "files": [
   {
    "path": "android/activity-lifecycle.md",
-   "sha256": "dc3ff113ca24de72e1cfb3f2320f277121a844b15c103d8f069dd155f4cee087",
-   "size": 7193
+   "sha256": "608052bcf930f2e3952efe556a9a441b311a09218faa5521e64b4dd50a2853a2",
+   "size": 7222
   },
   {
    "path": "android/ble-android-pitfalls.md",
@@ -25,18 +25,18 @@
   },
   {
    "path": "android/content-provider.md",
-   "sha256": "0e4aefe9d7510ff638056361a5bebcca00c8f4091043b45c0e69e4bc05b4a48f",
-   "size": 7786
+   "sha256": "d61494b50f303b4568d9314164787354550391eb63a0f1985334f01fc4e0f922",
+   "size": 7815
   },
   {
    "path": "android/context-application-vs-activity.md",
-   "sha256": "ede3dc5345993832db7ed88d5e5dbd17aaac5c764a6d038321a8e56e47022866",
-   "size": 7578
+   "sha256": "9c8380eee5525542d3f12ac6da65b8d53afb1a0460d76d1d53af37fcf5114e13",
+   "size": 7616
   },
   {
    "path": "android/crashlytics-and-fcm.md",
-   "sha256": "b31914501b948b2b73f2b6f972beffe7381f6fd76736cac59b7d2489b4481e84",
-   "size": 7936
+   "sha256": "323d5450502491b6f1c57b8372d983576398013445ba3ff2e043f270937058c7",
+   "size": 7963
   },
   {
    "path": "android/datastore.md",
@@ -200,8 +200,8 @@
   },
   {
    "path": "android/gc-roots.md",
-   "sha256": "5ce24215c581504d376f802ccd0cd0fa816f03f2b26a79042c2ef808b778ff2c",
-   "size": 7782
+   "sha256": "c66325e20775ee310f3a1bdc8e8f7ab440addfee05bc75790174d751a13945f7",
+   "size": 7825
   },
   {
    "path": "android/gradle-build.md",
@@ -215,8 +215,8 @@
   },
   {
    "path": "android/intent.md",
-   "sha256": "28e27c552ae07c7aa9a91dd7f1d026577d45daf181ae6b5f30d68675d3af3b64",
-   "size": 7231
+   "sha256": "69d07bb4576641be9bad67a4fbd3afd14d52e5aeb364d3910f5a4c8e21ff9d1c",
+   "size": 7267
   },
   {
    "path": "android/main-thread-and-anr.md",
@@ -235,13 +235,13 @@
   },
   {
    "path": "android/recyclerview-and-diffutil.md",
-   "sha256": "fcc11569c507d028a4a35fd117bf694642b5d5ba787605c34bf51a4f92b158c9",
-   "size": 7161
+   "sha256": "fbf30b1dd7f28e17d0396829476092b695a19f9e717449324281340635552afd",
+   "size": 7194
   },
   {
    "path": "android/release-r8-signing.md",
-   "sha256": "e624be9d6d75ea88ae929c4374350efcb1741fcfde7b90d5cbdb69aaeeb7faef",
-   "size": 7407
+   "sha256": "d19d7c9f7c3bb65e7bac638b91434ef1fd3abef39cd5f17e45bf4a5fcccb9bfd",
+   "size": 7446
   },
   {
    "path": "android/retrofit-and-okhttp.md",
@@ -265,13 +265,13 @@
   },
   {
    "path": "android/state-holders.md",
-   "sha256": "136217bef4fa5c6a45ebea939b3926a660eeb0d87f3944913b6a3a5513b48f9d",
-   "size": 8048
+   "sha256": "1f533f205645b6e46f138905b49cbe1dcbc988a853fe64f35357afcdee253acd",
+   "size": 8075
   },
   {
    "path": "android/tasks-and-back-stack.md",
-   "sha256": "9873b039b857cc589ac68aa8604f2de575aad0a9b1717dc95bc307c12f638def",
-   "size": 7290
+   "sha256": "59805639c8074f2c3813f978cfd485bebec61d004d9c9eb00886e0ed564cd70a",
+   "size": 7320
   },
   {
    "path": "android/tcp-stream-framing.md",
@@ -300,8 +300,8 @@
   },
   {
    "path": "architecture/dependency-injection.md",
-   "sha256": "5778e4127ebcafa41d054254b6bc1eeef6373cc5c4555736fd1b234eed4b34db",
-   "size": 7155
+   "sha256": "24a547342676c9d58564dadfe6261abf962e36471efb41be3bc7a1623188c2ed",
+   "size": 7188
   },
   {
    "path": "architecture/diagrams/clean-architecture-dependency-rule.png",
@@ -570,8 +570,8 @@
   },
   {
    "path": "kotlin/generics-variance.md",
-   "sha256": "e3d855935bb312bb9be2697ccaf42b82bfbaa86b492b3c38b465701aedecee0f",
-   "size": 7373
+   "sha256": "45a4ab2d42d7ee1b5f229da0519fa0e9c97699176c81e1f338021b60cfd7ca4a",
+   "size": 7417
   },
   {
    "path": "kotlin/inline-function.md",
@@ -625,13 +625,13 @@
   },
   {
    "path": "oop/composition-over-inheritance.md",
-   "sha256": "dad0b8fe54d25e1c93f96a1f2936e7c7936d580c9e6130036f26b8f89242dc36",
-   "size": 6895
+   "sha256": "181feebe71d81d171c907ec663e66f74ed12ff14f361b5b738356e884fe430c0",
+   "size": 6926
   },
   {
    "path": "oop/design-patterns.md",
-   "sha256": "c26921d68fa731994413c2d07b61ad9e12673808cc4c3380859b34cb9e6e273a",
-   "size": 8149
+   "sha256": "8a43647b08e911f02c42bce2d4fe71488b8c29355731a14df8fd729be44017e7",
+   "size": 8188
   },
   {
    "path": "oop/diagrams/abstract-class-vs-interface.png",

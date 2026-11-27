@@ -63,7 +63,7 @@ Bẫy hay gặp nhất là tin rằng `onDestroy()` lúc nào cũng chạy khi �
 Không. Lệnh `finish()` chỉ báo cho hệ thống xếp lịch đóng màn hình, nên các dòng code viết ngay bên dưới nó vẫn chạy tiếp. Hệ thống chỉ thực sự gọi `onDestroy` ở các lượt xử lý tin nhắn sau trên Main Thread.
 
 **Hỏi:** onPause với onStop khác nhau chỗ nào trong thực tế?
-`onPause` chạy khi màn hình mất tương tác nhưng vẫn nhìn thấy, còn `onStop` chạy khi màn hình bị che kín. Ví dụ khi một hộp thoại xin quyền trong suốt bật đè lên, Activity phía dưới chỉ vào `onPause` chứ chưa vào `onStop`. Bạn nên dừng hoạt ảnh nhẹ ở `onPause`, và ngắt GPS hay camera nặng ở `onStop`.
+`onPause` chạy khi màn hình mất tương tác nhưng vẫn nhìn thấy, còn `onStop` chạy khi màn hình bị che kín. Ví dụ khi một hộp thoại xin quyền trong suốt bật đè lên, Activity phía dưới chỉ vào `onPause` chứ chưa vào `onStop`. Bạn nên dừng [hoạt ảnh](concept:compose-animation) nhẹ ở `onPause`, và ngắt GPS hay camera nặng ở `onStop`.
 
 **Hỏi:** Lưu trạng thái màn hình nên chọn onSaveInstanceState hay ViewModel, làm sao biết?
 Tuỳ vào việc bạn muốn giữ dữ liệu qua lúc xoay màn hình hay qua lúc hệ thống tắt ngầm tiến trình. [ViewModel](concept:android-viewmodel) giữ được danh sách lớn trong RAM khi xoay máy, nhưng sẽ mất hết nếu tiến trình bị hệ thống tắt. Vì vậy, bạn phải dùng thêm `onSaveInstanceState` để cất các ID hoặc chữ đang gõ vào `Bundle` nhằm tải lại màn hình.

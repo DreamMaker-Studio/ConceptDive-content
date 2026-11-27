@@ -22,7 +22,7 @@ Khi ứng dụng tới tay người dùng, bạn không thể cắm cáp đọc 
 - android-release-r8-signing
 
 ## Vấn đề buộc nó ra đời
-Ở những năm đầu của Android, muốn nhận tin từ máy chủ, mỗi ứng dụng phải tự mở dịch vụ ngầm giữ kết nối riêng. Hàng chục ứng dụng cùng giữ kết nối khiến radio mạng không bao giờ nghỉ, làm máy nóng và tụt pin nhanh chóng. Ngược lại, khi ứng dụng sập trên máy khách, người dùng chỉ bấm tắt hộp thoại. Lập trình viên vì thế mù tịt về lỗi ngoài thực tế.
+Ở những năm đầu của Android, muốn nhận tin từ máy chủ, mỗi ứng dụng phải tự mở [dịch vụ ngầm](concept:android-service) giữ kết nối riêng. Hàng chục ứng dụng cùng giữ kết nối khiến radio mạng không bao giờ nghỉ, làm máy nóng và tụt pin nhanh chóng. Ngược lại, khi ứng dụng sập trên máy khách, người dùng chỉ bấm tắt hộp thoại. Lập trình viên vì thế mù tịt về lỗi ngoài thực tế.
 
 Google ra mắt `Google Cloud Messaging` rồi nâng cấp thành `Firebase Cloud Messaging` (`FCM`) tại Google I/O tháng 5 năm 2016. Dịch vụ này gom thông báo đẩy của mọi ứng dụng vào một kết nối chung. Tháng 1 năm 2017, Google mua lại `Fabric` (chứa `Crashlytics`, ra đời năm 2011) từ Twitter. Công cụ này được tích hợp thành `Firebase Crashlytics` để thu thập và giải mã báo cáo sập ứng dụng.
 

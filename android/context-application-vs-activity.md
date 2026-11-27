@@ -21,7 +21,7 @@ diagrams: [Cơ chế|context-activity-vs-application.png|Activity có Theme và 
 - android-memory-leak
 
 ## Vấn đề buộc nó ra đời
-Năm 2008, Android được thiết kế với nhiều thành phần độc lập như Activity, Service và BroadcastReceiver. Các thành phần này đều cần một cách chung để đọc file layout, mở database hay gửi thông báo.
+Năm 2008, Android được thiết kế với nhiều thành phần độc lập như Activity, Service và [BroadcastReceiver](concept:android-broadcast-receiver). Các thành phần này đều cần một cách chung để đọc file layout, mở database hay gửi thông báo.
 
 Google tạo ra lớp trừu tượng `Context` làm đầu mối giao tiếp chung. Nhưng vì mỗi thành phần có tuổi thọ dài ngắn khác nhau, việc dùng chung một kiểu `Context` rất dễ gây lỗi bộ nhớ.
 

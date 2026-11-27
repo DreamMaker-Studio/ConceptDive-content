@@ -60,7 +60,7 @@ Truyền thẳng đường dẫn `Uri.fromFile` vào `Intent` khi ứng dụng n
 
 ## Câu hỏi thực chiến
 **Hỏi:** Ứng dụng của mình chỉ lưu dữ liệu nội bộ chứ không chia sẻ cho app khác thì có cần viết ContentProvider không?
-Không. Nếu dữ liệu chỉ dùng nội bộ, việc bọc thêm `ContentProvider` chỉ làm code dài dòng và tốn thêm chi phí trung gian. Bạn chỉ cần dùng thẳng cơ sở dữ liệu `Room` hoặc `DataStore` là đủ.
+Không. Nếu dữ liệu chỉ dùng nội bộ, việc bọc thêm `ContentProvider` chỉ làm code dài dòng và tốn thêm chi phí trung gian. Bạn chỉ cần dùng thẳng cơ sở dữ liệu `Room` hoặc [`DataStore`](concept:android-datastore) là đủ.
 
 **Hỏi:** Vì sao một số thư viện như Firebase hay WorkManager tự động khởi tạo được mà không cần mình gọi hàm init trong Application?
 Vì các thư viện đó khai báo sẵn một `ContentProvider` rỗng trong tệp manifest của thư viện. Khi ứng dụng vừa mở, Android tự động tạo các `ContentProvider` và gọi hàm `onCreate` của chúng trên `Main Thread` trước cả khi chạy `Application.onCreate`.

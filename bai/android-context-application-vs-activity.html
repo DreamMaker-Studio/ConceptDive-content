@@ -26,7 +26,7 @@
 <li><a href="android-memory-leak.html">Memory leak</a></li>
 </ul>
 <h2>Vấn đề buộc nó ra đời</h2>
-<p>Năm 2008, Android được thiết kế với nhiều thành phần độc lập như Activity, Service và BroadcastReceiver. Các thành phần này đều cần một cách chung để đọc file layout, mở database hay gửi thông báo.</p>
+<p>Năm 2008, Android được thiết kế với nhiều thành phần độc lập như Activity, Service và <a href="android-broadcast-receiver.html">BroadcastReceiver</a>. Các thành phần này đều cần một cách chung để đọc file layout, mở database hay gửi thông báo.</p>
 <p>Google tạo ra lớp trừu tượng <code>Context</code> làm đầu mối giao tiếp chung. Nhưng vì mỗi thành phần có tuổi thọ dài ngắn khác nhau, việc dùng chung một kiểu <code>Context</code> rất dễ gây lỗi bộ nhớ.</p>
 <p>Nếu bạn truyền nhầm <code>Context</code> của màn hình vào đối tượng sống lâu, <a href="android-memory-leak.html">Memory leak</a> sẽ xảy ra và làm ứng dụng hết RAM. Ngược lại, lấy <code>Context</code> toàn cục đi mở hộp thoại thì ứng dụng sẽ sập ngay hoặc mất sạch màu sắc giao diện.</p>
 <h2>Nó thực sự là cái gì</h2>

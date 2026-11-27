@@ -37,7 +37,7 @@ Khi `Activity` A mở `Activity` B, A dừng ở trạng thái `onStop` và gi�
 Chồng `back stack` xuyên ứng dụng giúp nút Back hoạt động liền mạch đúng theo dòng việc người dùng vừa làm. Đổi lại, mọi màn hình nằm dưới chồng vẫn giữ nguyên đối tượng trong RAM. Chồng quá cao sẽ làm tăng nguy cơ hệ thống thu hồi tiến trình. Nếu lạm dụng `singleTask` hay `singleInstance`, người dùng bấm Back sẽ thấy màn hình nhảy cóc hoặc thoát thẳng ra ngoài.
 
 ## Nguyên lý gốc
-Quản lý lịch sử điều hướng bằng cấu trúc ngăn xếp vào sau ra trước (`LIFO`). Tại mỗi thời điểm, chỉ phần tử nằm trên đỉnh ngăn xếp mới được tương tác.
+Quản lý lịch sử [điều hướng](concept:compose-navigation) bằng cấu trúc ngăn xếp vào sau ra trước (`LIFO`). Tại mỗi thời điểm, chỉ phần tử nằm trên đỉnh ngăn xếp mới được tương tác.
 
 ## Key insight
 > Một `Task` không gắn chặt với một ứng dụng, mà là một ngăn xếp của hệ thống ghép được màn hình từ nhiều ứng dụng.

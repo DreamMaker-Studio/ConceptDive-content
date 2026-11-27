@@ -21,7 +21,7 @@ Khi bạn kế thừa một lớp chỉ để dùng lại vài hàm, sửa một
 - oop-abstract-class-vs-interface
 
 ## Vấn đề buộc nó ra đời
-Năm 1994, nhóm Gang of Four đúc kết nguyên lý ưu tiên lắp ghép hơn kế thừa trong cuốn sách mẫu thiết kế kinh điển. Kế thừa làm vỡ tính đóng gói vì lớp con bị lệ thuộc thẳng vào cách lớp cha tự gọi hàm bên trong.
+Năm 1994, nhóm Gang of Four đúc kết nguyên lý ưu tiên lắp ghép hơn kế thừa trong cuốn sách [mẫu thiết kế](concept:oop-design-patterns) kinh điển. Kế thừa làm vỡ tính đóng gói vì lớp con bị lệ thuộc thẳng vào cách lớp cha tự gọi hàm bên trong.
 
 Năm 2001, Joshua Bloch khuyên ưu tiên lắp ghép hơn kế thừa trong sách Effective Java. Đến năm 2003, Allen Holub mổ xẻ lỗi lớp cơ sở mong manh (*Fragile Base Class*) trong bài viết 'Why extends is evil'.
 

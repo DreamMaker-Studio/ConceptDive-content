@@ -75,7 +75,7 @@ Có. Chừng nào luồng chưa chạy xong hàm `run()`, ngăn xếp của nó 
 Không. Gán `null` chỉ cắt đứt một sợi dây nối từ biến đó tới đối tượng trên vùng nhớ Heap. Máy ảo chỉ thu hồi đối tượng khi nó mất sạch mọi đường nối về `GC Roots` và đến đúng đợt dọn rác của hệ thống.
 
 **Hỏi:** Đọc báo cáo rò rỉ của LeakCanary thì tìm GC Root ở đâu?
-Bạn nhìn ngay dòng đầu tiên trên cùng của chuỗi tham chiếu trong báo cáo. Dòng đó chính là `GC Root` đang giữ chặt màn hình của bạn, thường là một biến `static` hoặc một luồng đang chạy. Việc của bạn là đọc từ trên xuống để tìm mắt xích giữ tham chiếu thừa và cắt nó đi.
+Bạn nhìn ngay dòng đầu tiên trên cùng của chuỗi tham chiếu trong [báo cáo](concept:android-debugging-and-profiling). Dòng đó chính là `GC Root` đang giữ chặt màn hình của bạn, thường là một biến `static` hoặc một luồng đang chạy. Việc của bạn là đọc từ trên xuống để tìm mắt xích giữ tham chiếu thừa và cắt nó đi.
 
 **Hỏi:** Biến static trong class có bị GC thu hồi bao giờ không?
 Biến `static` chỉ được thu hồi khi chính `ClassLoader` đã nạp lớp đó bị gỡ khỏi bộ nhớ. Trên Android, `ClassLoader` chính sống suốt vòng đời tiến trình nên biến `static` hầu như không bao giờ mất. Mọi thứ gán vào biến `static` sẽ nằm trong RAM tới khi bạn gán `null` hoặc tắt ứng dụng.

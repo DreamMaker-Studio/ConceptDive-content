@@ -27,7 +27,7 @@
 <h2>Vấn đề buộc nó ra đời</h2>
 <p>Đầu thập niên 2000, cách viết test trước khi viết code (TDD) phát triển mạnh. Các kỹ sư nhận ra những lớp tự gọi <code>new ApiClient()</code> ở bên trong thì không sao viết unit test riêng lẻ được. Cứ chạy test là hàm lại gọi mạng thật hoặc ghi xuống ổ cứng, vừa chậm vừa không giả lập được lúc rớt mạng.</p>
 <p>Tháng 1/2004, Martin Fowler viết bài luận nổi tiếng về IoC Containers. Ông đặt tên cho cách làm này là Dependency Injection (tiêm phụ thuộc), tức là truyền đối tượng cần dùng từ bên ngoài vào.</p>
-<p>Khi dự án lớn dần, việc tự tay khởi tạo rồi truyền hàng chục tham số qua nhiều tầng rất mỏi tay. Các thư viện như Guice, Dagger và Hilt ra đời để tự động nối các đối tượng này giúp bạn.</p>
+<p>Khi dự án lớn dần, việc tự tay khởi tạo rồi truyền hàng chục tham số qua nhiều tầng rất mỏi tay. Các thư viện như Guice, Dagger và <a href="android-hilt-and-koin.html">Hilt</a> ra đời để tự động nối các đối tượng này giúp bạn.</p>
 <h2>Nó thực sự là cái gì</h2>
 <p>Dependency Injection không phải là thư viện Hilt hay Koin mà bạn bắt buộc phải cài vào dự án. Nó chỉ là một cách tổ chức code. Thay vì tự gọi lệnh khởi tạo, đối tượng nhận các công cụ cần dùng từ bên ngoài truyền vào.</p>
 <h2>Cơ chế</h2>

@@ -68,7 +68,7 @@ Có. Chừng nào luồng chưa chạy xong hàm <code>run()</code>, ngăn xếp
 <p><strong>Hỏi:</strong> Gán biến bằng null có ép được Garbage Collector dọn dẹp ngay không?
 Không. Gán <code>null</code> chỉ cắt đứt một sợi dây nối từ biến đó tới đối tượng trên vùng nhớ Heap. Máy ảo chỉ thu hồi đối tượng khi nó mất sạch mọi đường nối về <code>GC Roots</code> và đến đúng đợt dọn rác của hệ thống.</p>
 <p><strong>Hỏi:</strong> Đọc báo cáo rò rỉ của LeakCanary thì tìm GC Root ở đâu?
-Bạn nhìn ngay dòng đầu tiên trên cùng của chuỗi tham chiếu trong báo cáo. Dòng đó chính là <code>GC Root</code> đang giữ chặt màn hình của bạn, thường là một biến <code>static</code> hoặc một luồng đang chạy. Việc của bạn là đọc từ trên xuống để tìm mắt xích giữ tham chiếu thừa và cắt nó đi.</p>
+Bạn nhìn ngay dòng đầu tiên trên cùng của chuỗi tham chiếu trong <a href="android-debugging-and-profiling.html">báo cáo</a>. Dòng đó chính là <code>GC Root</code> đang giữ chặt màn hình của bạn, thường là một biến <code>static</code> hoặc một luồng đang chạy. Việc của bạn là đọc từ trên xuống để tìm mắt xích giữ tham chiếu thừa và cắt nó đi.</p>
 <p><strong>Hỏi:</strong> Biến static trong class có bị GC thu hồi bao giờ không?
 Biến <code>static</code> chỉ được thu hồi khi chính <code>ClassLoader</code> đã nạp lớp đó bị gỡ khỏi bộ nhớ. Trên Android, <code>ClassLoader</code> chính sống suốt vòng đời tiến trình nên biến <code>static</code> hầu như không bao giờ mất. Mọi thứ gán vào biến <code>static</code> sẽ nằm trong RAM tới khi bạn gán <code>null</code> hoặc tắt ứng dụng.</p>
 <h2>Ý bắt buộc khi giải thích lại</h2>

@@ -27,7 +27,7 @@ Tháng 10 năm 2014, Google đưa `RecyclerView` vào Support Library 21.0.0 và
 Tháng 8 năm 2016, Support Library 24.2.0 bổ sung thêm `DiffUtil` dựa trên thuật toán của Eugene Myers năm 1986. Công cụ này tự tìm ra đúng mục nào thêm, bớt hay đổi chỗ để chỉ cập nhật những ô đó.
 
 ## Nó thực sự là cái gì
-`RecyclerView` không tự mình ôm hết mọi việc như `ListView` ngày xưa, mà chia rõ cho ba thành phần phối hợp. `LayoutManager` tính vị trí các ô, `Adapter` gắn dữ liệu, còn `ViewHolder` giữ tham chiếu tới các View con. Sang Jetpack Compose, `LazyColumn` cũng giữ nguyên cách làm này, và bạn cần truyền `key` để định danh từng mục.
+`RecyclerView` không tự mình ôm hết mọi việc như `ListView` ngày xưa, mà chia rõ cho ba thành phần phối hợp. `LayoutManager` tính vị trí các ô, `Adapter` gắn dữ liệu, còn `ViewHolder` giữ tham chiếu tới các View con. Sang Jetpack Compose, [`LazyColumn`](concept:compose-layout-basics) cũng giữ nguyên cách làm này, và bạn cần truyền `key` để định danh từng mục.
 
 ## Cơ chế
 Khi bạn cuộn làm một ô trôi khuất khỏi mép màn hình, `RecyclerView` cất nó vào kho tái chế thay vì xóa bỏ. Ô mới trồi lên ở mép kia sẽ lấy lại chính View cũ đó và chỉ gọi `onBindViewHolder` để điền dữ liệu mới. Khi danh sách thay đổi, `DiffUtil` so hai danh sách cũ mới để tìm ra chuỗi thao tác thêm, xóa hoặc dời chỗ ngắn nhất. Nếu bạn dùng `ListAdapter`, phép tính `DiffUtil` sẽ tự chạy trên luồng nền rồi mới gửi kết quả về luồng chính để sửa giao diện.

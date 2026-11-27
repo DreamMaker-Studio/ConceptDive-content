@@ -41,7 +41,7 @@ interface StateFlow<out T> : SharedFlow<T> {
 `LiveData` tự biết nhìn [Activity Lifecycle](concept:android-activity-lifecycle) và chỉ phát dữ liệu khi màn hình đang ở trạng thái `STARTED` hoặc `RESUMED`. Ngược lại, `SharedFlow` là kênh phát cho nhiều nơi cùng nghe với bộ đệm và số lượng giá trị phát lại (`replay`) tùy bạn chọn. Còn `StateFlow` là `SharedFlow` đặc biệt với `replay = 1` và có giá trị đầu. Nó tự bỏ qua nếu giá trị mới trùng giá trị cũ qua `equals`.
 
 ## Đánh đổi
-Dùng `StateFlow` giúp bạn tách sạch code khỏi Android SDK để viết unit test nhanh và dùng chung trên `KMP`. Khi ghép `stateIn(WhileSubscribed)` với `repeatOnLifecycle`, luồng dữ liệu phía trên cũng tự tạm nghỉ lúc người dùng ẩn app xuống nền. Đổi lại, bạn phải bọc `repeatOnLifecycle` ở giao diện, còn `LiveData` vẫn gọn hơn cho dự án Java thuần.
+Dùng `StateFlow` giúp bạn tách sạch code khỏi Android SDK để viết [unit test](concept:android-testing) nhanh và dùng chung trên `KMP`. Khi ghép `stateIn(WhileSubscribed)` với `repeatOnLifecycle`, luồng dữ liệu phía trên cũng tự tạm nghỉ lúc người dùng ẩn app xuống nền. Đổi lại, bạn phải bọc `repeatOnLifecycle` ở giao diện, còn `LiveData` vẫn gọn hơn cho dự án Java thuần.
 
 ## Nguyên lý gốc
 Theo nguyên lý [State vs Event](concept:architecture-state-vs-event), thông báo từ ViewModel nên là một trường trong trạng thái màn hình. Khi giao diện hiện xong thì báo lại để xóa đi.

@@ -26,7 +26,7 @@
 <li><a href="oop-abstract-class-vs-interface.html">Abstract class đối lập Interface</a></li>
 </ul>
 <h2>Vấn đề buộc nó ra đời</h2>
-<p>Năm 1994, nhóm Gang of Four đúc kết nguyên lý ưu tiên lắp ghép hơn kế thừa trong cuốn sách mẫu thiết kế kinh điển. Kế thừa làm vỡ tính đóng gói vì lớp con bị lệ thuộc thẳng vào cách lớp cha tự gọi hàm bên trong.</p>
+<p>Năm 1994, nhóm Gang of Four đúc kết nguyên lý ưu tiên lắp ghép hơn kế thừa trong cuốn sách <a href="oop-design-patterns.html">mẫu thiết kế</a> kinh điển. Kế thừa làm vỡ tính đóng gói vì lớp con bị lệ thuộc thẳng vào cách lớp cha tự gọi hàm bên trong.</p>
 <p>Năm 2001, Joshua Bloch khuyên ưu tiên lắp ghép hơn kế thừa trong sách Effective Java. Đến năm 2003, Allen Holub mổ xẻ lỗi lớp cơ sở mong manh (<em>Fragile Base Class</em>) trong bài viết 'Why extends is evil'.</p>
 <p>Vì vậy, Kotlin để mọi lớp mặc định là <code>final</code>, đúng theo lời khuyên thiết kế rõ cho kế thừa hoặc khóa lại. Đồng thời, ngôn ngữ thêm từ khóa <code>by</code> để bạn chuyển tiếp lệnh gọi hàm thật gọn.</p>
 <h2>Nó thực sự là cái gì</h2>

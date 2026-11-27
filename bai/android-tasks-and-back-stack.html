@@ -37,7 +37,7 @@
 <h2>Đánh đổi</h2>
 <p>Chồng <code>back stack</code> xuyên ứng dụng giúp nút Back hoạt động liền mạch đúng theo dòng việc người dùng vừa làm. Đổi lại, mọi màn hình nằm dưới chồng vẫn giữ nguyên đối tượng trong RAM. Chồng quá cao sẽ làm tăng nguy cơ hệ thống thu hồi tiến trình. Nếu lạm dụng <code>singleTask</code> hay <code>singleInstance</code>, người dùng bấm Back sẽ thấy màn hình nhảy cóc hoặc thoát thẳng ra ngoài.</p>
 <h2>Nguyên lý gốc</h2>
-<p>Quản lý lịch sử điều hướng bằng cấu trúc ngăn xếp vào sau ra trước (<code>LIFO</code>). Tại mỗi thời điểm, chỉ phần tử nằm trên đỉnh ngăn xếp mới được tương tác.</p>
+<p>Quản lý lịch sử <a href="compose-navigation.html">điều hướng</a> bằng cấu trúc ngăn xếp vào sau ra trước (<code>LIFO</code>). Tại mỗi thời điểm, chỉ phần tử nằm trên đỉnh ngăn xếp mới được tương tác.</p>
 <h2>Key insight</h2>
 <blockquote>
 <p>Một <code>Task</code> không gắn chặt với một ứng dụng, mà là một ngăn xếp của hệ thống ghép được màn hình từ nhiều ứng dụng.</p>

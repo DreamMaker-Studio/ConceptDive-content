@@ -24,7 +24,7 @@ Khi một lớp tự gọi lệnh tạo công cụ bên trong, bạn không th�
 
 Tháng 1/2004, Martin Fowler viết bài luận nổi tiếng về IoC Containers. Ông đặt tên cho cách làm này là Dependency Injection (tiêm phụ thuộc), tức là truyền đối tượng cần dùng từ bên ngoài vào.
 
-Khi dự án lớn dần, việc tự tay khởi tạo rồi truyền hàng chục tham số qua nhiều tầng rất mỏi tay. Các thư viện như Guice, Dagger và Hilt ra đời để tự động nối các đối tượng này giúp bạn.
+Khi dự án lớn dần, việc tự tay khởi tạo rồi truyền hàng chục tham số qua nhiều tầng rất mỏi tay. Các thư viện như Guice, Dagger và [Hilt](concept:android-hilt-and-koin) ra đời để tự động nối các đối tượng này giúp bạn.
 
 ## Nó thực sự là cái gì
 Dependency Injection không phải là thư viện Hilt hay Koin mà bạn bắt buộc phải cài vào dự án. Nó chỉ là một cách tổ chức code. Thay vì tự gọi lệnh khởi tạo, đối tượng nhận các công cụ cần dùng từ bên ngoài truyền vào.
