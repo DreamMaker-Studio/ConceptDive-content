@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service | ConceptDive</title>
+<meta name="description" content="Khi bạn khóa màn hình hay chuyển sang ứng dụng khác mà vẫn muốn nhạc phát tiếp, Activity đã bị ẩn đi. Service là thành phần không giao diện giúp ứng dụng giữ việc chạy tiếp và báo hệ điều hành đừng vộ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-service.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Service | ConceptDive">
+<meta property="og:description" content="Khi bạn khóa màn hình hay chuyển sang ứng dụng khác mà vẫn muốn nhạc phát tiếp, Activity đã bị ẩn đi. Service là thành phần không giao diện giúp ứng dụng giữ việc chạy tiếp và báo hệ điều hành đừng vộ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-service.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/service-lifecycle-and-restrictions.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Service</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn khóa màn hình hay chuyển sang ứng dụng khác mà vẫn muốn nhạc phát tiếp, <code>Activity</code> đã bị ẩn đi. <code>Service</code> là thành phần không giao diện giúp ứng dụng giữ việc chạy tiếp và báo hệ điều hành đừng vội tắt tiến trình. Để chống hao pin ngầm, Android hiện nay buộc <code>Service</code> chạy lâu phải treo thông báo cho người dùng thấy.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Ở các bản Android đầu tiên năm 2008, khi người dùng thoát màn hình, tiến trình rất dễ bị bộ dọn bộ nhớ tắt mất. Lập trình viên cần một thành phần báo cho hệ thống biết ứng dụng vẫn đang phát nhạc hoặc tải tệp.</p>
+<p>Nhưng suốt nhiều năm sau đó, hàng chục ứng dụng mạng xã hội và quảng cáo lạm dụng <code>Service</code> để chạy ngầm suốt ngày đêm. Máy điện thoại bị cạn RAM và tụt pin nhanh dù người dùng không hề mở các ứng dụng đó.</p>
+<p>Từ Android 8.0 (API 26), hệ thống tự dừng <code>Background Service</code> sau vài phút khi ứng dụng xuống nền. Rồi Android 12 (API 31) cấm luôn việc tự bật <code>Foreground Service</code> từ dưới nền. Sang Android 14 (API 34), mọi <code>Foreground Service</code> bắt buộc phải khai báo rõ mục đích chạy qua <code>foregroundServiceType</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Service</code> không phải là một luồng chạy ngầm tách biệt như <code>Thread</code> hay coroutine. Thực chất, nó chạy ngay trên <code>Main Thread</code> của tiến trình ứng dụng. Nó chỉ là một thẻ đánh dấu trong <code>system_server</code> để hạ điểm ưu tiên bị tắt (<code>oom_score_adj</code>). Nếu bạn chạy vòng lặp nặng trực tiếp trong <code>Service</code>, màn hình ứng dụng vẫn bị đơ và nổ lỗi <code>ANR</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Ba chế độ của Service trên Main Thread và chuỗi hạn chế từ Android 8.0, Android 12 tới Android 14" src="../android/diagrams/service-lifecycle-and-restrictions.png"></p>
+<p>Một <code>Started Service</code> khởi chạy qua <code>startService</code>, đi vào <code>onCreate</code> rồi <code>onStartCommand</code> và sống tới khi tự gọi <code>stopSelf</code>. Một <code>Bound Service</code> cho phép các thành phần khác kết nối qua <code>bindService</code> và nhận đối tượng <code>IBinder</code> trong <code>onBind</code> để gọi hàm qua lại. Với <code>Foreground Service</code>, khi gọi <code>startForegroundService</code>, bạn phải gọi tiếp <code>startForeground</code> kèm thông báo (<code>Notification</code>) trong vòng vài giây và khai báo <code>foregroundServiceType</code>. Tất cả các hàm vòng đời này đều chạy trên <code>Main Thread</code> trừ khi bạn tự mở coroutine hoặc luồng phụ bên trong.</p>
+<h2>Đánh đổi</h2>
+<p>Dùng <code>Foreground Service</code> giúp tiến trình được hệ điều hành bảo vệ để không bị tắt giữa chừng khi đang phát nhạc hay dẫn đường. Đổi lại, màn hình khóa của người dùng luôn hiện một thanh thông báo cố định và máy tốn thêm RAM lẫn pin. Các việc chạy nền có thể trì hoãn được thì nên giao cho <a href="android-workmanager.html">WorkManager</a> thay vì tự giữ <code>Service</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tách vòng đời công việc khỏi vòng đời màn hình. Mọi công việc chiếm tài nguyên dài hạn bắt buộc phải hiện diện công khai trước người dùng.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Service</code> không tạo luồng phụ, mà chỉ là giấy phép báo hệ điều hành giữ tiến trình sống lâu hơn khi vắng mặt giao diện.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class AudioPlayService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        ServiceCompat.startForeground(
+            this, 101, buildPlayerNotification(),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        )
+        startAudioOnBackgroundCoroutine()
+        return START_NOT_STICKY
+    }
+    override fun onBind(intent: Intent?): IBinder? = null
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Đọc tệp lớn hay giải mã âm thanh ngay trong <code>onStartCommand</code> sẽ khóa chặt <code>Main Thread</code> và gây lỗi <code>ANR</code> sau 20 giây ở tiền cảnh. Trên Android 8.0 trở lên, gọi <code>startService</code> khi ứng dụng đang ở dưới nền sẽ làm sập ứng dụng ngay với <code>IllegalStateException</code>. Từ Android 12, bật <code>startForegroundService</code> từ nền ngoài diện ngoại lệ sẽ ném <code>ForegroundServiceStartNotAllowedException</code>, còn quên gọi <code>startForeground</code> đúng hạn cũng làm sập tiến trình. Trên Android 14, thiếu khai báo <code>foregroundServiceType</code> hoặc quyền tương ứng trong <code>AndroidManifest.xml</code> sẽ gây lỗi <code>MissingForegroundServiceTypeException</code> và <code>SecurityException</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Viết lệnh tải file nặng bên trong hàm onStartCommand của Service thì giao diện Activity có bị giật không?
+Có. Toàn bộ các hàm của <code>Service</code> mặc định đều chạy chung trên <code>Main Thread</code> với <code>Activity</code>. Nếu bạn không tự chuyển việc tải tệp sang luồng phụ hoặc <code>Dispatchers.IO</code>, màn hình sẽ đứng im và báo lỗi <code>ANR</code>.</p>
+<p><strong>Hỏi:</strong> Gọi startForegroundService xong mà quên gọi startForeground bên trong Service thì sao?
+Hệ thống chỉ cho phép <code>Service</code> vài giây sau khi khởi động để gắn thanh thông báo lên màn hình qua hàm <code>startForeground</code>. Quá hạn đó mà chưa có thông báo, Android sẽ dừng <code>Service</code> ngay lập tức và làm ứng dụng sập.</p>
+<p><strong>Hỏi:</strong> Khi nào nên dùng Bound Service thay cho Started Service?
+Bạn dùng <code>Bound Service</code> khi màn hình đang mở cần gọi hàm liên tục và lấy dữ liệu trực tiếp từ <code>Service</code>. Ví dụ thanh tua nhạc cần hỏi liên tục vị trí bài hát đang phát. Khi mọi màn hình đều ngắt kết nối (<code>unbindService</code>), <code>Bound Service</code> tự đóng, trừ khi nó cũng được mở bằng <code>startService</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao Service không phải là luồng riêng mà chạy ngay trên Main Thread để giữ điểm oom_score_adj thấp.</li>
+<li>Phân biệt được Started Service, Bound Service (qua onBind và IBinder) và Foreground Service kèm thông báo bắt buộc.</li>
+<li>Nêu được các lỗi sập khi vi phạm giới hạn nền: IllegalStateException (Android 8.0), ForegroundServiceStartNotAllowedException (Android 12) và MissingForegroundServiceTypeException (Android 14).</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/background-work/services" target="_blank" rel="noopener">Services overview — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/app/Service" target="_blank" rel="noopener">Service API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/about/versions/oreo/background" target="_blank" rel="noopener">Background Execution Limits in Android 8.0</a></li>
+<li><a href="https://developer.android.com/about/versions/14/changes/fgs-types-required" target="_blank" rel="noopener">Foreground service types are required — Android 14</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+<li><a href="android-process-death-and-saved-state.html">Process Death &amp; SavedStateHandle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-service" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

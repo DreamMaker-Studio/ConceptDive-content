@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room | ConceptDive</title>
+<meta name="description" content="Khi viết truy vấn SQL bằng chuỗi chữ thường, chỉ cần gõ sai tên cột là ứng dụng sập lúc mở màn hình. Room kiểm tra toàn bộ câu lệnh SQL ngay lúc biên dịch. Nó cũng tự viết sẵn code chuyển từng dòng dữ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-room.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Room | ConceptDive">
+<meta property="og:description" content="Khi viết truy vấn SQL bằng chuỗi chữ thường, chỉ cần gõ sai tên cột là ứng dụng sập lúc mở màn hình. Room kiểm tra toàn bộ câu lệnh SQL ngay lúc biên dịch. Nó cũng tự viết sẵn code chuyển từng dòng dữ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-room.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/room-compile-invalidation-flow.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Room</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi viết truy vấn SQL bằng chuỗi chữ thường, chỉ cần gõ sai tên cột là ứng dụng sập lúc mở màn hình. <code>Room</code> kiểm tra toàn bộ câu lệnh SQL ngay lúc biên dịch. Nó cũng tự viết sẵn code chuyển từng dòng dữ liệu thành đối tượng Kotlin và đẩy danh sách mới lên giao diện.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Từ những ngày đầu của Android, lập trình viên phải làm việc trực tiếp với <code>SQLiteOpenHelper</code> và con trỏ dữ liệu <code>Cursor</code>. Bạn phải tự ghép từng chuỗi SQL bằng tay và gọi <code>getColumnIndex</code> để đọc từng cột ra đối tượng.</p>
+<p>Nếu gõ sai tên bảng hoặc đổi cấu trúc cột mà quên sửa chuỗi SQL, trình biên dịch hoàn toàn không báo lỗi. Ứng dụng chỉ sập với lỗi <code>SQLiteException</code> khi người dùng bấm tới đúng màn hình chạy câu truy vấn đó. Hơn nữa, mỗi khi thêm dữ liệu mới, màn hình không tự biết để vẽ lại nếu bạn không tự viết code thông báo.</p>
+<p>Tại sự kiện Google I/O tháng 5/2017, Google ra mắt thư viện <code>Room</code> trong bộ Android Architecture Components (bản 1.0.0 cuối năm 2017). <code>Room</code> chặn lỗi cú pháp SQL ngay lúc build và nối thẳng bảng dữ liệu với luồng quan sát của giao diện.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Room</code> không phải là một hệ quản trị cơ sở dữ liệu mới thay thế cho SQLite có sẵn trong nhân Android. Thực chất, nó là một bộ sinh mã lúc biên dịch (<em>compile-time code generator</em>) bọc bên ngoài SQLite. Trình xử lý KSP đọc <code>@Entity</code>, <code>@Dao</code>, <code>@Database</code> để sinh các lớp <code>_Impl</code> chạy <code>Cursor</code> và quản lý giao dịch ở bên dưới.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Trình biên dịch sinh lớp _Impl kiểm tra SQL, còn InvalidationTracker theo dõi bảng đổi để tự phát danh sách mới qua Flow" src="../android/diagrams/room-compile-invalidation-flow.png"></p>
+<p>Lúc biên dịch, trình xử lý của <code>Room</code> phân tích câu lệnh trong <code>@Query</code> và đối chiếu với các bảng <code>@Entity</code>. Nếu tên cột sai, quá trình build dừng ngay; nếu đúng, nó sinh ra lớp cụ thể như <code>UserDao_Impl</code> chứa sẵn lệnh đọc <code>Cursor</code>. Khi ứng dụng chạy, bộ theo dõi <code>InvalidationTracker</code> giữ danh sách các bảng đang được lắng nghe qua <a href="kotlin-flow-under-the-hood.html">Flow</a>. Hễ lệnh <code>@Insert</code>, <code>@Update</code> hay <code>@Delete</code> chạm vào bảng, <code>InvalidationTracker</code> đánh dấu bảng bẩn và tự chạy lại <code>@Query</code> để phát danh sách mới.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn bắt được lỗi gõ sai SQL trước khi xuất ứng dụng và không phải tự đóng mở <code>Cursor</code>. Bạn cũng có sẵn <a href="kotlin-flow-under-the-hood.html">Flow</a> cho kiến trúc <a href="architecture-offline-first-repository.html">Offline-First</a>. Đổi lại, bước sinh mã làm thời gian build dự án dài hơn. Mỗi lần đổi cột trong <code>@Entity</code>, bạn bắt buộc phải tăng <code>version</code> kèm kịch bản <code>Migration</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chuyển việc kiểm tra câu truy vấn từ lúc ứng dụng đang chạy về ngay lúc biên dịch. Nhờ vậy, bạn triệt tiêu được lỗi gõ sai tên bảng và cột.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Room</code> không thay thế SQLite, mà sinh sẵn code đọc <code>Cursor</code> lúc biên dịch và dùng <code>InvalidationTracker</code> tự phát <code>Flow</code> khi bảng đổi.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Entity(tableName = &quot;notes&quot;)
+data class Note(@PrimaryKey val id: Int, val text: String)
+
+@Dao
+interface NoteDao {
+    @Query(&quot;SELECT * FROM notes&quot;)
+    fun observeAll(): Flow&lt;List&lt;Note&gt;&gt;
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun save(note: Note)
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn sửa lớp <code>@Entity</code> và tăng <code>version</code> mà quên viết <code>Migration</code>, ứng dụng nâng cấp lên sẽ sập ngay với lỗi <code>IllegalStateException</code>. Ngược lại, nếu bật <code>fallbackToDestructiveMigration()</code> trên bản phát hành thật, <code>Room</code> sẽ xóa trắng toàn bộ dữ liệu cũ của người dùng khi đổi <code>version</code>. Tuyệt đối không tạo mới <code>RoomDatabase</code> ở mỗi màn hình vì mở nhiều kết nối SQLite cùng lúc rất tốn RAM và dễ khóa bảng. Gọi hàm <code>@Dao</code> thường (không <code>suspend</code>, không trả <code>Flow</code>) trên luồng chính cũng làm ứng dụng sập vì <code>Room</code> chặn khóa giao diện.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Hàm trong Dao trả về Flow thì có cần gắn thêm từ khóa suspend ở đầu hàm không?
+Không cần và không nên. Bản thân <a href="kotlin-flow-under-the-hood.html">Flow</a> chỉ là công thức khai báo luồng dữ liệu. Khi bạn gọi <code>collect</code>, <code>Room</code> đã tự đẩy truy vấn SQL xuống luồng nền của <code>RoomDatabase</code>.</p>
+<p><strong>Hỏi:</strong> Làm sao Room biết bảng vừa có dòng mới để phát dữ liệu qua Flow khi SQLite vốn là thư viện C cũ?
+Khi có nơi lắng nghe một bảng, <code>InvalidationTracker</code> cài <code>trigger</code> SQLite (lệnh tự chạy khi bảng bị ghi) để đánh dấu bảng đó. Ngay khi lệnh ghi hoàn tất, <code>InvalidationTracker</code> kiểm tra bảng vừa bị sửa rồi tự gọi lại các hàm <code>@Query</code> đang mở <code>Flow</code>.</p>
+<p><strong>Hỏi:</strong> Khi nào mới được dùng allowMainThreadQueries() lúc khởi tạo RoomDatabase?
+Chỉ dùng trong bài kiểm thử ngắn trên máy ảo hoặc thiết bị test. Khi đó bạn muốn kiểm tra kết quả tuần tự ngay lập tức. Tuyệt đối không bật hàm này ở ứng dụng thật vì đọc đĩa SQLite trên luồng chính sẽ gây giật hoặc treo màn hình.</p>
+<p><strong>Hỏi:</strong> Muốn thêm một cột mới vào bảng ở bản cập nhật ứng dụng tiếp theo mà không mất dữ liệu người dùng thì làm thế nào?
+Bạn tăng số <code>version</code> trong <code>@Database</code> lên một đơn vị. Sau đó, bạn dùng <code>@AutoMigration</code> hoặc viết một đối tượng <code>Migration</code> chạy lệnh <code>ALTER TABLE</code> rồi truyền vào <code>addMigrations()</code> lúc dựng <code>RoomDatabase</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được Room sinh các lớp _Impl lúc biên dịch để kiểm tra cú pháp SQL và tự chuyển Cursor thành đối tượng Kotlin.</li>
+<li>Trình bày được cơ chế InvalidationTracker theo dõi các lệnh thêm, sửa, xóa để tự chạy lại truy vấn và đẩy dữ liệu mới vào Flow.</li>
+<li>Chỉ ra được bẫy thiếu Migration gây sập IllegalStateException, bẫy mất sạch dữ liệu do fallbackToDestructiveMigration() và lý do RoomDatabase phải là singleton.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/training/data-storage/room" target="_blank" rel="noopener">Save data in a local database using Room — Android Developers</a></li>
+<li><a href="https://developer.android.com/training/data-storage/room/migrating-db-versions" target="_blank" rel="noopener">Migrate your Room database — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/room/InvalidationTracker" target="_blank" rel="noopener">InvalidationTracker API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/jetpack/androidx/releases/room" target="_blank" rel="noopener">Room release notes — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+<li><a href="architecture-offline-first-repository.html">Offline-First Repository &amp; SSOT</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-room" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

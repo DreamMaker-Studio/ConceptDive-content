@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debug: LeakCanary, Profiler | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng cuộn giật hay ngốn RAM dần rồi sập, việc đọc code bằng mắt hoặc rải lệnh in log chỉ là đoán mò. Công cụ LeakCanary tự bắt màn hình đã đóng nhưng chưa được dọn, còn Android Studio Profiler">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-debugging-and-profiling.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Debug: LeakCanary, Profiler | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng cuộn giật hay ngốn RAM dần rồi sập, việc đọc code bằng mắt hoặc rải lệnh in log chỉ là đoán mò. Công cụ LeakCanary tự bắt màn hình đã đóng nhưng chưa được dọn, còn Android Studio Profiler">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-debugging-and-profiling.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/leakcanary-and-profiler-pipeline.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Debug: LeakCanary, Profiler</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng cuộn giật hay ngốn RAM dần rồi sập, việc đọc code bằng mắt hoặc rải lệnh in log chỉ là đoán mò. Công cụ <code>LeakCanary</code> tự bắt màn hình đã đóng nhưng chưa được dọn, còn <code>Android Studio Profiler</code> đo CPU, RAM và thời gian vẽ khung hình. Nhờ số đo thật, bạn chỉ thẳng được đối tượng nào đang giữ RAM hoặc hàm nào đang chiếm luồng chính.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2015, muốn tìm chỗ <a href="android-memory-leak.html">rò rỉ bộ nhớ</a>, bạn phải mở <code>DDMS</code> (<em>Dalvik Debug Monitor Server</em>). Bạn phải tự chụp bộ nhớ rồi dò bằng mắt. Vì quá mất công, hầu hết lỗi rò rỉ chỉ lộ ra khi người dùng thật bị sập ứng dụng hàng loạt vì <code>OutOfMemoryError</code>.</p>
+<p>Năm 2015, kỹ sư Pierre-Yves Ricau tại Square mở mã nguồn thư viện <code>LeakCanary</code>. Thư viện này tự động canh các màn hình vừa đóng. Nó tự chụp bộ nhớ khi thấy đối tượng kẹt lại và chỉ ra tham chiếu gây rò rỉ.</p>
+<p>Đến tháng 10 năm 2017, Google phát hành Android Studio 3.0 và thay thế <code>DDMS</code> bằng bộ <code>Android Profiler</code> hợp nhất. Công cụ mới cho phép đo trực tiếp CPU, bộ nhớ, mạng và năng lượng trên cùng một trục thời gian thực.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Gỡ lỗi hiệu năng không phải là rải lệnh <code>Log.d</code> khắp nơi để tính giờ chạy hàm. Thực chất là hai cơ chế lấy bằng chứng từ hệ thống. <code>LeakCanary</code> dùng hàng đợi tham chiếu yếu của máy ảo để bắt đối tượng rò rỉ trên Heap. Còn <code>Profiler</code> thu thập vết thời gian thực của luồng để tìm khung hình vượt ngưỡng 16 mili-giây (mốc 60 khung hình/giây).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Chu trình LeakCanary theo dõi đối tượng hủy qua ReferenceQueue và phân tích tệp .hprof bằng Shark, kết hợp System Trace đo khung hình 16ms" src="../android/diagrams/leakcanary-and-profiler-pipeline.png"></p>
+<p>Khi <code>Activity</code>, <code>Fragment</code> hay <code>ViewModel</code> kết thúc vòng đời, <code>ObjectWatcher</code> của <code>LeakCanary</code> bọc nó vào <code>WeakReference</code> (tham chiếu yếu) gắn với hàng đợi <code>ReferenceQueue</code>. Sau 5 giây và một đợt thu gom rác, nếu tham chiếu đó không vào <code>ReferenceQueue</code>, đối tượng bị đánh dấu là kẹt lại (<em>retained</em>). Đủ ngưỡng 5 đối tượng khi ứng dụng mở, <code>LeakCanary</code> chụp bộ nhớ ra tệp <code>.hprof</code> để <code>Shark</code> tìm đường về <a href="android-gc-roots.html">GC Roots</a>. Với lỗi giật (<em>jank</em>), bạn mở <code>CPU Profiler</code> ghi <code>System Trace</code> để đối chiếu dải <code>Janky frames</code> màu đỏ với <code>Main Thread</code> và <code>RenderThread</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn có bằng chứng chính xác tới từng biến tham chiếu và từng mili-giây giữ luồng mà không cần đoán mò. Đổi lại, việc chụp tệp <code>.hprof</code> làm đơ màn hình vài giây, còn chế độ ghi vết <code>Trace Java/Kotlin Methods</code> làm ứng dụng chạy chậm hơn hẳn.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Không bao giờ tối ưu hay sửa lỗi hiệu năng khi chưa có công cụ đo chỉ ra đúng điểm nghẽn thực tế.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>LeakCanary</code> không quét toàn bộ RAM liên tục, mà chỉ canh những đối tượng đã đóng nhưng không rơi vào <code>ReferenceQueue</code> sau khi dọn rác.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// build.gradle.kts: chỉ gắn LeakCanary vào bản debug
+dependencies {
+    debugImplementation(&quot;com.squareup.leakcanary:leakcanary-android:2.14&quot;)
+}
+
+// Theo dõi thêm một đối tượng tùy chỉnh khi nó vừa đóng
+fun onSessionClosed(session: UserSession) {
+    AppWatcher.objectWatcher.expectWeaklyReachable(
+        watchedObject = session,
+        description = &quot;UserSession đã đóng nhưng chưa được thu hồi&quot;
+    )
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu gắn <code>LeakCanary</code> bằng <code>implementation</code> thay vì <code>debugImplementation</code>, nó sẽ đi vào bản phát hành và tự chụp bộ nhớ làm đơ máy người dùng. Cũng đừng đo tốc độ khung hình trên bản <code>debug</code> hay lạm dụng <code>Trace Java/Kotlin Methods</code>, vì chi phí ghi vết sẽ báo giật giả. Bạn hãy đo bằng <code>System Trace</code> trên thiết bị thật với bản cài bật cờ <code>profileable</code>. Khi <code>LeakCanary</code> báo lỗi, triệu chứng là chuỗi <code>LeakTrace</code> có dấu ngã <code>~~~</code> nằm ngay dưới biến tham chiếu bạn cần cắt đứt.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có nên đưa LeakCanary vào bản release để thu thập lỗi rò rỉ bộ nhớ từ máy người dùng thật không?
+Không. Mỗi lần <code>LeakCanary</code> chụp tệp <code>.hprof</code> và chạy bộ phân tích <code>Shark</code>, ứng dụng sẽ bị đơ cứng vài giây và tốn nhiều RAM. Bạn chỉ được gắn nó qua <code>debugImplementation</code> để bắt lỗi ngay trong lúc phát triển và kiểm thử nội bộ.</p>
+<p><strong>Hỏi:</strong> Khi đọc một báo cáo LeakTrace dài chục dòng của LeakCanary, làm sao biết phải sửa ở dòng nào?
+Bạn đừng sửa ở dòng cuối cùng chứa <code>Activity</code> bị rò rỉ, cũng không sửa được dòng đầu tiên là <code>GC Root</code> của hệ thống. Hãy tìm dòng có gạch chân dấu ngã <code>~~~</code>, vì đó là mắt xích cuối cùng còn sống đang giữ nhầm đối tượng đã chết.</p>
+<p><strong>Hỏi:</strong> Vì sao đo hiệu năng trên bản debug bằng chế độ Trace Java/Kotlin Methods lại hay cho con số sai lệch?
+Vì chế độ <code>Trace Java/Kotlin Methods</code> chèn mã ghi nhận vào đầu và cuối mọi hàm, làm những hàm nhỏ gọi lặp bị đội thời gian lên. Để tìm khung hình giật trên 16 mili-giây sát thực tế nhất, bạn hãy dùng <code>System Trace</code> trên bản build đã bật cờ <code>profileable</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được 4 bước của LeakCanary: bọc đối tượng hủy bằng <code>WeakReference</code> + <code>ReferenceQueue</code>, chờ 5 giây, chụp <code>.hprof</code> và dùng <code>Shark</code> tìm đường về <code>GC Roots</code>.</li>
+<li>Nêu được cách dùng <code>System Trace</code> trong <code>CPU Profiler</code> để tìm khung hình vượt ngưỡng 16ms trên <code>Main Thread</code> và <code>RenderThread</code>.</li>
+<li>Chỉ ra được lý do chỉ dùng <code>debugImplementation</code> cho LeakCanary và cách đọc dấu <code>~~~</code> trên chuỗi <code>LeakTrace</code>.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/studio/profile" target="_blank" rel="noopener">Profile your app performance — Android Developers</a></li>
+<li><a href="https://developer.android.com/studio/profile/jank-detection" target="_blank" rel="noopener">Detect jank with CPU Profiler — Android Developers</a></li>
+<li><a href="https://square.github.io/leakcanary/" target="_blank" rel="noopener">LeakCanary documentation — Square</a></li>
+<li><a href="https://square.github.io/leakcanary/fundamentals-how-leakcanary-works/" target="_blank" rel="noopener">How LeakCanary works — Square</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+<li><a href="android-gc-roots.html">GC Roots &amp; Chuỗi Tham chiếu Android</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-debugging-and-profiling" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

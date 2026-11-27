@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradle &amp; build variant | ConceptDive</title>
+<meta name="description" content="Khi cần bản thử nghiệm nối máy chủ nội bộ và bản thu phí, sửa tay địa chỉ mạng rồi chép thư mục dễ nhầm. Hệ thống Gradle giữ một mã nguồn chung, rồi tự ghép các cấu hình để xuất ra nhiều bản cài đặt k">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-gradle-build.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gradle &amp; build variant | ConceptDive">
+<meta property="og:description" content="Khi cần bản thử nghiệm nối máy chủ nội bộ và bản thu phí, sửa tay địa chỉ mạng rồi chép thư mục dễ nhầm. Hệ thống Gradle giữ một mã nguồn chung, rồi tự ghép các cấu hình để xuất ra nhiều bản cài đặt k">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-gradle-build.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/gradle-build-variants-pipeline.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Gradle &amp; build variant</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi cần bản thử nghiệm nối máy chủ nội bộ và bản thu phí, sửa tay địa chỉ mạng rồi chép thư mục dễ nhầm. Hệ thống <code>Gradle</code> giữ một mã nguồn chung, rồi tự ghép các cấu hình để xuất ra nhiều bản cài đặt khác nhau. Nhờ vậy, bạn cài song song bản thử nghiệm và bản chính thức trên cùng một điện thoại mà không đè lên nhau.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước năm 2013, lập trình viên Android biên dịch ứng dụng bằng công cụ <code>Eclipse ADT</code> hoặc tệp kịch bản <code>Apache Ant</code>. Khi cần thư viện ngoài, bạn phải tự tải tệp <code>.jar</code> bỏ vào thư mục <code>libs/</code> và tự xử lý khi trùng phiên bản. Muốn làm thêm bản miễn phí cạnh bản trả phí, nhiều đội phải nhân bản cả dự án ra hai thư mục rời nhau.</p>
+<p>Tháng 5 năm 2013 tại Google I/O, Google ra mắt <code>Android Studio</code> cùng hệ thống biên dịch dựa trên <code>Gradle</code> và <code>Android Gradle Plugin</code> (<code>AGP</code>). Công cụ mới tự tải thư viện từ kho mạng và sinh nhiều biến thể từ một mã nguồn. Tới cuối năm 2015, <code>Eclipse ADT</code> chính thức ngừng hỗ trợ.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Gradle</code> không phải là trình biên dịch biến mã Kotlin hay Java thành mã máy. Thực chất nó là bộ điều phối đồ thị tác vụ (<em>Task Graph</em>, chuỗi bước chạy theo thứ tự phụ thuộc). Nó gọi <code>Android Gradle Plugin</code> gộp mã nguồn theo từng biến thể (<code>Build Variant</code>) rồi giao cho trình biên dịch Kotlin và công cụ đóng gói làm việc.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Ma trận nhân chéo Product Flavors với Build Types tạo ra các Build Variants, gộp mã nguồn theo thứ tự ưu tiên rồi biên dịch ra tệp DEX" src="../android/diagrams/gradle-build-variants-pipeline.png"></p>
+<p>Mỗi <code>Build Variant</code> là tích số nhân chéo giữa một <code>Product Flavor</code> (như <code>free</code>, <code>paid</code>) thuộc chiều <code>flavorDimensions</code> với một <code>Build Type</code> (như <code>debug</code>, <code>release</code>). Với biến thể <code>freeDebug</code>, <code>AGP</code> gộp các <code>sourceSets</code> theo thứ tự ưu tiên giảm dần: <code>src/freeDebug/</code> đè lên <code>src/debug/</code>, đè lên <code>src/free/</code> rồi <code>src/main/</code>. Khi nối module, <code>implementation</code> giấu thư viện nội bộ để chỉ biên dịch lại module sửa, còn <code>api</code> phơi bày thư viện ra toàn chuỗi. Cuối cùng, mã nguồn được biên dịch thành tệp thực thi <code>DEX</code> (<em>Dalvik Executable</em>), gộp cùng tài nguyên và <code>AndroidManifest.xml</code> để đóng gói.</p>
+<h2>Đánh đổi</h2>
+<p>Chia dự án thành nhiều module và nhiều <code>Build Variant</code> giúp bạn tách biệt môi trường thử nghiệm và chỉ biên dịch lại phần vừa sửa. Đổi lại, mỗi lần mở dự án, <code>Gradle</code> tốn thêm RAM và thời gian chạy pha cấu hình để dựng đồ thị tác vụ.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tách mô tả "ứng dụng gồm những mảnh nào" ra khỏi quy trình lắp ráp. Nhờ đó, máy tự ghép thành nhiều sản phẩm từ một mã nguồn.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Bạn không cấu hình trực tiếp một <code>Build Variant</code>, mà chỉ khai báo <code>Product Flavors</code> và <code>Build Types</code> để <code>Gradle</code> tự nhân chéo ra biến thể.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">android {
+    flavorDimensions += &quot;tier&quot;
+    productFlavors {
+        create(&quot;free&quot;) {
+            dimension = &quot;tier&quot;
+            applicationIdSuffix = &quot;.free&quot;
+        }
+    }
+    buildTypes {
+        getByName(&quot;debug&quot;) { applicationIdSuffix = &quot;.debug&quot; }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Khai báo thư viện bằng <code>api</code> thay vì <code>implementation</code> làm lộ thư viện sang mọi module cha. Một sửa đổi nhỏ khi đó cũng bắt biên dịch lại cả chuỗi. Đừng chạy lệnh đọc tệp hay tính toán nặng ngoài thân hàm thực thi task trong <code>build.gradle.kts</code>, vì nó sẽ làm treo pha cấu hình. Khi hai thư viện xung đột phiên bản hoặc dùng <code>compileOnly</code> mà quên kiểm tra lúc chạy, ứng dụng sẽ sập với <code>NoSuchMethodError</code> hoặc <code>ClassNotFoundException</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Khai báo thư viện bằng <code>api</code> và <code>implementation</code> khác nhau thế nào khi dự án có nhiều module?
+Nếu module A gắn thư viện mạng bằng <code>implementation</code>, module B phụ thuộc vào A sẽ không nhìn thấy các lớp của thư viện đó. Nhờ vậy khi thư viện mạng đổi phiên bản, <code>Gradle</code> chỉ biên dịch lại một mình module A. Ngược lại, dùng <code>api</code> sẽ phơi bày thư viện mạng sang module B và bắt các module phía trên biên dịch lại theo.</p>
+<p><strong>Hỏi:</strong> Làm sao cài bản debug và bản release của cùng một ứng dụng lên chung một chiếc điện thoại?
+Android phân biệt các ứng dụng trên máy bằng chuỗi định danh <code>applicationId</code>. Bạn chỉ cần thêm dòng <code>applicationIdSuffix = ".debug"</code> vào khối <code>debug</code> trong <code>buildTypes</code>. Lúc đó bản thử nghiệm sẽ mang định danh mới và nằm cạnh bản chính thức mà không ghi đè lên nhau.</p>
+<p><strong>Hỏi:</strong> Vì sao nên chuyển các thư viện sinh mã như Room hay Hilt từ <code>kapt</code> sang <code>ksp</code>?
+Vì <code>kapt</code> buộc phải sinh các tệp vỏ Java trung gian rồi mới chạy bộ xử lý chú thích, làm chậm thời gian biên dịch. Còn <code>ksp</code> (<em>Kotlin Symbol Processing</em>) đọc trực tiếp cây cú pháp Kotlin mà không sinh mã Java giả, giúp bước biên dịch nhanh hơn hẳn.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được công thức nhân chéo <code>Product Flavors</code> x <code>Build Types</code> = <code>Build Variants</code> và cách dùng <code>applicationIdSuffix</code>.</li>
+<li>Nêu đúng thứ tự ưu tiên gộp thư mục mã nguồn (<code>sourceSets</code>) từ biến thể cụ thể về <code>src/main/</code>.</li>
+<li>Phân biệt được phạm vi lộ thư viện và tốc độ biên dịch lại giữa <code>implementation</code>, <code>api</code>, <code>compileOnly</code> và <code>ksp</code>.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/build" target="_blank" rel="noopener">Configure your build — Android Developers</a></li>
+<li><a href="https://developer.android.com/build/build-variants" target="_blank" rel="noopener">Configure build variants — Android Developers</a></li>
+<li><a href="https://developer.android.com/build/dependencies" target="_blank" rel="noopener">Add build dependencies — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-release-r8-signing.html">R8, ký app, lên Play</a></li>
+<li><a href="android-testing.html">Unit test &amp; UI test</a></li>
+<li><a href="architecture-clean-architecture-and-use-cases.html">Clean Architecture &amp; Use Cases</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-gradle-build" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

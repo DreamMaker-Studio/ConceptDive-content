@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hilt &amp; Koin | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng có hàng chục màn hình, việc tự tạo từng kho dữ liệu rồi truyền vào ViewModel làm code phình to. Hilt và Koin đều tự động lắp ráp các đối tượng này nhưng đi theo hai hướng ngược hẳn nhau. ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-hilt-and-koin.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hilt &amp; Koin | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng có hàng chục màn hình, việc tự tạo từng kho dữ liệu rồi truyền vào ViewModel làm code phình to. Hilt và Koin đều tự động lắp ráp các đối tượng này nhưng đi theo hai hướng ngược hẳn nhau. ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-hilt-and-koin.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/architecture/diagrams/hilt-compile-vs-koin-runtime.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Kiến trúc</p>
+<h1>Hilt &amp; Koin</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng có hàng chục màn hình, việc tự tạo từng kho dữ liệu rồi truyền vào ViewModel làm code phình to. <code>Hilt</code> và <code>Koin</code> đều tự động lắp ráp các đối tượng này nhưng đi theo hai hướng ngược hẳn nhau. <code>Hilt</code> sinh sẵn code nối đối tượng lúc biên dịch, còn <code>Koin</code> tra cứu bảng đăng ký để tạo đối tượng lúc đang chạy.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Khi áp dụng <a href="architecture-dependency-injection.html">Dependency Injection</a> cho dự án lớn, <code>Dagger 2</code> sinh code lúc biên dịch. Tuy nhiên, nó bắt bạn phải tự viết rất nhiều giao diện <code>Component</code> và <code>Subcomponent</code>. Đặc biệt trên Android, hệ điều hành tự khởi tạo <code>Activity</code>. Vì vậy, bạn phải viết nhiều code khuôn mẫu để nối vòng đời màn hình vào <code>Dagger 2</code>.</p>
+<p>Năm 2017, Arnaud Giuliani ra mắt <code>Koin</code> dùng hàm Kotlin thuần túy (<code>module</code>, <code>single</code>, <code>viewModel</code>). Nó giúp đăng ký đối tượng gọn nhẹ mà không cần bước sinh mã. Đổi lại, tới năm 2020 Google giới thiệu <code>Hilt</code> bọc bên ngoài <code>Dagger 2</code> với bộ khung vòng đời Android dựng sẵn.</p>
+<p>Hai thư viện này đại diện cho hai trường phái trên Android. Bạn chọn kiểm tra chặt chẽ từ lúc build với <code>Hilt</code>, hoặc gọn nhẹ lúc viết code với <code>Koin</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Hilt</code> không phải là một thư viện độc lập thay thế <code>Dagger 2</code>. Nó là bộ tiền xử lý sinh sẵn các khung chứa (<code>SingletonComponent</code>, <code>ViewModelComponent</code>) cho <code>Dagger 2</code>. Ngược lại, <code>Koin</code> là một bộ định vị dịch vụ (<em>Service Locator</em>) bọc cú pháp tiêm phụ thuộc. Nó giữ bảng băm ánh xạ kiểu dữ liệu tới hàm lambda khởi tạo ngay trên RAM.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hilt sinh cây khởi tạo lúc biên dịch từ @HiltAndroidApp, còn Koin đăng ký lambda vào bảng băm lúc chạy qua startKoin" src="../architecture/diagrams/hilt-compile-vs-koin-runtime.png"></p>
+<p>Với <code>Hilt</code>, khi bạn gắn <code>@HiltAndroidApp</code> lên <code>Application</code> và <code>@AndroidEntryPoint</code> lên <code>Activity</code>, trình xử lý KSP sinh ra lớp cha <code>Hilt_...</code> ngay lúc biên dịch. Lớp cha này tự động lấy đối tượng từ khung chứa tương ứng và bơm vào <code>@HiltViewModel</code> trước khi màn hình hiện lên. Với <code>Koin</code>, hàm <code>startKoin</code> lúc mở ứng dụng sẽ nạp các khối <code>module { ... }</code> vào một từ điển trong bộ nhớ. Khi màn hình gọi <code>get()</code> hoặc lấy <a href="android-viewmodel.html">ViewModel</a>, <code>Koin</code> mới tra từ điển này để gọi hàm <code>single</code> hoặc <code>factory</code> tạo đối tượng tại chỗ.</p>
+<h2>Đánh đổi</h2>
+<p><code>Hilt</code> bắt được lỗi thiếu hoặc vòng lặp phụ thuộc ngay lúc bấm build, và chạy rất nhanh vì không phải tra cứu bảng băm. Đổi lại, bước sinh mã của <code>Hilt</code> làm thời gian biên dịch lâu hơn. Nó cũng khó dùng chung cho dự án đa nền tảng hơn <code>Koin</code>. <code>Koin</code> biên dịch nhanh và viết gọn, nhưng nếu quên khai báo một lớp thì ứng dụng đang chạy mới bị sập.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Đánh đổi thời điểm bắt lỗi giữa lúc build và lúc chạy. Bạn chịu tốn thời gian biên dịch để an toàn lúc chạy, hoặc biên dịch tức thì nhưng kiểm tra lúc chạy.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Koin</code> không phải bản viết gọn của <code>Hilt</code>; nó tra bảng lúc chạy, nên quên khai báo chỉ lộ ra khi mở màn hình.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">// Hilt: kiểm tra và sinh mã lúc biên dịch
+@HiltViewModel
+class OrderViewModel @Inject constructor(private val repo: OrderRepo) : ViewModel()
+
+// Koin: đăng ký lambda vào bảng tra cứu lúc chạy
+val appModule = module {
+    single { OrderRepo() }
+    viewModel { OrderViewModel(get()) }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Trong <code>Koin</code>, nếu quên khai báo tham số của <code>OrderViewModel</code> trong <code>module</code>, ứng dụng sẽ sập với lỗi <code>NoDefinitionFoundException</code> lúc mở màn hình. Để chặn bẫy này, bạn bắt buộc phải gọi hàm <code>verify()</code> của <code>Koin</code> trong bài unit test. Trong <code>Hilt</code>, gắn <code>@AndroidEntryPoint</code> cho <code>Fragment</code> mà quên gắn cho <code>Activity</code> cha cũng làm ứng dụng sập với lỗi <code>IllegalStateException</code>. Ngoài ra, tiêm đối tượng sống ngắn theo <code>ActivityComponent</code> vào một <code>@Singleton</code> sẽ bị <code>Hilt</code> chặn lúc build để chống rò rỉ bộ nhớ.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Quên khai báo một lớp phụ thuộc thì khi nào Hilt báo lỗi và khi nào Koin báo lỗi?
+<code>Hilt</code> báo lỗi đỏ ngay lúc bạn bấm biên dịch dự án và không cho xuất ra file cài đặt. Còn <code>Koin</code> mặc định vẫn cho biên dịch xong. Nó chỉ ném lỗi <code>NoDefinitionFoundException</code> làm sập ứng dụng lúc người dùng mở màn hình cần lớp đó.</p>
+<p><strong>Hỏi:</strong> Làm sao để dùng Koin mà vẫn phát hiện được lỗi quên khai báo phụ thuộc trước khi giao app cho người dùng?
+Bạn viết một bài unit test nhỏ trên JVM gọi hàm <code>appModule.verify()</code> từ thư viện <code>koin-test</code>, hoặc cài thêm <code>Koin Compiler Plugin</code>. Hàm <code>verify()</code> sẽ quét toàn bộ cây hàm dựng trong <code>module</code> để báo lỗi ngay khi chạy test mà không cần mở máy ảo.</p>
+<p><strong>Hỏi:</strong> Vì sao gắn @AndroidEntryPoint lên Fragment mà quên gắn lên Activity cha lại bị sập ứng dụng?
+Vì các khung chứa của <code>Hilt</code> xếp theo cây cha - con. <code>FragmentComponent</code> buộc phải lấy phụ thuộc cấp cao từ <code>ActivityComponent</code> của <code>Activity</code> chứa nó. Nếu <code>Activity</code> không có <code>@AndroidEntryPoint</code>, khung chứa cha không tồn tại nên <code>Fragment</code> không có nơi để nối dây.</p>
+<p><strong>Hỏi:</strong> Đối tượng đánh dấu @Singleton trong Hilt hoặc khai báo single trong Koin có sống sót khi hệ điều hành diệt tiến trình ngầm không?
+Không. Cả <code>@Singleton</code> lẫn <code>single</code> chỉ giữ duy nhất một đối tượng trên bộ nhớ RAM trong suốt thời gian tiến trình ứng dụng đang sống. Khi hệ điều hành tắt tiến trình để thu hồi RAM, các đối tượng này mất sạch và được tạo mới khi mở lại app.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được cơ chế sinh lớp cha và kiểm tra cây phụ thuộc lúc biên dịch của Hilt với cơ chế tra cứu bảng băm lúc chạy của Koin.</li>
+<li>Giải thích được cấu trúc cây khung chứa của Hilt (@HiltAndroidApp, @AndroidEntryPoint, @HiltViewModel) và cách khai báo module, single, viewModel trong Koin.</li>
+<li>Chỉ ra được lỗi NoDefinitionFoundException lúc chạy của Koin (cách phòng bằng verify()) và lỗi quên gắn @AndroidEntryPoint trên Activity cha của Hilt.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/training/dependency-injection/hilt-android" target="_blank" rel="noopener">Dependency injection with Hilt — Android Developers</a></li>
+<li><a href="https://dagger.dev/hilt/design-overview.html" target="_blank" rel="noopener">Hilt design overview — Dagger</a></li>
+<li><a href="https://insert-koin.io/docs/quickstart/android/" target="_blank" rel="noopener">Android quickstart — Koin</a></li>
+<li><a href="https://insert-koin.io/docs/reference/koin-test/verify/" target="_blank" rel="noopener">Verify your Koin configuration — Koin</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="oop-solid.html">SOLID</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-hilt-and-koin" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

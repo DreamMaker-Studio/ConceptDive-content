@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&quot;Layout Compose: Row, Column, LazyColumn&quot; | ConceptDive</title>
+<meta name="description" content="Khi dựng màn hình, bạn xếp phần tử ngang bằng Row, dọc bằng Column hoặc chồng lên nhau bằng Box. Nếu danh sách dài hàng ngàn mục mà nhét hết vào Column, máy sẽ đo và vẽ tất cả cùng lúc gây đơ màn hình">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-layout-basics.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="&quot;Layout Compose: Row, Column, LazyColumn&quot; | ConceptDive">
+<meta property="og:description" content="Khi dựng màn hình, bạn xếp phần tử ngang bằng Row, dọc bằng Column hoặc chồng lên nhau bằng Box. Nếu danh sách dài hàng ngàn mục mà nhét hết vào Column, máy sẽ đo và vẽ tất cả cùng lúc gây đơ màn hình">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-layout-basics.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/compose/diagrams/compose-layout-basics.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Compose</p>
+<h1>&quot;Layout Compose: Row, Column, LazyColumn&quot;</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi dựng màn hình, bạn xếp phần tử ngang bằng <code>Row</code>, dọc bằng <code>Column</code> hoặc chồng lên nhau bằng <code>Box</code>. Nếu danh sách dài hàng ngàn mục mà nhét hết vào <code>Column</code>, máy sẽ đo và vẽ tất cả cùng lúc gây đơ màn hình. Lúc đó bạn phải dùng <code>LazyColumn</code> để chỉ tạo và đo đúng vài mục đang lọt vào tầm mắt.</p>
+<h2>Cần biết trước</h2>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong hệ thống <code>View</code> cũ từ Android 1.0 (2008), <code>RelativeLayout</code> hay <code>LinearLayout</code> có <code>layout_weight</code> thường phải đo các <code>View</code> con tới 2 lần. Nếu bạn lồng nhiều tầng như vậy, số lần đo sẽ nhân đôi theo từng cấp và làm khung hình bị giật.</p>
+<p>Muốn làm danh sách cuộn mượt với <a href="android-recyclerview-and-diffutil.html">RecyclerView</a>, bạn lại phải viết <code>Adapter</code>, <code>ViewHolder</code> và tập tin XML rời rạc. Chỉ để hiện một danh sách đơn giản, bạn phải nối ba bốn lớp lại với nhau rất tốn công.</p>
+<p>Khi Jetpack Compose ra bản 1.0 năm 2021, Google đặt ra luật chỉ đo mỗi phần tử con đúng 1 lần (<em>single-pass measurement</em>). Đồng thời, <code>LazyColumn</code> thay thế <code>RecyclerView</code> chỉ bằng một khối lệnh nhận danh sách dữ liệu trực tiếp.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Row</code> và <code>Column</code> không phải là các <code>ViewGroup</code> nặng nề như trong hệ <code>View</code> cũ. Chúng là các hàm cấu hình nút bố cục (<code>LayoutNode</code>) chạy qua ba pha: <code>Composition</code> (tạo cây), <code>Layout</code> (đo và đặt chỗ) rồi <code>Drawing</code> (vẽ). Còn <code>LazyColumn</code> là bộ khung trì hoãn cả pha tạo cây lẫn pha đo, chỉ gọi hàm của những mục nằm trong khung nhìn (<em>viewport</em>).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Cha truyền Constraints xuống để đo con đúng một lần trong pha Layout, còn LazyColumn chỉ tạo các mục lọt vào khung nhìn" src="../compose/diagrams/compose-layout-basics.png"></p>
+<p>Ở pha <code>Layout</code>, nút cha truyền khung giới hạn kích thước (<code>Constraints</code> gồm rộng, cao tối thiểu và tối đa) xuống từng nút con. Mỗi nút con tự đo đúng một lần để trả về kích thước thật (<code>Placeable</code>), rồi nút cha đặt tọa độ cho chúng. Riêng <code>LazyColumn</code> dùng <code>SubcomposeLayout</code> (trì hoãn tạo cây con tới lúc đo) để biết khung nhìn trước rồi mới chạy <code>LazyListScope</code>. Khi bạn truyền <code>key</code> và <code>contentType</code> vào hàm <code>items</code>, <code>LazyColumn</code> sẽ giữ đúng trạng thái và dùng lại các nút cũ khi cuộn.</p>
+<h2>Đánh đổi</h2>
+<p>Luật chỉ đo một lần giúp cây giao diện sâu bao nhiêu tầng cũng chạy xong pha <code>Layout</code> rất nhanh theo thời gian tuyến tính. Đổi lại, cha không được đo con hai lần, nên khi cần căn bằng nhau bạn phải bật <code>IntrinsicSize</code> (hỏi trước kích thước). Với <code>LazyColumn</code>, việc tách từng mục qua <code>SubcomposeLayout</code> tốn chi phí quản lý, nên sẽ chậm hơn <code>Column</code> nếu danh sách chỉ có vài dòng.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Luôn giới hạn công việc trong một lượt duyệt duy nhất và chỉ tạo những phần tử thật sự xuất hiện trước mắt người dùng.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Column</code> thêm <code>verticalScroll</code> vẫn dựng và đo cả 1.000 mục ngay lúc mở màn hình, chỉ có <code>LazyColumn</code> mới tạo mục theo khung nhìn.</p>
+</blockquote>
+<h2>Ví von</h2>
+<p><code>Column</code> giống như in sẵn cả cuốn danh bạ 1.000 trang trải dài ra sàn nhà rồi mới cho bạn đi dọc xem. Còn <code>LazyColumn</code> giống màn hình đọc sách điện tử, tới trang nào mới nạp chữ của đúng trang đó lên.</p>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Composable
+fun UserDirectory(users: List&lt;User&gt;) {
+    LazyColumn {
+        items(
+            items = users,
+            key = { user -&gt; user.id },
+            contentType = { user -&gt; user.role }
+        ) { user -&gt;
+            Row { Text(text = user.name) }
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu bạn bọc <code>LazyColumn</code> không giới hạn chiều cao trong một <code>Column</code> bật <code>verticalScroll</code>, ứng dụng sẽ sập ngay với lỗi <code>IllegalStateException</code>. Lý do là khung cuộn ngoài truyền chiều cao tối đa bằng vô cực (<code>Constraints.Infinity</code>), làm <code>LazyColumn</code> không biết dừng tạo mục ở đâu. Ngoài ra, quên truyền <code>key</code> vào hàm <code>items</code> sẽ làm các dòng bị tráo trạng thái và chạy lại <a href="compose-recomposition-and-state.html">Recomposition</a> thừa khi xóa mục đầu.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Danh sách chỉ có khoảng 5 mục cố định thì có nên dùng <code>LazyColumn</code> cho đồng bộ không?
+Không nên. <code>LazyColumn</code> phải khởi tạo bộ quản lý cuộn và <code>SubcomposeLayout</code> nên tốn nhiều bộ nhớ hơn một <code>Column</code> thường. Với vài mục ít ỏi và cố định, bạn chỉ cần dùng <code>Column</code> kết hợp <code>Modifier.verticalScroll</code> là gọn và nhanh nhất.</p>
+<p><strong>Hỏi:</strong> Vì sao lồng <code>LazyColumn</code> vào trong một <code>Column</code> có cuộn dọc lại làm sập ứng dụng?
+Vì <code>Column</code> có cuộn dọc cho phép con của nó dài tới vô cực (<code>Constraints.Infinity</code>). Khi nhận chiều cao vô cực, <code>LazyColumn</code> không tính được khung nhìn cao bao nhiêu nên sẽ ném lỗi <code>IllegalStateException</code>. Muốn lồng nhau, bạn bắt buộc phải gán một chiều cao cố định như <code>Modifier.height</code> cho danh sách bên trong.</p>
+<p><strong>Hỏi:</strong> Tham số <code>contentType</code> trong hàm <code>items</code> của <code>LazyColumn</code> giúp ích gì cho hiệu năng?
+Nó giúp <code>LazyColumn</code> biết những mục nào có cùng cấu trúc giao diện để tái sử dụng lại nút bố cục khi cuộn. Nếu danh sách trộn lẫn tiêu đề và tin nhắn, truyền <code>contentType</code> sẽ ngăn Compose lấy nhầm khung của tiêu đề gắn cho tin nhắn.</p>
+<p><strong>Hỏi:</strong> Khi nào thì buộc phải dùng <code>IntrinsicSize.Min</code> trong <code>Row</code> hoặc <code>Column</code>?
+Khi bạn muốn phần tử con co giãn theo anh em nằm cạnh nó, như thanh kẻ dọc cao bằng dòng chữ bên cạnh. Vì Compose cấm đo con hai lần, <code>IntrinsicSize.Min</code> cho phép <code>Row</code> hỏi trước chiều cao cần thiết rồi mới chốt khung <code>Constraints</code> để đo thật.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được luật đo một lần (single-pass measurement): cha truyền Constraints xuống, con trả về Placeable rồi cha đặt tọa độ.</li>
+<li>Phân biệt được Column có verticalScroll (tạo hết mọi mục ngay từ đầu) với LazyColumn (chỉ tạo mục trong khung nhìn qua SubcomposeLayout).</li>
+<li>Nêu được nguyên nhân lỗi IllegalStateException khi lồng LazyColumn chiều cao vô cực và vai trò của key, contentType trong hàm items.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/compose/layouts/basics" target="_blank" rel="noopener">Layout basics — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/lists" target="_blank" rel="noopener">Lists and grids — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/layouts/custom" target="_blank" rel="noopener">Custom layouts — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/phases" target="_blank" rel="noopener">Jetpack Compose Phases — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="android-recyclerview-and-diffutil.html">RecyclerView &amp; DiffUtil</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dcompose-layout-basics" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

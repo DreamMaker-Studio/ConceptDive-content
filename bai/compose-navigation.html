@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navigation | ConceptDive</title>
+<meta name="description" content="Trong Compose, các màn hình là những hàm nên bạn không mở màn hình mới bằng Intent hay FragmentTransaction. Thay vào đó, NavController giữ một danh sách điểm đến và bảo khung NavHost gọi đúng hàm của ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-navigation.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Navigation | ConceptDive">
+<meta property="og:description" content="Trong Compose, các màn hình là những hàm nên bạn không mở màn hình mới bằng Intent hay FragmentTransaction. Thay vào đó, NavController giữ một danh sách điểm đến và bảo khung NavHost gọi đúng hàm của ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-navigation.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/compose/diagrams/compose-navigation.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Compose</p>
+<h1>Navigation</h1>
+<h2>Bản 30 giây</h2>
+<p>Trong Compose, các màn hình là những hàm nên bạn không mở màn hình mới bằng <code>Intent</code> hay <code>FragmentTransaction</code>. Thay vào đó, <code>NavController</code> giữ một danh sách điểm đến và bảo khung <code>NavHost</code> gọi đúng hàm của màn hình đang ở trên đỉnh. Khi bạn xoay máy hoặc ứng dụng bị tắt ngầm, danh sách này cùng các tham số truyền theo vẫn được tự động khôi phục.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="android-tasks-and-back-stack.html">Task &amp; back stack</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trước khi có Jetpack Navigation năm 2018, chuyển màn hình bằng <code>FragmentTransaction</code> rất dễ gây lỗi lệch chồng màn hình (<a href="android-tasks-and-back-stack.html">back stack</a>). Nếu hàm <code>commit</code> chạy sau khi <code>Activity</code> đã lưu trạng thái, ứng dụng sẽ sập ngay với lỗi <code>IllegalStateException</code>.</p>
+<p>Khi chuyển sang Jetpack Compose năm 2021, các bản <code>navigation-compose</code> đầu tiên bắt bạn viết đường dẫn bằng chuỗi ký tự như <code>"profile/{id}"</code>. Nếu gõ sai một chữ hoặc quên tham số, ứng dụng chỉ báo lỗi lúc người dùng bấm vào màn hình đó.</p>
+<p>Tháng 9 năm 2024, bản Navigation 2.8.0 ra mắt cơ chế định tuyến kiểm tra kiểu (<em>type-safe navigation</em>) dựa trên Kotlin Serialization. Bạn dùng thẳng <code>object</code> hoặc <code>data class</code> gắn <code>@Serializable</code> làm đích đến để trình biên dịch bắt lỗi sai tham số ngay lúc viết code.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Chuyển màn hình trong Compose không phải là tạo cửa sổ mới mà là đổi hàm được gọi trong <code>NavHost</code> qua một lần <a href="compose-recomposition-and-state.html">Recomposition</a>. Thực chất, <code>NavController</code> quản lý một chồng các đối tượng <code>NavBackStackEntry</code> nằm trên bộ nhớ <a href="jvm-stack-vs-heap.html">Heap</a>. Mỗi <code>NavBackStackEntry</code> tự gom cả ba vai trò: chủ vòng đời (<code>LifecycleOwner</code>), kho chứa <a href="android-viewmodel.html">ViewModel</a> (<code>ViewModelStoreOwner</code>) và bộ lưu trạng thái (<code>SavedStateRegistryOwner</code>).</p>
+<h2>Cơ chế</h2>
+<p><img alt="NavController quản lý danh sách NavBackStackEntry gắn với ViewModel và SavedStateHandle riêng của từng màn hình" src="../compose/diagrams/compose-navigation.png"></p>
+<p>Khi bạn gọi <code>navController.navigate(Profile(id = "42"))</code>, thư viện biến <code>Profile</code> thành gói tham số rồi đẩy một <code>NavBackStackEntry</code> mới lên đỉnh chồng. <code>NavHost</code> đang lắng nghe biến <code>State</code> của chồng này sẽ tự chạy lại để vẽ màn hình <code>Profile</code> và ngừng vẽ màn hình <code>Home</code>. Dù <code>Home</code> không còn trên cây giao diện, <code>NavBackStackEntry</code> của nó vẫn nằm trong chồng nên <code>ViewModel</code> của <code>Home</code> vẫn sống nguyên. Khi người dùng bấm nút Back, mục <code>Profile</code> bị rút khỏi chồng và hệ thống gọi <code>onCleared()</code> để dọn sạch <code>ViewModel</code> của <code>Profile</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Gắn <code>ViewModel</code> và <a href="android-process-death-and-saved-state.html">SavedStateHandle</a> theo từng <code>NavBackStackEntry</code> giúp mỗi màn hình tự giữ dữ liệu khi xoay máy và tự dọn khi thoát. Đổi lại, mọi dữ liệu truyền qua <code>navigate</code> đều bị chép vào <code>Bundle</code> để hệ thống giữ hộ khi ứng dụng xuống nền. Nếu bạn nhét đối tượng nặng vào đường dẫn thay vì chỉ truyền mã <code>id</code>, giao dịch lưu trạng thái sẽ bị nghẽn.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Mỗi bước đi là một bản ghi dữ liệu độc lập, còn giao diện trên màn hình chỉ là hình chiếu của đỉnh chồng.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Đi tiếp bằng <code>navigate</code> chỉ tháo giao diện khỏi cây vẽ, còn rút mục đó khỏi chồng bằng <code>popBackStack</code> mới hủy <code>ViewModel</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Serializable object Home
+@Serializable data class Profile(val id: String)
+
+@Composable
+fun AppNavHost(navController: NavHostController = rememberNavController()) {
+    NavHost(navController = navController, startDestination = Home) {
+        composable&lt;Home&gt; { HomeScreen(onOpen = { navController.navigate(Profile(it)) }) }
+        composable&lt;Profile&gt; { entry -&gt; ProfileScreen(entry.toRoute&lt;Profile&gt;()) }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Truyền nguyên đối tượng <code>User</code> nhiều trường qua <code>navigate</code> làm phình bộ nhớ <code>Bundle</code> và dễ gây lỗi <code>TransactionTooLargeException</code> khi hạ ứng dụng xuống nền. Bạn chỉ được truyền mã nhỏ gọn như <code>id</code>, rồi để <code>ViewModel</code> màn hình đích đọc qua <code>savedStateHandle.toRoute()</code> và tự tải dữ liệu từ kho. Một bẫy nữa là bấm đúp nhanh làm <code>navigate</code> chạy hai lần, đẩy hai màn hình trùng nhau lên chồng hoặc gây sập ứng dụng. Ngoài ra, đừng truyền <code>navController</code> xuống sâu các hàm con, mà hãy truyền callback như <code>onOpen</code> để màn hình con dễ kiểm thử độc lập.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Khi từ màn hình danh sách <code>Home</code> bấm mở màn hình chi tiết <code>Profile</code>, <code>ViewModel</code> của <code>Home</code> có bị hủy không?
+Không. Màn hình <code>Home</code> chỉ tạm rút khỏi cây giao diện để nhường chỗ cho <code>Profile</code>, nhưng <code>NavBackStackEntry</code> của <code>Home</code> vẫn nằm dưới chồng. Nhờ vậy, khi người dùng bấm Back quay về <code>Home</code>, <code>ViewModel</code> cũ vẫn còn nguyên mà không phải tải lại dữ liệu.</p>
+<p><strong>Hỏi:</strong> Có nên truyền cả đối tượng dữ liệu lớn qua <code>data class</code> của <code>navigate</code> cho tiện không?
+Không được làm vậy. Mọi tham số trong đường dẫn đều được lưu vào <code>Bundle</code> của hệ thống để phục hồi khi xảy ra <a href="android-process-death-and-saved-state.html">Process Death</a>. Nếu gói dữ liệu vượt ngưỡng giới hạn của Binder (khoảng 1MB dùng chung cho cả tiến trình), ứng dụng sẽ sập vì lỗi <code>TransactionTooLargeException</code>.</p>
+<p><strong>Hỏi:</strong> Làm sao lấy được tham số của đường dẫn <code>@Serializable</code> ngay bên trong <code>ViewModel</code> mà không cần truyền từ giao diện vào?
+Bạn nhận <code>SavedStateHandle</code> qua hàm khởi tạo của <code>ViewModel</code>, rồi gọi thẳng hàm mở rộng <code>savedStateHandle.toRoute&lt;Profile&gt;()</code>. Thư viện Navigation 2.8.0 tự giải mã các trường trong <code>SavedStateHandle</code> về lại đúng đối tượng <code>Profile</code> an toàn kiểu cho bạn.</p>
+<p><strong>Hỏi:</strong> Nếu người dùng bấm liên tục vào tab dưới đáy màn hình thì làm sao tránh đẻ ra hàng chục bản sao của cùng một tab trên chồng?
+Khi gọi <code>navController.navigate</code>, bạn bật cờ <code>launchSingleTop = true</code> kèm <code>popUpTo</code> về điểm đầu đồ thị với <code>saveState = true</code> và <code>restoreState = true</code>. Cách này giúp giữ đúng một bản của mỗi tab và nhớ luôn vị trí cuộn của từng tab khi chuyển qua lại.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được ba vai trò của NavBackStackEntry: giữ Lifecycle, giữ ViewModelStore riêng và giữ SavedStateHandle qua Process Death.</li>
+<li>Phân biệt được việc màn hình tạm ẩn xuống dưới chồng (ViewModel còn sống) với việc bị rút khỏi chồng bằng popBackStack (ViewModel bị gọi onCleared).</li>
+<li>Nêu được cách định tuyến kiểm tra kiểu bằng @Serializable và toRoute() từ Navigation 2.8.0, cùng lý do chỉ truyền id thay vì đối tượng lớn.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/compose/navigation" target="_blank" rel="noopener">Navigation with Compose — Android Developers</a></li>
+<li><a href="https://developer.android.com/guide/navigation/design/type-safety" target="_blank" rel="noopener">Type safety in Kotlin DSL and Navigation Compose</a></li>
+<li><a href="https://developer.android.com/jetpack/androidx/releases/navigation#2.8.0" target="_blank" rel="noopener">Jetpack Navigation Release Notes 2.8.0</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="android-process-death-and-saved-state.html">Process Death &amp; SavedStateHandle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dcompose-navigation" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

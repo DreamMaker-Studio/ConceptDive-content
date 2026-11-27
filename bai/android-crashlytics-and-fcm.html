@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crashlytics &amp; FCM | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng tới tay người dùng, bạn không thể cắm cáp đọc log lúc máy sập hay bắt máy thức dậy hỏi tin. Firebase Crashlytics tự động ghi vết lỗi vào bộ nhớ máy ngay giây phút ứng dụng sập rồi gửi kèm">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-crashlytics-and-fcm.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Crashlytics &amp; FCM | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng tới tay người dùng, bạn không thể cắm cáp đọc log lúc máy sập hay bắt máy thức dậy hỏi tin. Firebase Crashlytics tự động ghi vết lỗi vào bộ nhớ máy ngay giây phút ứng dụng sập rồi gửi kèm">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-crashlytics-and-fcm.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/crashlytics-deobfuscation-and-fcm-routing.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Crashlytics &amp; FCM</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng tới tay người dùng, bạn không thể cắm cáp đọc log lúc máy sập hay bắt máy thức dậy hỏi tin. <code>Firebase Crashlytics</code> tự động ghi vết lỗi vào bộ nhớ máy ngay giây phút ứng dụng sập rồi gửi kèm sổ giải mã về cho bạn. Còn <code>Firebase Cloud Messaging</code> (<code>FCM</code>) mượn kết nối ngầm sẵn có của hệ thống để đánh thức ứng dụng và trao thông báo đẩy đỡ tốn pin.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-release-r8-signing.html">R8, ký app, lên Play</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Ở những năm đầu của Android, muốn nhận tin từ máy chủ, mỗi ứng dụng phải tự mở dịch vụ ngầm giữ kết nối riêng. Hàng chục ứng dụng cùng giữ kết nối khiến radio mạng không bao giờ nghỉ, làm máy nóng và tụt pin nhanh chóng. Ngược lại, khi ứng dụng sập trên máy khách, người dùng chỉ bấm tắt hộp thoại. Lập trình viên vì thế mù tịt về lỗi ngoài thực tế.</p>
+<p>Google ra mắt <code>Google Cloud Messaging</code> rồi nâng cấp thành <code>Firebase Cloud Messaging</code> (<code>FCM</code>) tại Google I/O tháng 5 năm 2016. Dịch vụ này gom thông báo đẩy của mọi ứng dụng vào một kết nối chung. Tháng 1 năm 2017, Google mua lại <code>Fabric</code> (chứa <code>Crashlytics</code>, ra đời năm 2011) từ Twitter. Công cụ này được tích hợp thành <code>Firebase Crashlytics</code> để thu thập và giải mã báo cáo sập ứng dụng.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Crashlytics</code> không gửi báo cáo qua mạng ngay khoảnh khắc ứng dụng đang sập. <code>FCM</code> cũng không phải kết nối riêng do ứng dụng của bạn tự giữ. Thực chất, <code>Crashlytics</code> cài <code>UncaughtExceptionHandler</code> để ghi vết lỗi xuống đĩa rồi chờ lần mở kế tiếp mới tải lên đối chiếu với <code>mapping.txt</code>. Còn <code>FCM</code> là trạm chuyển tiếp của dịch vụ Google Play đứng ra nhận gói tin tối đa 4KB (4096 byte) rồi gọi ứng dụng.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Luồng Crashlytics giải mã vết lỗi trên đĩa bằng mapping.txt và bảng rẽ nhánh FCM giữa Notification Message với Data Message tối đa 4KB" src="../android/diagrams/crashlytics-deobfuscation-and-fcm-routing.png"></p>
+<p>Khi có lỗi chưa bắt, <code>Crashlytics</code> ghi stack trace, dòng <code>log</code> và tối đa 64 cặp <code>setCustomKey</code> xuống đĩa. Lúc biên dịch bản <code>release</code>, <code>uploadCrashlyticsMappingFileRelease</code> tải tệp <code>mapping.txt</code> của <a href="android-release-r8-signing.html">R8</a> lên máy chủ để dịch tên lớp <code>a.b.a</code> về đúng số dòng gốc. Ở chiều nhận tin, <code>FCM</code> gửi gói tin tối đa 4096 byte gồm <code>Notification Message</code> (tiêu đề, nội dung) và <code>Data Message</code> (dữ liệu tùy chỉnh). Khi mở ở tiền cảnh, cả hai vào <code>onMessageReceived</code> của <code>FirebaseMessagingService</code>; còn ở nền, hệ thống tự hiện <code>Notification Message</code> và chỉ gọi <code>onMessageReceived</code> cho <code>Data Message</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Nhờ gom đường truyền hệ thống và ghi lỗi xuống đĩa, bạn biết dòng code gây sập và đẩy tin đỡ tốn pin. Đổi lại, gói tin <code>FCM</code> chỉ chở tối đa 4KB. Nó có thể bị hoãn khi máy tiết kiệm pin và không chạy nếu thiếu dịch vụ Google Play.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Gom các kết nối lẻ tẻ của nhiều ứng dụng về một kênh hệ thống duy nhất. Đồng thời, luôn ghi dữ liệu sống còn xuống đĩa trước khi tiến trình chết.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Gói <code>Notification Message</code> gửi tới khi ứng dụng nằm ở nền sẽ do khay hệ thống tự hiển thị và bỏ qua hoàn toàn hàm <code>onMessageReceived</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class AppMessagingService : FirebaseMessagingService() {
+    override fun onNewToken(token: String) {
+        Firebase.crashlytics.setCustomKey(&quot;fcm_token_updated&quot;, true)
+    }
+
+    override fun onMessageReceived(message: RemoteMessage) {
+        val orderId = message.data[&quot;order_id&quot;] ?: return
+        Firebase.crashlytics.log(&quot;Nhận đơn hàng: $orderId&quot;)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Gửi gói <code>Notification Message</code> kèm dữ liệu phụ sẽ khiến hàm <code>onMessageReceived</code> không chạy để lưu dữ liệu khi ứng dụng đang ở nền. Ngược lại, đừng nhồi danh sách dài vào <code>Data Message</code> vì vượt trần 4096 byte thì <code>FCM</code> từ chối gửi ngay từ phía máy chủ. Với <code>Crashlytics</code>, nếu bật <code>R8</code> mà xóa <code>SourceFile</code>, <code>LineNumberTable</code> hoặc thiếu tệp <code>mapping.txt</code>, báo cáo lỗi sẽ chỉ hiện <code>Unknown Source</code> không thể gỡ lỗi.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao thông báo đẩy gửi xuống khi người dùng đang mở app thì chạy đúng code xử lý, nhưng khi thoát app ra màn hình chính thì code đó lại không chạy?
+Vì máy chủ của bạn đang gửi gói tin dạng <code>Notification Message</code>. Khi ứng dụng ở nền, dịch vụ hệ thống tự lấy tiêu đề và nội dung hiện lên khay thông báo mà không gọi <code>onMessageReceived</code>. Muốn code trong <code>onMessageReceived</code> luôn chạy ở cả nền lẫn tiền cảnh, máy chủ phải gửi gói tin thuần <code>Data Message</code>.</p>
+<p><strong>Hỏi:</strong> Khi ứng dụng bị sập ngay lập tức vì hết bộ nhớ hoặc lỗi nghiêm trọng, Crashlytics lấy đâu ra thời gian để gọi mạng gửi báo cáo?
+Nó không hề gọi mạng lúc ứng dụng đang sập. Khi bắt được ngoại lệ chưa xử lý, <code>Crashlytics</code> chỉ ghi tệp báo cáo xuống đĩa rồi để hệ điều hành đóng tiến trình. Tới lần sau khi người dùng mở lại ứng dụng, thư viện mới đọc tệp đó từ đĩa và gửi lên máy chủ.</p>
+<p><strong>Hỏi:</strong> Có nên gọi <code>Firebase.crashlytics.recordException(e)</code> ở mọi khối <code>catch</code> trong ứng dụng để không bỏ sót lỗi nào không?
+Không nên. <code>Crashlytics</code> chỉ giữ tối đa 8 lỗi không sập (<code>non-fatal</code>) gần nhất trong mỗi phiên làm việc để tránh tốn băng thông và bộ nhớ. Nếu bạn bắn cả lỗi mất mạng thông thường vào <code>recordException</code>, chúng sẽ đẩy bay mất các lỗi logic quan trọng cần theo dõi.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách <code>Crashlytics</code> ghi lỗi xuống đĩa qua <code>UncaughtExceptionHandler</code> và dùng tệp <code>mapping.txt</code> từ tác vụ <code>uploadCrashlyticsMappingFileRelease</code> để giải mã tên lớp.</li>
+<li>Nêu được các giới hạn con số cụ thể: gói tin <code>FCM</code> tối đa 4096 byte (4KB), <code>Crashlytics</code> lưu tối đa 64 cặp <code>setCustomKey</code> và 8 lỗi <code>recordException</code> mỗi phiên.</li>
+<li>Phân biệt được đường đi của <code>Notification Message</code> và <code>Data Message</code> khi ứng dụng đang mở ở tiền cảnh so với khi nằm ở nền.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://firebase.google.com/docs/crashlytics" target="_blank" rel="noopener">Firebase Crashlytics documentation — Firebase</a></li>
+<li><a href="https://firebase.google.com/docs/crashlytics/get-deobfuscated-reports" target="_blank" rel="noopener">Get deobfuscated crash reports — Firebase</a></li>
+<li><a href="https://firebase.google.com/docs/crashlytics/customize-crash-reports" target="_blank" rel="noopener">Customize your Firebase Crashlytics crash reports — Firebase</a></li>
+<li><a href="https://firebase.google.com/docs/cloud-messaging" target="_blank" rel="noopener">Firebase Cloud Messaging documentation — Firebase</a></li>
+<li><a href="https://firebase.google.com/docs/cloud-messaging/customize-messages/set-message-type" target="_blank" rel="noopener">About FCM messages — Firebase</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-release-r8-signing.html">R8, ký app, lên Play</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-crashlytics-and-fcm" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

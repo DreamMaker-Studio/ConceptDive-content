@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content provider | ConceptDive</title>
+<meta name="description" content="Khi ứng dụng nhắn tin muốn đọc danh bạ hay lấy ảnh từ ứng dụng khác, nó không thể mở thẳng tệp của người ta. ContentProvider là cổng gác dữ liệu chuẩn hóa giúp ứng dụng chia sẻ bảng dữ liệu hoặc tệp c">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-content-provider.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Content provider | ConceptDive">
+<meta property="og:description" content="Khi ứng dụng nhắn tin muốn đọc danh bạ hay lấy ảnh từ ứng dụng khác, nó không thể mở thẳng tệp của người ta. ContentProvider là cổng gác dữ liệu chuẩn hóa giúp ứng dụng chia sẻ bảng dữ liệu hoặc tệp c">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-content-provider.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/content-provider-ipc-cursor.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Content provider</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi ứng dụng nhắn tin muốn đọc danh bạ hay lấy ảnh từ ứng dụng khác, nó không thể mở thẳng tệp của người ta. <code>ContentProvider</code> là cổng gác dữ liệu chuẩn hóa giúp ứng dụng chia sẻ bảng dữ liệu hoặc tệp cho bên khác sau khi kiểm quyền. Nhờ có cổng này, bạn cấp được quyền đọc tạm thời cho từng bức ảnh lẻ mà không làm lộ cả thư mục riêng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-intent.html">Intent &amp; intent filter</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Từ bản Android 1.0 (2008), hệ điều hành chạy mỗi ứng dụng dưới một tài khoản người dùng Linux (<code>UID</code>) riêng biệt. Tệp cơ sở dữ liệu của ứng dụng nào thì khóa chặt trong thư mục riêng của ứng dụng đó, không ai ngoài đọc được.</p>
+<p>Trước đây, nhiều lập trình viên lách luật bằng cách ném thẳng đường dẫn tệp <code>file://</code> qua <a href="android-intent.html">Intent</a>. Một số khác lại mở toang quyền đọc tệp cho toàn bộ máy. Cách này vừa làm lộ cấu trúc thư mục riêng, vừa buộc bên nhận xin quyền đọc toàn bộ nhớ ngoài rất nguy hiểm.</p>
+<p>Từ Android 7.0 (API 24), ứng dụng nhắm API này không được đưa đường dẫn <code>file://</code> ra ngoài. Làm vậy sẽ gặp lỗi <code>FileUriExposedException</code>. Mọi việc chia sẻ dữ liệu hay tệp liên ứng dụng bắt buộc phải đi qua địa chỉ <code>content://</code> của <code>ContentProvider</code> hoặc <code>FileProvider</code>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>ContentProvider</code> không phải là một hệ quản trị cơ sở dữ liệu như <code>SQLite</code>. Thực chất, nó là lớp vỏ giao tiếp liên tiến trình (<code>IPC</code>) bọc ngoài kho dữ liệu bất kỳ như bảng <code>SQLite</code> hay tệp ảnh. Bên gọi không bao giờ chạm trực tiếp vào <code>ContentProvider</code>, mà phải gửi địa chỉ <code>Uri</code> qua đối tượng trung gian <code>ContentResolver</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Giao tiếp liên tiến trình từ ContentResolver qua Binder tới ContentProvider bằng Uri, CursorWindow và FileProvider" src="../android/diagrams/content-provider-ipc-cursor.png"></p>
+<p>Khi bạn gọi <code>ContentResolver.query</code> với địa chỉ <code>content://authority/path</code>, hệ thống dùng tên định danh (<code>authority</code>) để tìm tiến trình chứa <code>ContentProvider</code> đó. Yêu cầu đi qua <code>Binder</code> sang đánh thức các hàm <code>query</code>, <code>insert</code>, <code>update</code>, <code>delete</code> hoặc <code>openFile</code> bên phía ứng dụng giữ dữ liệu. Với bảng dữ liệu, kết quả trả về là con trỏ <code>Cursor</code> đọc qua vùng nhớ chung (<code>CursorWindow</code>) để khỏi chép từng dòng qua <code>Binder</code>. Với tệp tin, <code>FileProvider</code> đổi đường dẫn tệp thật thành địa chỉ <code>content://</code> và cho phép gắn cờ <code>FLAG_GRANT_READ_URI_PERMISSION</code> để cấp quyền đọc tạm thời.</p>
+<h2>Đánh đổi</h2>
+<p>Đi qua <code>ContentProvider</code> giúp hệ điều hành kiểm quyền truy cập tới từng dòng dữ liệu hoặc từng tệp mà không lộ đường dẫn gốc. Đổi lại, việc dựng tiến trình đích và truyền dữ liệu qua <code>Binder</code> chậm hơn nhiều so với đọc trực tiếp trong cùng ứng dụng. Ngoài ra, hàm <code>ContentProvider.onCreate</code> luôn chạy trên <a href="android-main-thread-and-anr.html">Main Thread</a> trước cả <code>Application.onCreate</code>, nên khởi tạo nặng ở đây sẽ làm chậm lúc mở ứng dụng.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Không bao giờ đưa chìa khóa cả kho dữ liệu cho bên ngoài. Chỉ cấp thẻ truy cập tạm thời qua một cổng kiểm soát tập trung.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>ContentProvider</code> không lưu dữ liệu, mà là cổng kiểm quyền liên tiến trình biến đường dẫn tệp và bảng nội bộ thành địa chỉ <code>content://</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">val photoFile = File(context.cacheDir, &quot;receipt.jpg&quot;)
+val contentUri: Uri = FileProvider.getUriForFile(
+    context, &quot;${context.packageName}.fileprovider&quot;, photoFile
+)
+val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+    setDataAndType(contentUri, &quot;image/jpeg&quot;)
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+context.startActivity(viewIntent)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Truyền thẳng đường dẫn <code>Uri.fromFile</code> vào <code>Intent</code> khi ứng dụng nhắm Android 7.0 trở lên sẽ làm sập ngay với lỗi <code>FileUriExposedException</code>. Gọi <code>ContentResolver.query</code> trên <code>Main Thread</code> sẽ gây đơ và nổ lỗi <code>ANR</code>, còn quên gọi <code>Cursor.close()</code> sẽ làm rò rỉ bộ nhớ vùng <code>CursorWindow</code>. Tự viết <code>ContentProvider</code> mà để <code>android:exported="true"</code> thiếu quyền bảo vệ hoặc nối chuỗi truy vấn sẽ làm lộ dữ liệu qua lỗi <code>SQL injection</code>. Khi chỉ lưu dữ liệu dùng riêng trong một ứng dụng, đừng tạo <code>ContentProvider</code> cho cồng kềnh mà hãy dùng thẳng <a href="android-room.html">Room</a>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Ứng dụng của mình chỉ lưu dữ liệu nội bộ chứ không chia sẻ cho app khác thì có cần viết ContentProvider không?
+Không. Nếu dữ liệu chỉ dùng nội bộ, việc bọc thêm <code>ContentProvider</code> chỉ làm code dài dòng và tốn thêm chi phí trung gian. Bạn chỉ cần dùng thẳng cơ sở dữ liệu <code>Room</code> hoặc <code>DataStore</code> là đủ.</p>
+<p><strong>Hỏi:</strong> Vì sao một số thư viện như Firebase hay WorkManager tự động khởi tạo được mà không cần mình gọi hàm init trong Application?
+Vì các thư viện đó khai báo sẵn một <code>ContentProvider</code> rỗng trong tệp manifest của thư viện. Khi ứng dụng vừa mở, Android tự động tạo các <code>ContentProvider</code> và gọi hàm <code>onCreate</code> của chúng trên <code>Main Thread</code> trước cả khi chạy <code>Application.onCreate</code>.</p>
+<p><strong>Hỏi:</strong> Đọc danh bạ bằng ContentResolver xong mà không đóng Cursor thì bị lỗi gì?
+Mỗi đối tượng <code>Cursor</code> trả về từ <code>ContentProvider</code> đều giữ một vùng nhớ dùng chung <code>CursorWindow</code> kèm tài nguyên kết nối liên tiến trình. Nếu bạn không gọi <code>close()</code> hoặc không bọc trong khối <code>.use { }</code>, ứng dụng sẽ bị rò rỉ bộ nhớ và sập khi mở nhiều lần.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách ContentResolver nói chuyện với ContentProvider ở tiến trình khác qua Binder, địa chỉ Uri và vùng nhớ CursorWindow.</li>
+<li>Nêu được lý do Android 7.0 chặn đường dẫn file:// bằng lỗi FileUriExposedException và cách FileProvider cấp quyền đọc tạm thời qua FLAG_GRANT_READ_URI_PERMISSION.</li>
+<li>Chỉ ra được bẫy chạy ContentProvider.onCreate hoặc ContentResolver.query trên Main Thread, bẫy quên đóng Cursor và nguy cơ lộ dữ liệu khi để android:exported="true".</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/topics/providers/content-providers" target="_blank" rel="noopener">Content providers overview — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/content/ContentProvider" target="_blank" rel="noopener">ContentProvider API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/androidx/core/content/FileProvider" target="_blank" rel="noopener">FileProvider API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/about/versions/nougat/android-7.0-changes" target="_blank" rel="noopener">Android 7.0 Behavior Changes — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-intent.html">Intent &amp; intent filter</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+<li><a href="android-memory-leak.html">Memory leak</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-content-provider" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

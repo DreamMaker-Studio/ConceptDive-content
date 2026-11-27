@@ -1,7 +1,7 @@
 {
  "version": 1,
- "generatedAt": "2026-11-26T08:17:37+00:00",
- "sourceCommit": "5872768",
+ "generatedAt": "2026-11-27T01:29:02+00:00",
+ "sourceCommit": "eb5708b",
  "files": [
   {
    "path": "android/activity-lifecycle.md",
@@ -19,9 +19,34 @@
    "size": 6768
   },
   {
+   "path": "android/broadcast-receiver.md",
+   "sha256": "9fd69fac22f6af03f5ccbc5053fade6aec6981ba3d841f5ff2c6d70a47099871",
+   "size": 8053
+  },
+  {
+   "path": "android/content-provider.md",
+   "sha256": "0e4aefe9d7510ff638056361a5bebcca00c8f4091043b45c0e69e4bc05b4a48f",
+   "size": 7786
+  },
+  {
    "path": "android/context-application-vs-activity.md",
    "sha256": "ede3dc5345993832db7ed88d5e5dbd17aaac5c764a6d038321a8e56e47022866",
    "size": 7578
+  },
+  {
+   "path": "android/crashlytics-and-fcm.md",
+   "sha256": "b31914501b948b2b73f2b6f972beffe7381f6fd76736cac59b7d2489b4481e84",
+   "size": 7936
+  },
+  {
+   "path": "android/datastore.md",
+   "sha256": "cd12ff3729d53d3d322cc80cb32ab1ba6fcf540c63e53713866f095e2395f4e0",
+   "size": 7792
+  },
+  {
+   "path": "android/debugging-and-profiling.md",
+   "sha256": "9a64e6292cbfc4f30565a9c847131c59fe92c1886647d73376568c21712b854f",
+   "size": 7346
   },
   {
    "path": "android/diagrams/activity-lifecycle-process-death.png",
@@ -44,9 +69,29 @@
    "size": 215722
   },
   {
+   "path": "android/diagrams/broadcast-receiver-lifecycle-goasync.png",
+   "sha256": "0406f38575a73ca147a88eeb24c25978c9b7d79b02e62a0dcada525b37088d5c",
+   "size": 281180
+  },
+  {
+   "path": "android/diagrams/content-provider-ipc-cursor.png",
+   "sha256": "833c7d4804474af5e0997746ff21138e8781c80c2fe75cddb19ef0aef5b674a6",
+   "size": 246464
+  },
+  {
    "path": "android/diagrams/context-activity-vs-application.png",
    "sha256": "a58a4f1bb11424682628283f39ac51e709a4be8f63e83ba7efbed9ba03df4292",
    "size": 251501
+  },
+  {
+   "path": "android/diagrams/crashlytics-deobfuscation-and-fcm-routing.png",
+   "sha256": "2e0758454df2f3a0a2b909227fdc04748da76f973395a7bc090b788d7ccc2096",
+   "size": 297974
+  },
+  {
+   "path": "android/diagrams/datastore-flow-atomic-write.png",
+   "sha256": "d0407d26201ce86d6e1a2391ee7d33ee9d4468d7e96e1c0ab5f21bb116fe36b6",
+   "size": 228011
   },
   {
    "path": "android/diagrams/fragment-vs-view-lifecycle.png",
@@ -59,9 +104,24 @@
    "size": 237223
   },
   {
+   "path": "android/diagrams/gradle-build-variants-pipeline.png",
+   "sha256": "9e4ec44f04451cff0e9d96a197f877cc9e01c60db3faa21139adaf85d37a5449",
+   "size": 270039
+  },
+  {
    "path": "android/diagrams/handler-looper-message-queue-loop.png",
    "sha256": "3974fbd46d7496d75646058549dbe8ec81e0599f5646a79e06bb2f1fe53293c5",
    "size": 248167
+  },
+  {
+   "path": "android/diagrams/intent-resolution-flow.png",
+   "sha256": "2c33fc40cfcbb71cc25847e50f215613decee0654c271d9b5d2c79097aee9956",
+   "size": 239316
+  },
+  {
+   "path": "android/diagrams/leakcanary-and-profiler-pipeline.png",
+   "sha256": "4d3f8fd34cfcbdea6c3c8f8c6278efe2e9d551b52a78077ab5dfdeb4348e0fd4",
+   "size": 276217
   },
   {
    "path": "android/diagrams/memory-leak-activity-tree.png",
@@ -69,9 +129,24 @@
    "size": 224054
   },
   {
+   "path": "android/diagrams/r8-signing-play-delivery.png",
+   "sha256": "8b843de4ad64294fe43d76e776b71f9a8ae5876ddc4c9c9ed3e0abd618a4f502",
+   "size": 285092
+  },
+  {
    "path": "android/diagrams/recyclerview-viewholder-recycling.png",
    "sha256": "91679c755c8f6a6b80d4cd7eeffc912744cc49eddeb20661f5a6946bb156cc25",
    "size": 252084
+  },
+  {
+   "path": "android/diagrams/retrofit-okhttp-interceptor-chain.png",
+   "sha256": "a117438bd47f77c66edcc4e155f960320c11165ead90aa8b8e982c0cc41bdc47",
+   "size": 269822
+  },
+  {
+   "path": "android/diagrams/room-compile-invalidation-flow.png",
+   "sha256": "df1b3d44c8f7828205937cdb838cb11b2b5a4c251e7a9145100675d862a64d47",
+   "size": 252067
   },
   {
    "path": "android/diagrams/samsung-mdc-packet-frame.png",
@@ -84,9 +159,19 @@
    "size": 268378
   },
   {
+   "path": "android/diagrams/service-lifecycle-and-restrictions.png",
+   "sha256": "0d45b52de6a797b0809d86eb5345c89f7ae2e191345b9ffd727acf16883dc7e4",
+   "size": 304231
+  },
+  {
    "path": "android/diagrams/state-holder-repeat-on-lifecycle.png",
    "sha256": "83f85f514cee5bab2bc35cebc737b9f14bf11f41dbc854178b1036334b3c7e9a",
    "size": 284532
+  },
+  {
+   "path": "android/diagrams/tasks-back-stack-launch-modes.png",
+   "sha256": "50e4d9d8230aa3533cda4e4c207fb378605a280730af277de25f8b64f0de1163",
+   "size": 271412
   },
   {
    "path": "android/diagrams/tcp-stream-framing-accumulator.png",
@@ -94,9 +179,19 @@
    "size": 260016
   },
   {
+   "path": "android/diagrams/testing-pyramid-jvm-device.png",
+   "sha256": "c88f857d2ca7760a146f22f620863f66f1d6d44395e2dbd2defab31b696d32d2",
+   "size": 263080
+  },
+  {
    "path": "android/diagrams/viewmodel-store-retention.png",
    "sha256": "7f190c3604f4916518ac1c2b39854bb59c95e1b3f18dfc8bf0011ca225710a56",
    "size": 249494
+  },
+  {
+   "path": "android/diagrams/workmanager-sqlite-jobscheduler.png",
+   "sha256": "5af17ea50139078bf49f477eafada4fb7210e0cf9ab086080f0c4df6aa76d153",
+   "size": 237478
   },
   {
    "path": "android/fragment-lifecycle.md",
@@ -109,9 +204,19 @@
    "size": 7782
   },
   {
+   "path": "android/gradle-build.md",
+   "sha256": "5d789ccf4b24932bbb7910e41560e25780bf94e91f2f55bdebb7ea59740f202e",
+   "size": 6771
+  },
+  {
    "path": "android/handler-looper-message-queue.md",
    "sha256": "123e4d04acdf381e5cfaf5a62a884fd6c9812e045257aa0ecad0c043b51a4ac8",
    "size": 6839
+  },
+  {
+   "path": "android/intent.md",
+   "sha256": "28e27c552ae07c7aa9a91dd7f1d026577d45daf181ae6b5f30d68675d3af3b64",
+   "size": 7231
   },
   {
    "path": "android/main-thread-and-anr.md",
@@ -134,9 +239,29 @@
    "size": 7161
   },
   {
+   "path": "android/release-r8-signing.md",
+   "sha256": "e624be9d6d75ea88ae929c4374350efcb1741fcfde7b90d5cbdb69aaeeb7faef",
+   "size": 7407
+  },
+  {
+   "path": "android/retrofit-and-okhttp.md",
+   "sha256": "36e3c42f14a110480a00829084f07e606a68b93470022e530c77ced4eb532b22",
+   "size": 7755
+  },
+  {
+   "path": "android/room.md",
+   "sha256": "45f133049d09b3bd5e0f2136e3921967e649347126bb12d7f9097c0d3684035e",
+   "size": 7674
+  },
+  {
    "path": "android/samsung-mdc-protocol.md",
    "sha256": "0a04994e78e431f6cb1d2a53bae3ce32bd34eaeb605389ce5a9aee2f98b90401",
    "size": 6519
+  },
+  {
+   "path": "android/service.md",
+   "sha256": "92762a57e96d231c1dbe8a8d4a1fc93c20d5fd08da735e49765329d61d157288",
+   "size": 7505
   },
   {
    "path": "android/state-holders.md",
@@ -144,14 +269,29 @@
    "size": 8048
   },
   {
+   "path": "android/tasks-and-back-stack.md",
+   "sha256": "9873b039b857cc589ac68aa8604f2de575aad0a9b1717dc95bc307c12f638def",
+   "size": 7290
+  },
+  {
    "path": "android/tcp-stream-framing.md",
    "sha256": "f9672bcdb60ca5d8f62fbcf4afa08bb78aebd0476d550ade2bef18ce458a7341",
    "size": 6847
   },
   {
+   "path": "android/testing.md",
+   "sha256": "3fea65d4e9cdce2b3891002068d13c284186c7609cc7fb9435afad43307cefc3",
+   "size": 7427
+  },
+  {
    "path": "android/viewmodel.md",
    "sha256": "30abe09e7102634dc20ba50f800e558d5fb6f8bcbac9d135e728e6a3a8b1233b",
    "size": 7709
+  },
+  {
+   "path": "android/workmanager.md",
+   "sha256": "6202b92c399f8062bf506cf87b5b809e1de75a8cf2e405ecc2095272c474acf9",
+   "size": 7836
   },
   {
    "path": "architecture/clean-architecture-and-use-cases.md",
@@ -174,6 +314,11 @@
    "size": 220941
   },
   {
+   "path": "architecture/diagrams/hilt-compile-vs-koin-runtime.png",
+   "sha256": "31aad6d287514983ab48a06f71bf3042550acc8447bd457b4f9c664e233ff670",
+   "size": 257270
+  },
+  {
    "path": "architecture/diagrams/mvi-unidirectional-data-flow.png",
    "sha256": "1053c21fdea5923a283ba33d96d3eb4f5ae324c2fd417c33cb420c8f55246e6c",
    "size": 199459
@@ -187,6 +332,11 @@
    "path": "architecture/diagrams/state-vs-event-lifecycle.png",
    "sha256": "068fbe435dbd9b067075a5a27b1864e2c176e8c1d95e728436d21abf2918b710",
    "size": 238362
+  },
+  {
+   "path": "architecture/hilt-and-koin.md",
+   "sha256": "c25570d9587d7f921d8b7c3949830319008522da2bdf96da1452f0801cd19aaa",
+   "size": 7814
   },
   {
    "path": "architecture/mvvm-vs-mvi.md",
@@ -209,9 +359,24 @@
    "size": 87
   },
   {
+   "path": "compose/animation.md",
+   "sha256": "81162552f377cc0b2b91c539f11f4890b64f84b39879894115dfa710ec87c8ff",
+   "size": 8310
+  },
+  {
    "path": "compose/compose-side-effects.md",
    "sha256": "31bcca491e0e533691154f645e8e560e49d4250dce251c11f9938171ffa20118",
    "size": 6251
+  },
+  {
+   "path": "compose/diagrams/compose-animation.png",
+   "sha256": "53263cceedb660eadd8ef30a4623574fe9af14ffc141e4a803e37e966884c930",
+   "size": 258261
+  },
+  {
+   "path": "compose/diagrams/compose-layout-basics.png",
+   "sha256": "3d05ac3276af6710f7d4e24333eb84d8cfcbd4392e5cb2c7ddd82e5b4ca27f83",
+   "size": 237703
   },
   {
    "path": "compose/diagrams/compose-lifecycle-side-effects.png",
@@ -219,9 +384,24 @@
    "size": 233623
   },
   {
+   "path": "compose/diagrams/compose-navigation.png",
+   "sha256": "d43786dc7bb55f09437d029da49e28df465ad4bd303bae912d0fc6fe8c001832",
+   "size": 246114
+  },
+  {
    "path": "compose/diagrams/recomposition-slot-table-gap-buffer.png",
    "sha256": "24b8c8a0fc95bafdd448631861b9be1cb90e575cf4efaf14fae264b108861cef",
    "size": 242787
+  },
+  {
+   "path": "compose/layout-basics.md",
+   "sha256": "6f06dd75a0950e45de2d487e2a2ffeec87ec5df41def33f0994e45d2760829b2",
+   "size": 7698
+  },
+  {
+   "path": "compose/navigation.md",
+   "sha256": "9c87e2b19396e4bae44cbbbb10728a2a7534296a94b04be7a52c23d94950d6f8",
+   "size": 8276
   },
   {
    "path": "compose/recomposition-and-state.md",
@@ -269,6 +449,11 @@
    "size": 7854
   },
   {
+   "path": "kotlin/collections-and-sequences.md",
+   "sha256": "12a2d312d5635118a5f1b8f61e3ea87e95b1503511e2dab7eac09b37731fd3ec",
+   "size": 7865
+  },
+  {
    "path": "kotlin/coroutine-context-and-dispatchers.md",
    "sha256": "0d14ad80cc092ce1eb2cb4069189204c702de6b2cb24e8b397e732cab597e0ee",
    "size": 6961
@@ -282,6 +467,11 @@
    "path": "kotlin/coroutines.md",
    "sha256": "898e25317e6b559423cd74218fbf655f9f2dc57ff405cf4b721cf418c90856f8",
    "size": 8244
+  },
+  {
+   "path": "kotlin/diagrams/collections-vs-sequence.png",
+   "sha256": "8215397da066083c5db300a1dd0affc8c8b486f772b2e0fa33a57f8bbc5bbd18",
+   "size": 240420
   },
   {
    "path": "kotlin/diagrams/coroutine-context-dispatcher-intercept.png",
@@ -439,9 +629,19 @@
    "size": 6895
   },
   {
+   "path": "oop/design-patterns.md",
+   "sha256": "c26921d68fa731994413c2d07b61ad9e12673808cc4c3380859b34cb9e6e273a",
+   "size": 8149
+  },
+  {
    "path": "oop/diagrams/abstract-class-vs-interface.png",
    "sha256": "d98f67bf50b77d76b168bd917a5a5e690612311d218c1675b9553e02a9ac918a",
    "size": 195528
+  },
+  {
+   "path": "oop/diagrams/builder-factory-observer.png",
+   "sha256": "279ee3b835047b7a4803feec4492283d3997b6aba0c35c911527432133ba3702",
+   "size": 263251
   },
   {
    "path": "oop/diagrams/composition-fragile-base-class.png",
@@ -470,8 +670,8 @@
   },
   {
    "path": "roadmaps/android.json",
-   "sha256": "b45aeed06a2fdccec80001a3ce5dbff6be71e9c7289884c2677e691da9493167",
-   "size": 26858
+   "sha256": "ac1375c61076892e905eaa20a36a191746518ca43c75dbc271f14022365e8851",
+   "size": 26834
   }
  ]
 }

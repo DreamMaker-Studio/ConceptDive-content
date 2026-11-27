@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R8, ký app, lên Play | ConceptDive</title>
+<meta name="description" content="Bản cài biên dịch thô kéo theo hàng nghìn hàm thư viện thừa và giữ nguyên tên lớp nên ai cũng dịch ngược đọc được. Trước khi phát hành, R8 cắt bỏ mã thừa, đổi tên lớp thành ký tự ngắn và xuất gói ứng ">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-release-r8-signing.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="R8, ký app, lên Play | ConceptDive">
+<meta property="og:description" content="Bản cài biên dịch thô kéo theo hàng nghìn hàm thư viện thừa và giữ nguyên tên lớp nên ai cũng dịch ngược đọc được. Trước khi phát hành, R8 cắt bỏ mã thừa, đổi tên lớp thành ký tự ngắn và xuất gói ứng ">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-release-r8-signing.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/r8-signing-play-delivery.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>R8, ký app, lên Play</h1>
+<h2>Bản 30 giây</h2>
+<p>Bản cài biên dịch thô kéo theo hàng nghìn hàm thư viện thừa và giữ nguyên tên lớp nên ai cũng dịch ngược đọc được. Trước khi phát hành, <code>R8</code> cắt bỏ mã thừa, đổi tên lớp thành ký tự ngắn và xuất gói ứng dụng ký khóa mật mã. Cuối cùng, bạn đẩy gói <code>.aab</code> lên Google Play để chợ ứng dụng tự cắt riêng bản cài vừa khít cho từng dòng máy.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-gradle-build.html">Gradle &amp; build variant</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Khi nhúng nhiều thư viện, tệp thực thi <code>classes.dex</code> nhanh chóng chạm trần 65.536 tham chiếu hàm (giới hạn chỉ số 16-bit của <code>DEX</code>). Trước đây, quy trình phát hành phải chạy <code>ProGuard</code> cắt mã thừa rồi mới biên dịch sang <code>DEX</code>, làm thời gian đóng gói rất lâu. Tệ hơn, nếu lập trình viên làm mất tệp khóa <code>.jks</code> cá nhân, họ vĩnh viễn không thể cập nhật ứng dụng trên Google Play.</p>
+<p>Để giải quyết, Google ra mắt định dạng <code>Android App Bundle</code> (<code>.aab</code>) tại Google I/O 2018 (bắt buộc cho ứng dụng mới từ tháng 8 năm 2021). Đi kèm là cơ chế <code>Play App Signing</code> tách riêng khóa tải lên và khóa phân phối chính thức. Đến năm 2019, từ bản <code>Android Gradle Plugin</code> 3.4.0, Google bật mặc định <code>R8</code>. Trình biên dịch này gộp việc cắt mã, làm rối tên và xuất <code>DEX</code> vào một bước.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>R8</code> không phải là lớp mã hóa chống dịch ngược tuyệt đối. Tệp <code>.aab</code> cũng không phải là bộ cài chạy trực tiếp được trên điện thoại. Thực chất, <code>R8</code> là trình biên dịch biến bytecode Java thành <code>DEX</code> kết hợp tỉa cây tham chiếu tĩnh (<em>Tree-Shaking</em>). Còn <code>.aab</code> là gói nguyên liệu được bạn ký bằng <code>Upload Key</code> để Google Play tách thành các <code>Split APKs</code> và ký lại bằng <code>App Signing Key</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Luồng R8 cắt mã thừa và rút gọn tên lớp ra tệp DEX kèm mapping.txt, ký bằng Upload Key trên gói AAB để Google Play sinh Split APKs ký bằng App Signing Key" src="../android/diagrams/r8-signing-play-delivery.png"></p>
+<p>Khi bật <code>isMinifyEnabled = true</code>, <code>R8</code> đi từ các điểm neo trong <code>AndroidManifest.xml</code> và các luật <code>-keep</code> trong <code>proguard-rules.pro</code> để lần theo đồ thị gọi hàm. Lớp không nối tới điểm neo bị xóa, còn tên lớp sống sót bị đổi thành <code>a.b.a</code> và ghi sổ đối chiếu vào <code>mapping.txt</code>. Nếu bật thêm <code>isShrinkResources = true</code>, công cụ xóa tiếp ảnh và XML thừa trước khi bạn đóng gói tệp <code>.aab</code> ký bằng <code>Upload Key</code>. Từ gói <code>.aab</code> tải lên Play Console, Google Play sinh các <code>Split APKs</code> vừa khít cấu hình máy người dùng và đóng dấu bằng <code>App Signing Key</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Ứng dụng giảm mạnh dung lượng, tránh chạm trần 65.536 hàm và cho phép xin cấp lại <code>Upload Key</code> nếu bạn lỡ mất tệp <code>.jks</code>. Đổi lại, stack trace khi sập sẽ toàn tên <code>a.b.a</code> nếu thiếu <code>mapping.txt</code>. Các lớp gọi ngầm lúc chạy cũng sẽ bị xóa nhầm nếu thiếu luật <code>-keep</code>.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chỉ đóng gói đúng những nhánh mã và tài nguyên mà thiết bị đích thực sự chạm tới. Đồng thời, luôn tách khóa người gửi khỏi khóa phân phối.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>R8</code> không biết lớp nào được gọi qua phản chiếu (<em>reflection</em>) lúc chạy; khi thiếu đường nối tĩnh và luật <code>-keep</code>, nó xóa lớp đó.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">android {
+    buildTypes {
+        getByName(&quot;release&quot;) {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile(&quot;proguard-android-optimize.txt&quot;),
+                &quot;proguard-rules.pro&quot;
+            )
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu lớp JSON chỉ đọc qua tên trường lúc chạy (<em>reflection</em>) mà thiếu <code>@Keep</code> hoặc luật <code>-keep</code>, <code>R8</code> sẽ đổi tên trường thành <code>a</code>, <code>b</code>. Triệu chứng là bản <code>debug</code> chạy đúng nhưng bản <code>release</code> trả về toàn dữ liệu <code>null</code> hoặc sập <code>ClassNotFoundException</code>. Ngược lại, đừng chép bừa luật <code>-keep class com.example.** { *; }</code> vì nó làm mất tác dụng cắt mã. Cũng nhớ đăng ký <code>SHA-1</code> của <code>App Signing Key</code> lên Firebase, nếu không đăng nhập Google sẽ lỗi trên bản tải từ Play.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao tính năng gọi API chạy mượt ở bản debug nhưng vừa xuất bản release lên máy là dữ liệu bị null hoặc sập <code>ClassNotFoundException</code>?
+Vì ở bản <code>release</code>, <code>R8</code> đã xóa hoặc đổi tên các lớp dữ liệu không được gọi trực tiếp bằng câu lệnh thông thường. Khi thư viện phân tích JSON tìm trường theo tên gốc lúc chạy, nó sẽ không tìm thấy nữa. Bạn cần gắn chú thích <code>@Keep</code> lên lớp dữ liệu đó hoặc dùng bộ sinh mã lúc biên dịch.</p>
+<p><strong>Hỏi:</strong> Có thể chép trực tiếp tệp <code>.aab</code> vào điện thoại để bấm cài đặt như tệp <code>.apk</code> được không?
+Không. Tệp <code>.aab</code> chỉ là gói chứa mã và tài nguyên thô dành cho máy chủ Google Play chứ không phải gói cài đặt hoàn chỉnh. Muốn cài thử từ tệp <code>.aab</code> lên máy thật ở dưới máy tính, bạn phải dùng công cụ <code>bundletool</code> để trích xuất ra bộ <code>Split APKs</code>.</p>
+<p><strong>Hỏi:</strong> Nếu làm mất tệp keystore <code>.jks</code> trên máy tính khi đã dùng Play App Signing thì ứng dụng có bị mất khả năng cập nhật không?
+Không. Vì khóa chính thức <code>App Signing Key</code> dùng để ký bản cài trên máy người dùng đã nằm an toàn trên hạ tầng của Google. Bạn chỉ cần tạo một tệp <code>.jks</code> mới làm <code>Upload Key</code> rồi gửi yêu cầu đặt lại khóa tải lên trong Google Play Console.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được 3 việc của R8 khi bật <code>isMinifyEnabled = true</code>: cắt mã thừa từ điểm neo và luật <code>-keep</code>, rút gọn tên lớp, và ghi sổ đối chiếu <code>mapping.txt</code>.</li>
+<li>Phân biệt được vai trò của <code>Upload Key</code> (bạn giữ để tải <code>.aab</code> lên) và <code>App Signing Key</code> (Google giữ để ký <code>Split APKs</code> giao cho máy người dùng).</li>
+<li>Chỉ ra được nguyên nhân lỗi mất dữ liệu JSON do <code>R8</code> đổi tên lớp dùng reflection và lỗi quên đăng ký <code>SHA-1</code> của <code>App Signing Key</code>.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/build/shrink-code" target="_blank" rel="noopener">Shrink, obfuscate, and optimize your app — Android Developers</a></li>
+<li><a href="https://developer.android.com/studio/publish/app-signing" target="_blank" rel="noopener">Sign your app — Android Developers</a></li>
+<li><a href="https://developer.android.com/guide/app-bundle" target="_blank" rel="noopener">About Android App Bundles — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-gradle-build.html">Gradle &amp; build variant</a></li>
+<li><a href="android-crashlytics-and-fcm.html">Crashlytics &amp; FCM</a></li>
+<li><a href="kotlin-inline-function.html">Inline Functions</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-release-r8-signing" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

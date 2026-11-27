@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intent &amp; intent filter | ConceptDive</title>
+<meta name="description" content="Khi bấm đường dẫn trong ứng dụng nhắn tin để mở trình duyệt, hai tiến trình khác nhau không thể gọi hàm của nhau. Intent đóng gói yêu cầu và dữ liệu thành một bức thư gửi qua hệ điều hành để nhờ mở mà">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-intent.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Intent &amp; intent filter | ConceptDive">
+<meta property="og:description" content="Khi bấm đường dẫn trong ứng dụng nhắn tin để mở trình duyệt, hai tiến trình khác nhau không thể gọi hàm của nhau. Intent đóng gói yêu cầu và dữ liệu thành một bức thư gửi qua hệ điều hành để nhờ mở mà">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-intent.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/intent-resolution-flow.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Intent &amp; intent filter</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bấm đường dẫn trong ứng dụng nhắn tin để mở trình duyệt, hai tiến trình khác nhau không thể gọi hàm của nhau. <code>Intent</code> đóng gói yêu cầu và dữ liệu thành một bức thư gửi qua hệ điều hành để nhờ mở màn hình đích. Nhờ vậy, các màn hình và các ứng dụng gọi được nhau mà không cần biết tên lớp code của nhau.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trên máy tính truyền thống, muốn mở ứng dụng khác, bạn phải gọi thẳng đường dẫn tệp chạy cố định trên ổ đĩa. Nhưng trên Android từ bản 1.0 (2008), người dùng có thể cài trình duyệt khác và chọn nó thay bản có sẵn.</p>
+<p>Ngoài ra, mỗi ứng dụng Android chạy trong một tiến trình riêng biệt nên không thể truyền con trỏ bộ nhớ sang cho nhau. Nếu ứng dụng gọi cứng tên lớp của ứng dụng khác, chỉ cần ứng dụng kia đổi tên hay bị gỡ là code sẽ gãy.</p>
+<p>Kỹ sư Android tạo ra <code>Intent</code> và bộ lọc <code>intent-filter</code> để tách rời nơi gửi yêu cầu với nơi thực hiện. Bạn chỉ cần mô tả hành động muốn làm, còn hệ điều hành sẽ dò tìm thành phần phù hợp nhất đang có trên máy.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Intent</code> không phải là lệnh gọi hàm trực tiếp giữa hai màn hình trong bộ nhớ của ứng dụng. Thực chất, nó là một gói dữ liệu đóng gói (<code>Parcelable</code>) đi qua kênh liên tiến trình <code>Binder</code> lên tiến trình hệ thống <code>system_server</code>. Tại đó, hệ điều hành kiểm tra quyền hạn rồi mới đánh thức hoặc tạo mới thành phần đích để giao gói tin này.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Luồng phân giải Explicit Intent và Implicit Intent qua Binder tới PackageManagerService trong system_server" src="../android/diagrams/intent-resolution-flow.png"></p>
+<p>Một <code>Intent</code> chứa tên thành phần đích, chuỗi hành động (<code>action</code>), địa chỉ dữ liệu (<code>Uri</code>), nhóm (<code>category</code>), cờ (<code>flags</code>) và gói dữ liệu <code>Bundle</code>. Với <code>Explicit Intent</code> (chỉ rõ tên lớp), <code>ActivityTaskManagerService</code> trong <code>system_server</code> mở thẳng thành phần đó mà không cần dò tìm. Với <code>Implicit Intent</code> (chỉ nêu hành động), <code>PackageManagerService</code> đối chiếu cả ba mục <code>action</code>, <code>data</code> và <code>category</code> với các <code>intent-filter</code> trong <code>AndroidManifest.xml</code>. Nếu cần nhờ ứng dụng khác chạy hộ <code>Intent</code> sau này với quyền của ứng dụng bạn, hệ thống cấp một thẻ <code>PendingIntent</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Tách rời nơi gọi và nơi nhận giúp ứng dụng dùng lại được màn hình máy ảnh hay trình duyệt có sẵn trên máy. Đổi lại, mọi dữ liệu trong <code>Bundle</code> phải chép qua bộ đệm <code>Binder</code> có giới hạn chung khoảng 1MB cho cả tiến trình. Hơn nữa, thành phần mở cửa đón <code>Implicit Intent</code> từ bên ngoài sẽ dễ bị ứng dụng lạ gửi dữ liệu giả mạo vào.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Các thành phần độc lập không giữ tham chiếu trực tiếp tới nhau. Chúng giao tiếp bằng cách gửi gói tin mô tả yêu cầu qua trung gian.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Intent</code> không gọi thẳng màn hình đích trong bộ nhớ, mà là gói tin đi vòng qua <code>system_server</code> để hệ điều hành kiểm quyền.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">val shareIntent = Intent(Intent.ACTION_SEND).apply {
+    type = &quot;text/plain&quot;
+    putExtra(Intent.EXTRA_TEXT, &quot;https://developer.android.com&quot;)
+}
+startActivity(Intent.createChooser(shareIntent, &quot;Chia sẻ liên kết&quot;))
+
+val notifyIntent = Intent(context, DetailActivity::class.java)
+val pendingIntent = PendingIntent.getActivity(
+    context, 0, notifyIntent,
+    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nhét ảnh hay danh sách lớn vào <code>Intent</code> sẽ tràn bộ đệm 1MB của <code>Binder</code> và sập với <code>TransactionTooLargeException</code>, nên chỉ truyền mã ID. Khi ứng dụng nhắm Android 12 (API 31), quên cờ <code>FLAG_IMMUTABLE</code> hoặc <code>FLAG_MUTABLE</code> trên <code>PendingIntent</code> sẽ ném <code>IllegalArgumentException</code>. Thiếu <code>android:exported</code> khi có <code>intent-filter</code> thì APK không cài được. Gọi <code>Implicit Intent</code> mà không có ứng dụng nào khớp trên máy cũng làm ứng dụng sập ngay vì <code>ActivityNotFoundException</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Truyền một đối tượng vài trăm KB qua Intent sang màn hình kế tiếp có an toàn không?
+Không. Bộ đệm <code>Binder</code> chỉ có khoảng 1MB dùng chung cho mọi giao dịch đang chạy của cả tiến trình. Nếu gói <code>Bundle</code> quá nặng, ứng dụng sẽ sập với lỗi <code>TransactionTooLargeException</code> ngay lúc chuyển màn hình hoặc lưu trạng thái nền.</p>
+<p><strong>Hỏi:</strong> Vì sao từ Android 12 hệ thống lại bắt buộc khai báo FLAG_IMMUTABLE khi tạo PendingIntent?
+Vì <code>PendingIntent</code> cho phép ứng dụng nhận chạy chiếc <code>Intent</code> bên trong với đúng danh tính và quyền hạn của ứng dụng bạn. Nếu để mặc định có thể sửa đổi như trước, ứng dụng độc hại sẽ đổi được đích đến hoặc chèn dữ liệu chiếm quyền.</p>
+<p><strong>Hỏi:</strong> Khai báo intent-filter cho Activity mà không thêm category DEFAULT thì điều gì xảy ra?
+Khi bạn gọi <code>startActivity</code> với một <code>Implicit Intent</code>, hệ thống tự động gắn thêm nhóm <code>CATEGORY_DEFAULT</code> vào yêu cầu đó. Nếu thẻ <code>intent-filter</code> trong <code>AndroidManifest.xml</code> của màn hình đích thiếu nhóm này, hệ thống sẽ bỏ qua và báo lỗi <code>ActivityNotFoundException</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được lộ trình của một Intent đi qua Binder sang system_server thay vì gọi trực tiếp đối tượng trong RAM.</li>
+<li>Phân biệt được Explicit Intent và cách PackageManagerService khớp ba mục action, data, category của Implicit Intent với intent-filter.</li>
+<li>Nêu được giới hạn 1MB của Binder gây TransactionTooLargeException và lý do phải gắn FLAG_IMMUTABLE cho PendingIntent từ Android 12.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/components/intents-filters" target="_blank" rel="noopener">Intents and intent filters — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/content/Intent" target="_blank" rel="noopener">Intent API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/app/PendingIntent" target="_blank" rel="noopener">PendingIntent API reference — Android Developers</a></li>
+<li><a href="https://developer.android.com/about/versions/12/behavior-changes-12" target="_blank" rel="noopener">Behavior changes: Apps targeting Android 12</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-process-death-and-saved-state.html">Process Death &amp; SavedStateHandle</a></li>
+<li><a href="android-context-application-vs-activity.html">Context: Application vs Activity</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-intent" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

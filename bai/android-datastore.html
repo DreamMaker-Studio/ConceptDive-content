@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataStore | ConceptDive</title>
+<meta name="description" content="Khi lưu cờ đăng nhập hay chế độ tối bằng SharedPreferences, lệnh đọc ghi dễ chặn đứng luồng vẽ giao diện gây đơ máy. DataStore thay thế bằng cách chuyển mọi thao tác đọc ghi file sang luồng nền và trả">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-datastore.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DataStore | ConceptDive">
+<meta property="og:description" content="Khi lưu cờ đăng nhập hay chế độ tối bằng SharedPreferences, lệnh đọc ghi dễ chặn đứng luồng vẽ giao diện gây đơ máy. DataStore thay thế bằng cách chuyển mọi thao tác đọc ghi file sang luồng nền và trả">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-datastore.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/datastore-flow-atomic-write.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>DataStore</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi lưu cờ đăng nhập hay chế độ tối bằng <code>SharedPreferences</code>, lệnh đọc ghi dễ chặn đứng luồng vẽ giao diện gây đơ máy. <code>DataStore</code> thay thế bằng cách chuyển mọi thao tác đọc ghi file sang luồng nền và trả dữ liệu qua luồng bất đồng bộ. Nhờ vậy, ứng dụng đọc cài đặt mượt mà, không bao giờ làm treo màn hình của người dùng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Từ Android 1.0, <code>SharedPreferences</code> là công cụ mặc định để lưu các cặp khóa - giá trị nhỏ trong file XML. Tuy nhiên, hàm đọc như <code>getString()</code> lại chạy đồng bộ. Nếu file chưa kịp nạp lên RAM, luồng chính phải đứng chờ ổ cứng đọc xong.</p>
+<p>Nhiều người tưởng gọi <code>apply()</code> là thoát khỏi việc chặn luồng chính vì nó ghi đĩa ở luồng nền. Thực tế, khi Activity đóng ở <code>onStop()</code>, hệ thống buộc luồng chính phải đứng đợi lệnh <code>fsync()</code> ghi hết các bản <code>apply()</code> xuống đĩa. Trên máy có bộ nhớ flash chậm, bước đợi này gây giật khung hình, bị <code>StrictMode</code> cảnh báo và dẫn tới lỗi <a href="android-main-thread-and-anr.html">ANR</a>.</p>
+<p>Tháng 8/2021, Google phát hành <code>DataStore</code> 1.0.0 với hai nhánh là <code>Preferences DataStore</code> và <code>Proto DataStore</code>. Thư viện này bỏ hẳn các hàm đọc ghi đồng bộ, ép mọi thao tác đi qua <a href="kotlin-flow-under-the-hood.html">Flow</a> và hàm tạm dừng trên luồng nền.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>DataStore</code> không phải là một cơ sở dữ liệu quan hệ thu nhỏ dùng để truy vấn hay lọc danh sách hàng nghìn dòng. Thực chất, nó là một trình quản lý một file nhị phân duy nhất trên đĩa, vận hành hoàn toàn trên <code>Dispatchers.IO</code>. Mỗi lần bạn sửa một khóa, <code>DataStore</code> tạo ra một bản chụp trạng thái mới và ghi đè nguyên tử toàn bộ file đó.</p>
+<h2>Cơ chế</h2>
+<p><img alt="DataStore đẩy toàn bộ đọc ghi xuống Dispatchers.IO, cập nhật bất biến qua edit và phát trạng thái mới qua Flow" src="../android/diagrams/datastore-flow-atomic-write.png"></p>
+<p>Khi bạn đọc <code>dataStore.data</code>, thư viện trả về một <a href="kotlin-flow-under-the-hood.html">Flow</a> đọc file trên <code>Dispatchers.IO</code> và giữ bản sao trong bộ nhớ đệm. Khi gọi hàm <code>edit</code>, <code>DataStore</code> dùng khóa đồng bộ nội bộ xếp hàng các lần ghi tuần tự, rồi truyền bản sao vào khối lệnh. Khối <code>edit</code> chạy xong, bản trạng thái mới được ghi ra file nhị phân trên đĩa và đẩy vào <code>Flow</code> cho màn hình đang nghe. Với <code>Proto DataStore</code>, cấu trúc file được định nghĩa chặt bằng <code>Protocol Buffers</code> thay vì cặp khóa rời rạc.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn loại bỏ hoàn toàn nguy cơ lỗi <a href="android-main-thread-and-anr.html">ANR</a> do <code>fsync()</code> của <code>SharedPreferences</code>. Bạn cũng có giao dịch nguyên tử và bắt được lỗi đọc đĩa qua <code>catch</code>. Đổi lại, bạn không thể lấy ngay giá trị bằng hàm đồng bộ thường mà phải đọc trong coroutine. Nó cũng không hỗ trợ truy vấn từng phần.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Không bao giờ chạm vào ổ cứng trên luồng vẽ giao diện. Mọi thay đổi trạng thái phải diễn ra nguyên tử qua một đầu mối duy nhất.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>SharedPreferences.apply()</code> vẫn chặn luồng chính lúc đóng màn hình để đợi ghi đĩa, còn <code>DataStore</code> tách hẳn mọi bước đọc ghi sang <code>Dispatchers.IO</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">val Context.settingsStore by preferencesDataStore(name = &quot;settings&quot;)
+val DARK_MODE = booleanPreferencesKey(&quot;dark_mode&quot;)
+
+val isDarkFlow: Flow&lt;Boolean&gt; = context.settingsStore.data
+    .map { prefs -&gt; prefs[DARK_MODE] ?: false }
+
+suspend fun setDarkMode(context: Context, enabled: Boolean) {
+    context.settingsStore.edit { prefs -&gt; prefs[DARK_MODE] = enabled }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Trong một tiến trình, bạn chỉ được phép tạo đúng một đối tượng <code>DataStore</code> cho mỗi tên file trên đĩa. Nếu khởi tạo <code>DataStore</code> trong hàm dựng làm sinh hai đối tượng cùng trỏ vào một file, ứng dụng sẽ sập ngay với lỗi <code>IllegalStateException</code>. Tuyệt đối không bọc <code>runBlocking</code> trên luồng chính để ép đọc <code>dataStore.data.first()</code>, vì làm vậy là tự đem họa chặn giao diện quay lại. Khi dữ liệu là danh sách lớn hoặc cần tìm kiếm theo điều kiện, hãy dùng <a href="android-room.html">Room</a> thay vì nhồi vào <code>DataStore</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao dùng SharedPreferences.apply() là ghi bất đồng bộ rồi mà trên Google Play Console vẫn báo lỗi ANR ở Activity.onStop()?
+Vì <code>apply()</code> chỉ đưa việc ghi vào hàng đợi nền. Khi chuyển màn hình, hàm <code>onStop()</code> buộc phải chờ hàng đợi đó ghi xong xuống đĩa (<code>fsync()</code>). Nếu lúc đó chip nhớ đang bận, luồng chính bị khóa cứng quá 5 giây và sinh lỗi <a href="android-main-thread-and-anr.html">ANR</a>.</p>
+<p><strong>Hỏi:</strong> Khi nào nên chọn Proto DataStore thay cho Preferences DataStore?
+Chọn <code>Preferences DataStore</code> khi bạn chỉ lưu vài cặp cài đặt đơn giản như cờ bật tắt thông báo hay mã ngôn ngữ. Khi lưu đối tượng cấu hình nhiều trường và muốn trình biên dịch kiểm tra chặt kiểu dữ liệu, bạn hãy dùng <code>Proto DataStore</code>.</p>
+<p><strong>Hỏi:</strong> Làm sao giữ lại dữ liệu cài đặt cũ của người dùng khi nâng cấp app từ SharedPreferences lên DataStore?
+Lúc khai báo <code>preferencesDataStore</code>, bạn truyền thêm <code>SharedPreferencesMigration(context, "ten_file_cu")</code> vào tham số <code>produceMigrations</code>. Trong lần đọc hoặc ghi đầu tiên, <code>DataStore</code> sẽ tự chép toàn bộ khóa cũ sang file mới rồi xóa file XML cũ.</p>
+<p><strong>Hỏi:</strong> Lưu danh sách 500 món hàng trong giỏ hàng vào DataStore dưới dạng chuỗi JSON có tốt không?
+Không nên. Mỗi lần sửa số lượng 1 món hàng, <code>DataStore</code> đều phải đọc, giải mã và ghi đè toàn bộ file 500 món đó. Với dữ liệu có nhiều dòng cần sửa từng phần, bạn bắt buộc phải dùng cơ sở dữ liệu <a href="android-room.html">Room</a>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vì sao hàm apply() của SharedPreferences vẫn gây ANR trên luồng chính khi chờ fsync() ở onStop().</li>
+<li>Trình bày được cơ chế DataStore đọc dữ liệu qua Flow và ghi tuần tự nguyên tử qua hàm suspend edit trên Dispatchers.IO.</li>
+<li>Nêu được quy tắc chỉ một đối tượng DataStore cho mỗi file (vi phạm gây IllegalStateException), bẫy dùng runBlocking trên luồng chính và ranh giới với Room.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/topic/libraries/architecture/datastore" target="_blank" rel="noopener">App Architecture: Data Layer - DataStore — Android Developers</a></li>
+<li><a href="https://developer.android.com/jetpack/androidx/releases/datastore" target="_blank" rel="noopener">DataStore release notes — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/os/StrictMode" target="_blank" rel="noopener">StrictMode API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-flow-under-the-hood.html">Flow: Bản chất Cold Stream</a></li>
+<li><a href="android-main-thread-and-anr.html">Main Thread &amp; ANR</a></li>
+<li><a href="android-room.html">Room</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-datastore" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

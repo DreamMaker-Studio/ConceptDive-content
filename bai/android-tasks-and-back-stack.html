@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task &amp; back stack | ConceptDive</title>
+<meta name="description" content="Khi bạn mở trang sản phẩm rồi xem giỏ hàng, Android xếp các màn hình chồng lên nhau theo thứ tự mở trước nằm dưới. Bấm nút Back sẽ lấy màn hình trên cùng ra hủy và đưa màn hình ngay bên dưới quay lại.">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-tasks-and-back-stack.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Task &amp; back stack | ConceptDive">
+<meta property="og:description" content="Khi bạn mở trang sản phẩm rồi xem giỏ hàng, Android xếp các màn hình chồng lên nhau theo thứ tự mở trước nằm dưới. Bấm nút Back sẽ lấy màn hình trên cùng ra hủy và đưa màn hình ngay bên dưới quay lại.">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-tasks-and-back-stack.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/tasks-back-stack-launch-modes.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Task &amp; back stack</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn mở trang sản phẩm rồi xem giỏ hàng, Android xếp các màn hình chồng lên nhau theo thứ tự mở trước nằm dưới. Bấm nút Back sẽ lấy màn hình trên cùng ra hủy và đưa màn hình ngay bên dưới quay lại. Nhờ thuộc tính <code>launchMode</code>, bạn quy định được màn hình mới sẽ chồng thêm hay dùng lại bản có sẵn.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-intent.html">Intent &amp; intent filter</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trên máy tính truyền thống, mỗi ứng dụng tự quản lý cửa sổ của mình và không cho ứng dụng khác chèn màn hình vào. Nhưng trên điện thoại từ bản Android 1.0 (2008), một việc của người dùng thường đi xuyên qua nhiều ứng dụng khác nhau.</p>
+<p>Ví dụ khi đang soạn thư và mở thư viện ảnh để đính kèm, bạn mong bấm nút Back là quay thẳng về bức thư. Nếu mỗi ứng dụng giữ một danh sách lịch sử riêng, nút Back sẽ bị loạn và không biết phải lùi về đâu.</p>
+<p>Ngoài ra, nếu bấm thông báo nhiều lần mà hệ thống cứ tạo chồng thêm màn hình giống hệt nhau, bộ nhớ sẽ nhanh cạn. Kỹ sư Android tạo ra <code>Task</code> và <code>back stack</code> do hệ thống quản lý chung. Họ cũng thêm bốn chế độ <code>launchMode</code> để kiểm soát việc tái sử dụng màn hình.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Task</code> không phải là một tiến trình hay một gói ứng dụng đơn lẻ trong bộ nhớ. Thực chất, nó là một chồng thẻ hồ sơ (<code>ActivityRecord</code>) nằm trong tiến trình hệ thống <code>system_server</code>. Chồng thẻ này có thể chứa các <code>Activity</code> từ nhiều ứng dụng khác nhau. Các màn hình trong <code>back stack</code> không đổi thứ tự, chỉ đẩy vào hoặc lấy khỏi đỉnh theo nguyên tắc vào sau ra trước (<code>LIFO</code>).</p>
+<h2>Cơ chế</h2>
+<p><img alt="Cách hệ thống xếp chồng back stack với standard, tái sử dụng đỉnh với singleTop và cắt chồng với singleTask qua onNewIntent" src="../android/diagrams/tasks-back-stack-launch-modes.png"></p>
+<p>Khi <code>Activity</code> A mở <code>Activity</code> B, A dừng ở trạng thái <code>onStop</code> và giữ nguyên trong <code>back stack</code>, còn B nằm lên đỉnh chồng. Ở chế độ mặc định <code>standard</code>, mỗi lệnh mở đều tạo một đối tượng <code>Activity</code> mới tinh trên đỉnh. Với <code>singleTop</code>, nếu đúng loại <code>Activity</code> đó đang nằm sẵn ở đỉnh chồng, hệ thống dùng lại nó và chuyển <a href="android-intent.html">Intent</a> mới qua hàm <code>onNewIntent</code>. Với <code>singleTask</code>, nếu <code>Activity</code> đã có dưới chồng, hệ thống hủy các màn hình trên nó để đưa lên đỉnh, còn <code>singleInstance</code> tách <code>Task</code> riêng.</p>
+<h2>Đánh đổi</h2>
+<p>Chồng <code>back stack</code> xuyên ứng dụng giúp nút Back hoạt động liền mạch đúng theo dòng việc người dùng vừa làm. Đổi lại, mọi màn hình nằm dưới chồng vẫn giữ nguyên đối tượng trong RAM. Chồng quá cao sẽ làm tăng nguy cơ hệ thống thu hồi tiến trình. Nếu lạm dụng <code>singleTask</code> hay <code>singleInstance</code>, người dùng bấm Back sẽ thấy màn hình nhảy cóc hoặc thoát thẳng ra ngoài.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Quản lý lịch sử điều hướng bằng cấu trúc ngăn xếp vào sau ra trước (<code>LIFO</code>). Tại mỗi thời điểm, chỉ phần tử nằm trên đỉnh ngăn xếp mới được tương tác.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Một <code>Task</code> không gắn chặt với một ứng dụng, mà là một ngăn xếp của hệ thống ghép được màn hình từ nhiều ứng dụng.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">class OrderDetailActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        renderOrder(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        renderOrder(intent)
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Bẫy phổ biến nhất khi dùng <code>singleTop</code> hoặc <code>singleTask</code> là quên gọi <code>setIntent(intent)</code> bên trong hàm <code>onNewIntent</code>. Khi đó, mọi chỗ trong màn hình gọi hàm <code>getIntent()</code> sẽ vẫn đọc nhầm gói dữ liệu cũ từ lần mở đầu tiên. Cũng đừng gắn cờ <code>FLAG_ACTIVITY_NEW_TASK</code> kèm <code>taskAffinity</code> bừa bãi vì sẽ đẻ ra nhiều thẻ trùng lặp trong màn hình đa nhiệm (<code>Recents</code>). Triệu chứng khi mắc bẫy là bấm thông báo mới vẫn hiện bài cũ, hoặc phải bấm Back nhiều lần mới thoát được trang.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Đặt launchMode là singleTop thì có đảm bảo trong bộ nhớ chỉ có duy nhất một bản của Activity đó không?
+Không. Chế độ <code>singleTop</code> chỉ dùng lại màn hình cũ nếu lúc đó nó đang nằm ngay trên đỉnh của <code>back stack</code>. Nếu màn hình A mở B rồi B lại gọi mở A, hệ thống vẫn tạo thêm bản A thứ hai đè lên B.</p>
+<p><strong>Hỏi:</strong> Khi một Activity đang mở sẵn được tái sử dụng qua singleTop hoặc singleTask, hàm onCreate có chạy lại không?
+Không. Hệ thống bỏ qua <code>onCreate</code> và chuyển gói <code>Intent</code> mới thẳng vào hàm <code>onNewIntent</code> trước khi gọi <code>onResume</code>. Nếu bạn chỉ viết code đọc dữ liệu <code>Intent</code> ở trong <code>onCreate</code>, màn hình sẽ không cập nhật được nội dung mới.</p>
+<p><strong>Hỏi:</strong> Khi người dùng bấm nút Back để thoát khỏi màn hình hiện tại, dữ liệu của màn hình đó giữ lại ở đâu?
+Màn hình trên đỉnh sẽ bị lấy khỏi <code>back stack</code>, chạy tới <code>onDestroy</code> và xóa sạch khỏi bộ nhớ cùng với <code>ViewModel</code> của nó. Khi bạn bấm Back, hệ thống hiểu là bạn muốn bỏ hẳn màn hình đó nên cũng không giữ lại gói trạng thái <code>onSaveInstanceState</code>.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cấu trúc LIFO của back stack trong system_server và vì sao một Task chứa được Activity từ nhiều ứng dụng.</li>
+<li>Phân biệt được bốn chế độ standard, singleTop, singleTask và singleInstance tác động lên đỉnh và thân của back stack thế nào.</li>
+<li>Nêu được bẫy đọc nhầm dữ liệu cũ nếu quên gọi setIntent(intent) bên trong hàm onNewIntent khi tái sử dụng Activity.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/guide/components/activities/tasks-and-back-stack" target="_blank" rel="noopener">Tasks and the back stack — Android Developers</a></li>
+<li><a href="https://developer.android.com/guide/topics/manifest/activity-element" target="_blank" rel="noopener">Activity element in AndroidManifest.xml — Android Developers</a></li>
+<li><a href="https://developer.android.com/reference/android/app/Activity" target="_blank" rel="noopener">Activity API reference — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-activity-lifecycle.html">Activity Lifecycle</a></li>
+<li><a href="android-intent.html">Intent &amp; intent filter</a></li>
+<li><a href="android-process-death-and-saved-state.html">Process Death &amp; SavedStateHandle</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-tasks-and-back-stack" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

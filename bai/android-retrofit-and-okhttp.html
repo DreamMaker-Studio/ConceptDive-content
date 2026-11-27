@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retrofit &amp; OkHttp | ConceptDive</title>
+<meta name="description" content="Nếu tự mở kết nối mạng bằng thư viện gốc, bạn phải tự ghép chuỗi URL, tự đóng luồng và chuyển JSON sang đối tượng. Retrofit cho phép bạn khai báo API như một hàm Kotlin bình thường, rồi giao việc truy">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-retrofit-and-okhttp.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Retrofit &amp; OkHttp | ConceptDive">
+<meta property="og:description" content="Nếu tự mở kết nối mạng bằng thư viện gốc, bạn phải tự ghép chuỗi URL, tự đóng luồng và chuyển JSON sang đối tượng. Retrofit cho phép bạn khai báo API như một hàm Kotlin bình thường, rồi giao việc truy">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-retrofit-and-okhttp.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/retrofit-okhttp-interceptor-chain.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Retrofit &amp; OkHttp</h1>
+<h2>Bản 30 giây</h2>
+<p>Nếu tự mở kết nối mạng bằng thư viện gốc, bạn phải tự ghép chuỗi URL, tự đóng luồng và chuyển JSON sang đối tượng. <code>Retrofit</code> cho phép bạn khai báo API như một hàm Kotlin bình thường, rồi giao việc truyền tải thật ở bên dưới cho <code>OkHttp</code>. <code>OkHttp</code> tự giữ lại đường truyền cũ để gọi lần sau nhanh hơn và cho phép gắn trạm kiểm soát chung ở một nơi.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Thời kỳ đầu của Android, lập trình viên gọi mạng bằng <code>Apache HTTP Client</code> hoặc <code>HttpURLConnection</code>. Với mỗi API, bạn phải tự mở luồng đọc byte và tự nối tham số vào chuỗi URL. Bạn cũng phải tự bắt lỗi đóng kết nối trong khối <code>finally</code>.</p>
+<p>Nếu quên đóng luồng đọc, ứng dụng sẽ bị rò rỉ tài nguyên. Việc mở kết nối TCP mới ở mỗi lần gọi cũng làm tốn hàng trăm mili-giây bắt tay mạng. Sau đó, Google cũng ngừng hỗ trợ rồi gỡ hẳn <code>Apache HTTP Client</code> khỏi đường dẫn mặc định từ Android 6.0 (API 23).</p>
+<p>Tháng 5/2013, đội ngũ Square giới thiệu <code>OkHttp</code> và <code>Retrofit</code> để tách hẳn việc khai báo API khỏi tầng vận chuyển mạng. Từ bản <code>Retrofit</code> 2.6.0, thư viện tích hợp sẵn từ khóa <code>suspend</code> để gọi mạng bất đồng bộ trực tiếp trong <a href="kotlin-coroutines.html">Coroutines</a>.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>Retrofit</code> không phải là công cụ tự mở kết nối mạng xuống máy chủ. Nó chỉ là lớp vỏ biến <code>interface</code> của bạn thành yêu cầu HTTP. Lúc ứng dụng chạy, nó dùng đối tượng đại diện động <code>Proxy.newProxyInstance</code> để đón lệnh gọi hàm và đọc các đánh dấu như <code>@GET</code>, <code>@POST</code>. Động cơ thực sự giữ ổ cắm mạng <a href="android-tcp-stream-framing.html">TCP</a>, nén dữ liệu <code>GZIP</code> và quản lý luồng ở tầng dưới chính là <code>OkHttpClient</code>.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Retrofit dùng Proxy.newProxyInstance biến hàm interface thành Request, đẩy qua chuỗi Interceptor và ConnectionPool của OkHttp" src="../android/diagrams/retrofit-okhttp-interceptor-chain.png"></p>
+<p>Khi gọi hàm trong <code>interface</code>, đối tượng đại diện của <code>Retrofit</code> gom tham số và nhờ <code>Converter</code> biến đối tượng thành JSON. Tiếp đó, nó gói thông tin thành đối tượng <code>Request</code> rồi chuyển xuống cho <code>OkHttpClient</code> điều phối qua <code>Dispatcher</code>. Yêu cầu đi xuyên qua chuỗi trạm kiểm soát <code>Interceptor</code>: gắn thêm tiêu đề, kiểm tra bộ nhớ đệm, rồi mở kết nối. Tại đây, <code>ConnectionPool</code> của <code>OkHttp</code> lấy lại ổ cắm đang rảnh (mặc định giữ 5 kết nối trong 5 phút) thay vì mở TCP mới.</p>
+<h2>Đánh đổi</h2>
+<p>Bạn viết gọi mạng gọn như gọi hàm nội bộ. Ứng dụng cũng tận dụng được kết nối <code>HTTP/2</code> dùng chung và gắn mã xác thực tập trung ở một <code>Interceptor</code>. Đổi lại, việc dùng phản chiếu (<code>reflection</code>) lúc khởi tạo <code>Proxy.newProxyInstance</code> tốn thêm chu kỳ CPU ở lần gọi đầu tiên. Bước phân tích JSON sang đối tượng cũng tiêu tốn thêm thời gian xử lý.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Tách lớp mô tả hợp đồng dữ liệu ở tầng trên ra khỏi động cơ quản lý đường truyền ở tầng dưới. Nhờ đó, hệ thống tái sử dụng được kết nối mạng hiệu quả.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p><code>Retrofit</code> không tự gửi một byte nào qua mạng, nó chỉ dùng <code>Proxy.newProxyInstance</code> dịch lời gọi hàm thành <code>Request</code> cho <code>OkHttp</code> chạy.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">interface UserApi {
+    @GET(&quot;users/{id}&quot;)
+    suspend fun getUser(@Path(&quot;id&quot;) id: String): UserDto
+}
+
+val okHttp = OkHttpClient.Builder()
+    .addInterceptor { chain -&gt; chain.proceed(chain.request()) }
+    .build()
+val api = Retrofit.Builder().baseUrl(&quot;https://api.example.com/&quot;).client(okHttp).build()
+    .create(UserApi::class.java)
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Nếu mỗi lần gọi API bạn lại tạo mới một <code>OkHttpClient()</code>, bạn sẽ phá hỏng hoàn toàn hồ tái sử dụng kết nối <code>ConnectionPool</code>. Lúc đó mỗi yêu cầu tự mở bể luồng <code>Dispatcher</code> và ổ cắm riêng, làm ngốn RAM và cạn cổng kết nối. Với hàm <code>suspend</code> trả thẳng đối tượng, khi gặp mã lỗi 404 hay 500 thì <code>Retrofit</code> ném <code>HttpException</code> làm sập coroutine nếu thiếu <code>try-catch</code>. Đừng bật <code>HttpLoggingInterceptor</code> ở mức <code>Level.BODY</code> khi tải file lớn vì nó sẽ đọc toàn bộ file vào RAM gây lỗi <code>OutOfMemoryError</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Trong hàm suspend của Retrofit, làm sao lấy được mã lỗi 400 hay 500 mà không bị ném văng HttpException?
+Bạn có hai cách: hoặc bọc lời gọi hàm <code>suspend</code> trong khối <code>try-catch</code> để bắt riêng <code>HttpException</code> và <code>IOException</code>. Hoặc bạn khai báo kiểu trả về là <code>Response&lt;UserDto&gt;</code>, lúc đó <code>Retrofit</code> không ném <code>HttpException</code> mà cho bạn kiểm tra <code>response.isSuccessful</code>.</p>
+<p><strong>Hỏi:</strong> Vì sao ứng dụng bắt buộc phải dùng chung một đối tượng OkHttpClient duy nhất (singleton)?
+Vì bên trong mỗi <code>OkHttpClient</code> chứa riêng một hồ kết nối <code>ConnectionPool</code> và một bộ điều phối luồng <code>Dispatcher</code>. Chỉ khi dùng chung một đối tượng duy nhất, các lần gọi API liên tiếp mới dùng lại được kết nối TCP đã mở sẵn.</p>
+<p><strong>Hỏi:</strong> Khi nào tôi nên tự cài đặt Authenticator thay vì dùng Interceptor thường để gắn token đăng nhập?
+Bạn dùng <code>Interceptor</code> thường để đính kèm sẵn thẻ <code>Authorization</code> vào đầu mỗi yêu cầu gửi đi. Khi máy chủ trả lỗi <code>401 Unauthorized</code> báo thẻ hết hạn, <code>OkHttp</code> sẽ gọi <code>Authenticator</code>. Tại đây bạn xin thẻ mới rồi tự gửi lại yêu cầu.</p>
+<p><strong>Hỏi:</strong> Có nên gọi hàm Retrofit.create() lại mỗi lần bấm nút gọi API trên màn hình không?
+Không nên. Mỗi lần gọi <code>create()</code>, <code>Retrofit</code> tạo thêm một đối tượng <code>Proxy</code> mới chỉ để làm đúng việc của đối tượng cũ. Bạn gọi <code>create()</code> một lần rồi giữ lại, thường qua DI.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được vai trò của từng bên: Retrofit dùng Proxy.newProxyInstance biến interface thành Request, còn OkHttp quản lý đường truyền TCP.</li>
+<li>Trình bày được luồng đi của Request qua chuỗi Interceptor và cách ConnectionPool giữ lại kết nối rảnh (mặc định 5 kết nối trong 5 phút).</li>
+<li>Chỉ ra được hậu quả khi tạo nhiều OkHttpClient, bẫy sập coroutine do HttpException khi mã trả về ngoài khoảng 2xx và bẫy OOM khi log Level.BODY với file lớn.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://lysine.dev/okhttp/" target="_blank" rel="noopener">OkHttp Overview — Square</a></li>
+<li><a href="https://lysine.dev/retrofit/" target="_blank" rel="noopener">Retrofit Overview — Square</a></li>
+<li><a href="https://lysine.dev/okhttp/features/interceptors/" target="_blank" rel="noopener">Interceptors — OkHttp</a></li>
+<li><a href="https://lysine.dev/okhttp/5.x/okhttp/okhttp3/-connection-pool/" target="_blank" rel="noopener">ConnectionPool API reference — OkHttp</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="android-tcp-stream-framing.html">TCP Stream Framing</a></li>
+<li><a href="architecture-offline-first-repository.html">Offline-First Repository &amp; SSOT</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-retrofit-and-okhttp" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

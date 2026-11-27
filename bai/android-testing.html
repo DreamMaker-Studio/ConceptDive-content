@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unit test &amp; UI test | ConceptDive</title>
+<meta name="description" content="Mỗi lần sửa hàm tính tiền hay gọi mạng mà phải cài ứng dụng lên máy rồi bấm thử, bạn sẽ mất nhiều phút. Android tách kiểm thử thành hai nhánh: chạy logic thuần trong vài mili-giây trên máy tính, và ch">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-testing.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Unit test &amp; UI test | ConceptDive">
+<meta property="og:description" content="Mỗi lần sửa hàm tính tiền hay gọi mạng mà phải cài ứng dụng lên máy rồi bấm thử, bạn sẽ mất nhiều phút. Android tách kiểm thử thành hai nhánh: chạy logic thuần trong vài mili-giây trên máy tính, và ch">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/android-testing.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/android/diagrams/testing-pyramid-jvm-device.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Android</p>
+<h1>Unit test &amp; UI test</h1>
+<h2>Bản 30 giây</h2>
+<p>Mỗi lần sửa hàm tính tiền hay gọi mạng mà phải cài ứng dụng lên máy rồi bấm thử, bạn sẽ mất nhiều phút. Android tách kiểm thử thành hai nhánh: chạy logic thuần trong vài mili-giây trên máy tính, và chạy giao diện trên thiết bị. Nhờ vậy, bạn bắt được lỗi logic ngay lúc vừa gõ xong mà không cần mở màn hình ứng dụng.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Ở các bản Android đầu, mọi bài test đều phải đóng gói thành file cài đặt rồi đẩy lên thiết bị hoặc máy ảo. Mỗi lần sửa một dòng tính toán nhỏ, lập trình viên phải chờ biên dịch và khởi động máy mất hàng phút. Vì vòng lặp chờ quá lâu, nhiều đội bỏ hẳn việc chạy test tự động trước khi ghép code.</p>
+<p>Khi Google đưa bộ kiểm thử cục bộ vào thư mục <code>src/test/</code>, code lại vấp phải tệp <code>android.jar</code> trên máy tính. Tệp này chỉ chứa vỏ hàm rỗng để biên dịch chứ không có mã chạy thật của hệ điều hành. Gọi bất kỳ hàm khung Android nào như <code>Log.d</code> trong test cục bộ cũng làm bài test sập với lỗi <code>Method ... not mocked</code>.</p>
+<p>Để gỡ nút thắt đó, kiến trúc Android tách hẳn logic trong <a href="android-viewmodel.html">ViewModel</a> khỏi khung hệ điều hành và dùng bản giả (<em>Test Doubles</em>). Riêng tác vụ bất đồng bộ được thư viện <code>kotlinx-coroutines-test</code> gom vào đồng hồ ảo của <code>runTest</code> để tua nhanh thời gian chờ.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p>Kiểm thử trên Android không phải là một công cụ duy nhất chạy được mọi thứ ở cùng một nơi. Thực chất là hai môi trường tách biệt theo thư mục mã nguồn: <code>src/test/</code> chạy trên máy ảo JVM của máy tính để kiểm logic. Còn <code>src/androidTest/</code> đóng gói thành một APK thứ hai cài lên thiết bị để điều khiển ứng dụng thật.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Phân tầng Local Unit Test chạy trên JVM với android.jar rỗng và TestCoroutineScheduler, tách khỏi Instrumented UI Test chạy trên máy thật hoặc máy ảo" src="../android/diagrams/testing-pyramid-jvm-device.png"></p>
+<p>Khi chạy Local Unit Test trong <code>src/test/</code>, JVM nạp tệp <code>android.jar</code> rỗng nên bạn chỉ truyền bản giả (<em>Fake</em>) qua <a href="architecture-dependency-injection.html">Dependency Injection</a>. Với coroutine, hàm <code>runTest</code> tạo <code>TestCoroutineScheduler</code> xếp hàng các tác vụ từ <code>StandardTestDispatcher</code> và nhảy cóc qua lệnh <code>delay</code> bằng <code>advanceUntilIdle()</code>. Ngược lại, Instrumented UI Test trong <code>src/androidTest/</code> đẩy APK test lên máy và dùng <code>createComposeRule()</code> dựng cây ngữ nghĩa (<em>Semantics tree</em>). Các hàm <code>onNodeWithText</code>, <code>onNodeWithTag</code> và <code>performClick</code> sẽ tìm nút trên cây mô tả thuộc tính giao diện đó và tự đồng bộ khung hình.</p>
+<h2>Đánh đổi</h2>
+<p>Chạy Local Unit Test trên JVM tốn vài mili-giây cho hàng trăm bài, nhưng không thấy được lỗi hiển thị hay khác biệt phần cứng. Ngược lại, Instrumented UI Test kiểm tra được giao diện thật trên thiết bị. Đổi lại, nó tốn nhiều phút khởi động máy ảo và dễ báo lỗi giả (<em>flaky test</em>) khi hoạt ảnh làm trễ khung hình.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Đẩy phần lớn phép kiểm tra xuống tầng thấp nhất không phụ thuộc môi trường ngoài, để có phản hồi nhanh với chi phí rẻ.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Bài unit test sập vì lỗi <code>Method ... not mocked</code> không phải do thiếu thư viện giả lập, mà vì lớp logic dính vào khung Android.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Test
+fun loadData_updatesUiState() = runTest {
+    Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+    try {
+        val viewModel = UserViewModel(FakeUserRepository())
+        viewModel.loadData()
+        advanceUntilIdle()
+        assertEquals(&quot;Alice&quot;, viewModel.uiState.value)
+    } finally {
+        Dispatchers.resetMain()
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Dùng thư viện tạo đối tượng giả (<em>Mock</em>) để ép từng lệnh nội bộ sẽ khóa chặt bài test. Nó làm bài test gãy ngay khi bạn đổi tên hàm riêng tư. Đừng bật cờ <code>isReturnDefaultValues = true</code> để né lỗi <code>Method ... not mocked</code>, vì hàm khung Android sẽ trả về <code>null</code> và giấu lỗi thật. Khi test <code>viewModelScope</code> trên JVM mà quên gọi <code>Dispatchers.setMain</code>, bài test sẽ sập ngay với lỗi <code>Module with the Main dispatcher had failed to initialize</code>.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Có nên dùng thư viện Mock cho mọi lớp phụ thuộc khi viết Unit Test không?
+Không. Lạm dụng <code>Mock</code> để kiểm tra xem hàm A có gọi hàm B hay không sẽ khóa cứng bài test vào cách viết bên trong. Bạn nên ưu tiên viết lớp <code>Fake</code> giữ sẵn dữ liệu trong bộ nhớ để kiểm tra trạng thái cuối cùng mà <code>ViewModel</code> phát ra.</p>
+<p><strong>Hỏi:</strong> Vì sao gọi <code>viewModelScope.launch</code> trong Local Unit Test lại sập dù đã bọc trong <code>runTest</code>?
+Vì <code>viewModelScope</code> mặc định dùng <code>Dispatchers.Main</code>, vốn dựa vào <code>Looper</code> của luồng giao diện Android không tồn tại trên JVM máy tính. Bạn bắt buộc phải gọi <code>Dispatchers.setMain</code> để trỏ luồng chính về <code>StandardTestDispatcher</code> trước khi chạy, rồi gọi <code>Dispatchers.resetMain()</code> khi dọn dẹp.</p>
+<p><strong>Hỏi:</strong> Trong Compose UI Test, làm sao tìm và bấm một nút không có chữ mà chỉ có hình icon?
+Bạn không tìm qua file ảnh được vì Compose Test chỉ đọc cây ngữ nghĩa <code>Semantics tree</code>. Hãy gắn mô tả <code>contentDescription</code> cho icon hoặc gắn thẻ <code>Modifier.testTag</code> vào nút đó, rồi dùng <code>onNodeWithContentDescription</code> hoặc <code>onNodeWithTag</code> để bấm.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Phân biệt được môi trường chạy của <code>src/test/</code> (JVM máy tính với <code>android.jar</code> rỗng) và <code>src/androidTest/</code> (APK test cài trên thiết bị).</li>
+<li>Giải thích được cách <code>runTest</code>, <code>StandardTestDispatcher</code> và <code>TestCoroutineScheduler</code> tua nhanh thời gian ảo và thay thế <code>Dispatchers.Main</code>.</li>
+<li>Nêu được cách Compose UI Test duyệt cây ngữ nghĩa (<code>Semantics tree</code>) qua <code>createComposeRule()</code> và lý do ưu tiên <code>Fake</code> hơn <code>Mock</code>.</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/training/testing/fundamentals" target="_blank" rel="noopener">Fundamentals of testing Android apps — Android Developers</a></li>
+<li><a href="https://developer.android.com/training/testing/local-tests" target="_blank" rel="noopener">Build local unit tests — Android Developers</a></li>
+<li><a href="https://developer.android.com/kotlin/coroutines/test" target="_blank" rel="noopener">Testing Kotlin coroutines on Android — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/testing" target="_blank" rel="noopener">Testing your Compose layout — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="android-viewmodel.html">ViewModel</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+<li><a href="architecture-dependency-injection.html">Dependency Injection</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dandroid-testing" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>

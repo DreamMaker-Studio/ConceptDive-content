@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animations | ConceptDive</title>
+<meta name="description" content="Khi bạn đổi biến trạng thái từ thu gọn sang mở rộng, màn hình sẽ nhảy bụp một cái nếu không có bước chuyển tiếp. Các hàm như animateDpAsState hay AnimatedVisibility tự chia khoảng cách đó thành hàng c">
+<link rel="canonical" href="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-animation.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Animations | ConceptDive">
+<meta property="og:description" content="Khi bạn đổi biến trạng thái từ thu gọn sang mở rộng, màn hình sẽ nhảy bụp một cái nếu không có bước chuyển tiếp. Các hàm như animateDpAsState hay AnimatedVisibility tự chia khoảng cách đó thành hàng c">
+<meta property="og:url" content="https://dreammaker-studio.github.io/ConceptDive-content/bai/compose-animation.html">
+<meta property="og:image" content="https://dreammaker-studio.github.io/ConceptDive-content/compose/diagrams/compose-animation.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a href="../index.html">ConceptDive</a></header>
+<main>
+<p class="meta"><a href="../index.html">Thư viện</a> · Compose</p>
+<h1>Animations</h1>
+<h2>Bản 30 giây</h2>
+<p>Khi bạn đổi biến trạng thái từ thu gọn sang mở rộng, màn hình sẽ nhảy bụp một cái nếu không có bước chuyển tiếp. Các hàm như <code>animateDpAsState</code> hay <code>AnimatedVisibility</code> tự chia khoảng cách đó thành hàng chục bước nhỏ theo từng nhịp khung hình. Nếu chỉ đọc giá trị ở bước đặt tọa độ hoặc bước vẽ, giao diện sẽ lướt mượt mà không chạy lại thân hàm.</p>
+<h2>Cần biết trước</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+</ul>
+<h2>Vấn đề buộc nó ra đời</h2>
+<p>Trong hệ thống <code>View</code> cũ, khi dùng <code>ObjectAnimator</code>, bạn phải tự gán giá trị đầu, cuối và tự hủy khi đổi ý giữa chừng. Nếu đang chạy hiệu ứng đóng thẻ mà người dùng bấm mở lại ngay, hình ảnh rất dễ bị giật ngược về điểm xuất phát.</p>
+<p>Với <code>View.GONE</code>, phần tử biến mất ngay lập tức trước khi hiệu ứng mờ dần kịp chạy xong. Bạn phải viết <code>AnimatorListener</code> để đợi hiệu ứng kết thúc rồi mới dám ẩn <code>View</code>, rất dễ sót lỗi khi trạng thái đổi liên tục.</p>
+<p>Năm 2021, Jetpack Compose 1.0 đưa toàn bộ hoạt ảnh chạy theo <code>State</code> và dùng hệ vật lý lò xo (<code>spring</code>) làm mặc định. Khi đích đến đổi, lò xo giữ vận tốc đang có để bẻ lái mượt, còn <code>AnimatedVisibility</code> đợi hiệu ứng xong mới tháo nút.</p>
+<h2>Nó thực sự là cái gì</h2>
+<p><code>animate*AsState</code> không phải là một bộ hẹn giờ chạy tách biệt ngoài luồng giao diện. Thực chất, nó bọc một đối tượng <code>Animatable</code> chạy trong <a href="kotlin-coroutines.html">coroutine</a> và lắng nghe nhịp khung hình của màn hình (<code>withFrameNanos</code>). Ở mỗi nhịp quét, nó tính giá trị trung gian mới theo công thức <code>AnimationSpec</code> rồi ghi vào <code>State</code> để kích hoạt pha cập nhật.</p>
+<h2>Cơ chế</h2>
+<p><img alt="Hoạt ảnh cập nhật State theo từng nhịp khung hình; đọc State ở pha Layout hoặc Drawing giúp bỏ qua Recomposition" src="../compose/diagrams/compose-animation.png"></p>
+<p>Khi biến đích (<code>targetValue</code>) đổi, <code>animate*AsState</code> mở coroutine tính giá trị mới ở mỗi khung hình theo lò xo <code>spring</code> hoặc đường cong <code>tween</code>. Với việc ẩn hiện, <code>AnimatedVisibility</code> giữ nút trong <code>Slot Table</code> suốt lúc chạy <code>ExitTransition</code>, và chỉ tháo ra khi hoạt ảnh về đích. Nếu màu sắc và kích thước cùng đổi theo một trạng thái, <code>updateTransition</code> sẽ gom chúng vào chung một đồng hồ khung hình. Đặc biệt, truyền hàm lambda vào <code>Modifier.offset { ... }</code> hoặc <code>Modifier.graphicsLayer { ... }</code> giúp dời việc đọc <code>State</code> xuống thẳng pha <code>Layout</code> hoặc <code>Drawing</code>.</p>
+<h2>Đánh đổi</h2>
+<p>Hoạt ảnh gắn liền với <code>State</code> giúp bạn hủy hoặc đổi hướng chuyển động bất kỳ lúc nào mà hình ảnh không bị giật cục. Đổi lại, biến <code>State</code> của hoạt ảnh cập nhật tới 60 hoặc 120 lần mỗi giây theo tần số quét màn hình. Nếu đọc biến này ngay trong thân hàm <code>@Composable</code>, toàn bộ hàm sẽ phải chạy lại <a href="compose-recomposition-and-state.html">Recomposition</a> ở mọi khung hình và ngốn sạch CPU.</p>
+<h2>Nguyên lý gốc</h2>
+<p>Chuyển động là chuỗi trạng thái trung gian theo thời gian; đọc trạng thái ở pha càng muộn thì càng bớt bước tính toán.</p>
+<h2>Key insight</h2>
+<blockquote>
+<p>Giá trị từ <code>animate*AsState</code> đổi ở mọi khung hình, nên đọc nó bằng lambda trong <code>graphicsLayer</code> hoặc <code>offset</code> mới giúp bạn bỏ qua hẳn <code>Recomposition</code>.</p>
+</blockquote>
+<h2>Khuôn mẫu chuẩn</h2>
+<pre><code class="language-kotlin">@Composable
+fun ExpandableCard(expanded: Boolean) {
+    val alpha by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0.4f,
+        label = &quot;cardAlpha&quot;
+    )
+    Box(modifier = Modifier.graphicsLayer { this.alpha = alpha }) {
+        AnimatedVisibility(visible = expanded) {
+            Text(text = &quot;Chi tiết nội dung thẻ&quot;)
+        }
+    }
+}
+</code></pre>
+<h2>Bẫy &amp; ranh giới</h2>
+<p>Viết <code>Modifier.alpha(alpha)</code> hay <code>Modifier.offset(x = offsetDp)</code> trực tiếp làm <code>State</code> bị đọc ngay trong thân hàm <code>@Composable</code>, ép hàm chạy lại <code>Composition</code> 60-120 lần mỗi giây. Triệu chứng trong Layout Inspector là bộ đếm recompose nhảy vọt hàng trăm lần chỉ trong một cú chạm, làm khung hình bị khựng. Bạn phải đổi sang bản nhận lambda như <code>Modifier.graphicsLayer { this.alpha = alpha }</code> hoặc <code>Modifier.offset { IntOffset(xPx, 0) }</code> để chỉ chạy pha <code>Drawing</code> hoặc <code>Layout</code>. Ngoài ra, đừng dùng câu lệnh <code>if</code> trần khi muốn có hiệu ứng biến mất, vì <code>if (visible)</code> sẽ xóa ngay nút khỏi cây giao diện.</p>
+<h2>Câu hỏi thực chiến</h2>
+<p><strong>Hỏi:</strong> Vì sao muốn làm hiệu ứng ẩn phần tử thì không dùng <code>if (visible)</code> bọc ngoài được mà phải dùng <code>AnimatedVisibility</code>?
+Vì khi <code>visible</code> chuyển sang <code>false</code>, câu lệnh <code>if</code> sẽ tháo ngay phần tử đó khỏi <code>Slot Table</code> trong lần chạy lại đầu tiên. Phần tử đã mất khỏi cây giao diện thì không còn gì trên màn hình để vẽ hiệu ứng mờ dần hay thu nhỏ nữa. <code>AnimatedVisibility</code> giữ phần tử sống thêm trên cây cho tới khi khung hình cuối của <code>ExitTransition</code> vẽ xong mới tháo ra.</p>
+<p><strong>Hỏi:</strong> <code>Modifier.graphicsLayer { alpha = animAlpha }</code> khác gì với <code>Modifier.alpha(animAlpha)</code> khi biến <code>animAlpha</code> đang chạy hoạt ảnh?
+Viết <code>Modifier.alpha(animAlpha)</code> là đọc giá trị <code>State</code> ngay lúc gọi hàm <code>@Composable</code>, nên mỗi khung hình đều kích hoạt lại pha <code>Composition</code>. Còn truyền khối lambda vào <code>graphicsLayer</code> thì tới tận pha <code>Drawing</code> khối đó mới được gọi để đọc <code>animAlpha</code>. Nhờ vậy, Compose bỏ qua được cả pha <code>Composition</code> lẫn pha <code>Layout</code> trong suốt lúc làm mờ.</p>
+<p><strong>Hỏi:</strong> Khi nào nên dùng <code>updateTransition</code> thay vì gọi nhiều hàm <code>animate*AsState</code> rời rạc?
+Khi một biến trạng thái duy nhất điều khiển cùng lúc nhiều thuộc tính như màu nền, độ cao và góc xoay. <code>updateTransition</code> gom tất cả hoạt ảnh con vào chung một đối tượng quản lý nên chúng chạy đồng bộ trên cùng một nhịp thời gian. Nó cũng cho phép bạn xem trước và kéo thanh thời gian kiểm tra trong công cụ Animation Preview của Android Studio.</p>
+<p><strong>Hỏi:</strong> Vì sao hoạt ảnh mặc định trong Compose dùng vật lý lò xo <code>spring</code> mà không dùng thời gian cố định <code>tween</code>?
+Vì lò xo <code>spring</code> tính chuyển động theo vận tốc thực tế thay vì ép chạy trong một số mili-giây cứng nhắc. Khi đang vuốt mở mà đột ngột bấm đóng lại, <code>spring</code> lấy ngay vận tốc hiện tại để hãm phanh rồi quay đầu mượt mà.</p>
+<h2>Ý bắt buộc khi giải thích lại</h2>
+<ul>
+<li>Giải thích được cách animate*AsState dùng Animatable cập nhật giá trị State ở mỗi nhịp khung hình theo AnimationSpec (spring hoặc tween).</li>
+<li>Nêu được cơ chế của AnimatedVisibility: giữ nút trong Slot Table suốt quá trình chạy ExitTransition rồi mới tháo khỏi cây.</li>
+<li>Phân biệt được việc đọc State trực tiếp trong thân hàm (gây Recomposition 60-120 lần/giây) với việc đọc trong lambda của offset và graphicsLayer (chỉ chạy pha Layout hoặc Drawing).</li>
+<li>Viết lại được khuôn mẫu chuẩn từ trí nhớ.</li>
+</ul>
+<h2>Nguồn</h2>
+<ul>
+<li><a href="https://developer.android.com/develop/ui/compose/animation/introduction" target="_blank" rel="noopener">Animations in Compose — Android Developers</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/animation/quick-guide" target="_blank" rel="noopener">Quick guide to Animations in Compose</a></li>
+<li><a href="https://developer.android.com/develop/ui/compose/phases" target="_blank" rel="noopener">Jetpack Compose Phases — Android Developers</a></li>
+</ul>
+<h2>Bài liên quan</h2>
+<ul>
+<li><a href="compose-recomposition-and-state.html">Compose: Recomposition &amp; State</a></li>
+<li><a href="compose-side-effects.html">Compose: Side Effects</a></li>
+<li><a href="kotlin-coroutines.html">Coroutines</a></li>
+</ul>
+<a class="btn" href="https://play.google.com/store/apps/details?id=com.conceptdive&referrer=utm_source%3Dweb%26utm_medium%3Darticle%26utm_campaign%3Dcompose-animation" target="_blank" rel="noopener">Nghe bài này trong app ConceptDive</a>
+</main>
+<footer>ConceptDive: thư viện khái niệm lập trình, miễn phí, không quảng cáo.</footer>
+</body>
+</html>
